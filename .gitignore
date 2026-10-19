@@ -1,0 +1,27 @@
+# Generated and local files
+**/.gradle/
+**/.kotlin/
+**/build/
+.idea/
+*.iml
+**/local.properties
+__pycache__/
+*.pyc
+.DS_Store
+# Signing material and credentials
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key
+*.lineage
+signing.properties
+.env
+.env.*
+!*.example
+# Distributable binaries
+*.apk
+*.aab
+*.apks
+*.zip

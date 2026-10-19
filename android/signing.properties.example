@@ -1,0 +1,5 @@
+# Paths are resolved relative to android/. Keep the real file out of Git.
+storeFile=/absolute/path/to/your-release.keystore
+storePassword=YOUR_STORE_PASSWORD
+keyAlias=YOUR_KEY_ALIAS
+keyPassword=YOUR_KEY_PASSWORD
