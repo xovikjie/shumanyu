@@ -3,9 +3,7 @@
 书漫屿是一款集成小说源和漫画源的阅读聚合器
 
 
-## 截图展示
-
-漫画书城实际运行截图：
+## 截图预览
 
 <img src="docs/screenshots/bookstore-comics.png" alt="书漫屿漫画书城" width="320" />
 
