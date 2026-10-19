@@ -3115,7 +3115,6 @@ private fun MorePane(
                 Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
                     ArrowPreference(
                         title = when (lang) { "en" -> "Mystery switch"; "zh-TW" -> "神秘開關"; else -> "神秘开关" },
-                        summary = when (lang) { "en" -> "Enter the number to open it"; "zh-TW" -> "輸入數字後進入"; else -> "输入数字后进入" },
                         onClick = {
                             code = ""
                             askCode = true
@@ -3176,16 +3175,11 @@ private fun MorePane(
         OverlayScrim(onDismiss = { askCode = false }) {
             Card(Modifier.padding(24.dp).fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        when (lang) { "en" -> "Enter the mystery number"; "zh-TW" -> "請輸入神秘數字"; else -> "请输入神秘数字" },
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
                     TextField(
                         value = code,
                         onValueChange = { code = it.filter { ch -> ch.isDigit() }.take(8) },
                         modifier = Modifier.fillMaxWidth(),
-                        label = when (lang) { "en" -> "Enter the mystery number"; "zh-TW" -> "請輸入神秘數字"; else -> "请输入神秘数字" },
+                        label = when (lang) { "en" -> "Enter a number"; "zh-TW" -> "請輸入數字"; else -> "请输入数字" },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
