@@ -555,9 +555,10 @@ fun ShuManYuApp() {
         val updateLifecycle=androidx.lifecycle.compose.LocalLifecycleOwner.current
         LaunchedEffect(updateLifecycle) {
             updateLifecycle.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+                appUpdater.check(immediate=true)
                 while(true) {
+                    delay(15_000L)
                     appUpdater.check()
-                    delay(60_000L)
                 }
             }
         }
@@ -8401,7 +8402,6 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
         "适配底栏 Monet 配色，调整自定义颜色设置，精简存储空间说明及小说列表提示。",
         "移除书城功能菜单中的自动检测入口。",
         "修复小说章节标题缺失及工具栏遮挡正文的问题，优化分页与阅读位置保持。",
-        "优化首次启动的书城展示，默认显示笔趣阁小说。",
         "优化小说封面的详情页自动补取与缓存，支持滑动列表时自动加载，无可用封面时保留底部书名显示。",
         "修复自动检查更新触发不及时的问题，增加应用回到前台后的检查及联网失败后的重试。"
     )

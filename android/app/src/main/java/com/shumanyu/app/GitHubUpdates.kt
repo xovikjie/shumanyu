@@ -12,6 +12,43 @@ internal object GitHubUpdates {
     const val RELEASES="https://github.com/$REPOSITORY/releases"
     private const val API="https://api.github.com/repos/$REPOSITORY/releases/latest"
 
+    private var feedEtag:String?=null
+    private var feedRevision:String?=null
+
+    @Synchronized fun releaseRevision():String {
+        val connection=URL("https://github.com/$REPOSITORY/releases.atom").openConnection() as HttpURLConnection
+        connection.connectTimeout=8_000
+        connection.readTimeout=8_000
+        connection.useCaches=false
+        connection.setRequestProperty("User-Agent","ShuManYu-Android")
+        connection.setRequestProperty("Accept","application/atom+xml")
+        connection.setRequestProperty("Cache-Control","no-cache")
+        feedEtag?.let { connection.setRequestProperty("If-None-Match",it) }
+        try {
+            if(connection.responseCode==304)return checkNotNull(feedRevision)
+            check(connection.responseCode==200) { "Release feed HTTP ${connection.responseCode}" }
+            val xml=connection.inputStream.use { String(it.readBytesLimited(1_000_000),Charsets.UTF_8) }
+            val revision=checkNotNull(parseReleaseRevision(xml)) { "Invalid release feed" }
+            feedRevision=revision
+            feedEtag=connection.getHeaderField("ETag")
+            return revision
+        }finally { connection.disconnect() }
+    }
+
+    internal fun parseReleaseRevision(xml:String):String? {
+        val doc=org.jsoup.Jsoup.parse(xml,"",org.jsoup.parser.Parser.xmlParser())
+        if(doc.selectFirst("feed")==null)return null
+        val entries=doc.select("entry")
+        val parts=entries.take(10).mapNotNull { entry ->
+            val link=entry.selectFirst("link[rel=alternate]")?.attr("href").orEmpty()
+            val uri=runCatching { URI(link) }.getOrNull() ?: return@mapNotNull null
+            if(uri.scheme!="https" || uri.host!="github.com" || uri.userInfo!=null || uri.port!=-1 || !uri.path.orEmpty().startsWith("/$REPOSITORY/releases/tag/"))return@mapNotNull null
+            listOf(entry.selectFirst("id")?.text().orEmpty(),entry.selectFirst("updated")?.text().orEmpty(),link,entry.selectFirst("content")?.text().orEmpty()).joinToString("\n")
+        }
+        if(entries.isNotEmpty() && parts.isEmpty())return null
+        return java.security.MessageDigest.getInstance("SHA-256").digest(parts.joinToString("\n").toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    }
+
     fun latest():GitHubRelease? {
         val connection=URL(API).openConnection() as HttpURLConnection
         connection.useCaches=false

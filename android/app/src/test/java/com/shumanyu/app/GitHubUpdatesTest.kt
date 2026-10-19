@@ -59,4 +59,15 @@ class GitHubUpdatesTest {
         assertNull(GitHubUpdates.parse(asset.toString()))
     }
 
+    private fun feed(updated:String="2026-10-19T08:57:29Z")="""<feed><entry><id>release-one</id><updated>$updated</updated><link rel="alternate" href="https://github.com/${GitHubUpdates.REPOSITORY}/releases/tag/v1.0.2"/><content>Notes</content></entry></feed>"""
+    @Test fun releaseFeedDetectsSameTagEditedToNewInternalVersion() {
+        val before=GitHubUpdates.parseReleaseRevision(feed())
+        assertNotNull(before)
+        assertEquals(before,GitHubUpdates.parseReleaseRevision(feed()))
+        assertNotEquals(before,GitHubUpdates.parseReleaseRevision(feed("2026-10-19T09:00:00Z")))
+    }
+    @Test fun invalidOrDifferentRepositoryFeedIsRejected() {
+        assertNull(GitHubUpdates.parseReleaseRevision("<html>verification required</html>"))
+        assertNull(GitHubUpdates.parseReleaseRevision(feed().replace(GitHubUpdates.REPOSITORY,"other/project")))
+    }
 }

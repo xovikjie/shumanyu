@@ -16,23 +16,33 @@ import kotlinx.coroutines.withContext
 internal class AppUpdateController(private val context:Context) {
     private val settings=context.getSharedPreferences("github_updates_${GitHubUpdates.REPOSITORY.replace('/','_')}",Context.MODE_PRIVATE)
     private var checking=false
+    private var probedAt:Long?=null
+    private var seenRevision:String?=null
     private var attemptedAt:Long?=null
     private var lastFailed=false
     var available by mutableStateOf<GitHubRelease?>(null)
         private set
 
-    suspend fun check() {
+    suspend fun check(immediate:Boolean=false) {
         if(checking || available!=null)return
         if(!Net.online(context))return
         val elapsed=SystemClock.elapsedRealtime()
-        if(!updateCheckDue(elapsed,attemptedAt,lastFailed))return
+        if(!immediate && !updateProbeDue(elapsed,probedAt))return
         val now=System.currentTimeMillis()
         checking=true
-        attemptedAt=elapsed
-        lastFailed=true
+        probedAt=elapsed
         try {
+            // Frequent conditional feed requests avoid exhausting GitHub's
+            // anonymous API quota. Fetch full metadata as soon as releases change.
+            val revision=try { withContext(Dispatchers.IO) { GitHubUpdates.releaseRevision() } }
+                catch(cancelled:CancellationException){throw cancelled}
+                catch(error:Exception){null}
+            if(!updateCheckDue(elapsed,attemptedAt,lastFailed,revision!=null && revision!=seenRevision))return
+            attemptedAt=elapsed
+            lastFailed=true
             val release=withContext(Dispatchers.IO){GitHubUpdates.latest()}
             lastFailed=false
+            if(revision!=null)seenRevision=revision
             val info=context.packageManager.getPackageInfo(context.packageName,0)
             val code=if(Build.VERSION.SDK_INT>=28)info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
             val newer=release!=null && GitHubUpdates.isNewer(release,code,info.versionName.orEmpty())
