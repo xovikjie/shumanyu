@@ -3,9 +3,9 @@
 书漫屿是一款集成小说源和漫画源的阅读聚合器
 
 
-## 下载方式
+## 下载
 
-前往[最新版本下载页面](https://github.com/xovikjie/shumanyu/releases/latest)
+[下载](https://github.com/xovikjie/shumanyu/releases/latest)
 
 ## 主要功能
 
