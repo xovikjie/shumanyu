@@ -3,6 +3,12 @@
 书漫屿是一款集成小说源和漫画源的阅读聚合器
 
 
+## 下载方式
+
+前往[最新版本下载页面](https://github.com/xovikjie/shumanyu/releases/latest)，下载 `.apk` 文件后安装。
+
+[直接下载 1.0.1 安装包](https://github.com/xovikjie/shumanyu/releases/download/v1.0.1/shumanyu-1.0.1-release.apk)
+
 ## 主要功能
 
 - **特色**：整合多种小说源和漫画源，支持在线阅读。
