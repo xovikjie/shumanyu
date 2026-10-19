@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,26 +16,31 @@ import kotlinx.coroutines.withContext
 internal class AppUpdateController(private val context:Context) {
     private val settings=context.getSharedPreferences("github_updates_${GitHubUpdates.REPOSITORY.replace('/','_')}",Context.MODE_PRIVATE)
     private var checking=false
+    private var attemptedAt:Long?=null
+    private var lastFailed=false
     var available by mutableStateOf<GitHubRelease?>(null)
         private set
 
     suspend fun check() {
-        if(checking)return
+        if(checking || available!=null)return
         if(!Net.online(context))return
+        val elapsed=SystemClock.elapsedRealtime()
+        if(!updateCheckDue(elapsed,attemptedAt,lastFailed))return
         val now=System.currentTimeMillis()
-        if(now-settings.getLong("lastAttempt",0)<15*60_000L || now-settings.getLong("lastSuccess",0)<12*60*60_000L)return
         checking=true
-        settings.edit().putLong("lastAttempt",now).apply()
+        attemptedAt=elapsed
+        lastFailed=true
         try {
             val release=withContext(Dispatchers.IO){GitHubUpdates.latest()}
-            settings.edit().putLong("lastSuccess",now).apply()
+            lastFailed=false
             val info=context.packageManager.getPackageInfo(context.packageName,0)
             val code=if(Build.VERSION.SDK_INT>=28)info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
-            if(release!=null && GitHubUpdates.isNewer(release,code,info.versionName.orEmpty())) {
-                if(now>=settings.getLong("snooze:${release.version}:${release.code}",0))available=release
-            }
+            val newer=release!=null && GitHubUpdates.isNewer(release,code,info.versionName.orEmpty())
+            val snoozed=release!=null && now<settings.getLong("snooze:${release.version}:${release.code}",0)
+            AppLog.add("app-update","installed=$code remote=${release?.code ?: release?.version} newer=$newer snoozed=$snoozed")
+            if(newer && !snoozed)available=release
         }catch(cancelled:CancellationException){throw cancelled}
-        catch(error:Exception){AppLog.add("app-update",error.javaClass.simpleName)}
+        catch(error:Exception){AppLog.add("app-update","check failed: ${error.message.orEmpty().take(160)}; retry later")}
         finally{checking=false}
     }
     fun later() {

@@ -14,6 +14,8 @@ internal object GitHubUpdates {
 
     fun latest():GitHubRelease? {
         val connection=URL(API).openConnection() as HttpURLConnection
+        connection.useCaches=false
+        connection.setRequestProperty("Cache-Control","no-cache")
         connection.connectTimeout=10_000
         connection.readTimeout=10_000
         connection.setRequestProperty("Accept","application/vnd.github+json")

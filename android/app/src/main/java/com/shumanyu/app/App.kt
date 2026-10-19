@@ -1,6 +1,8 @@
 package com.shumanyu.app
 
 import android.app.Activity
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.ui.layout.layout
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -550,7 +552,15 @@ fun ShuManYuApp() {
         }
         val appScope = rememberCoroutineScope()
         val appUpdater=remember { AppUpdateController(context.applicationContext) }
-        LaunchedEffect(Unit) { appUpdater.check() }
+        val updateLifecycle=androidx.lifecycle.compose.LocalLifecycleOwner.current
+        LaunchedEffect(updateLifecycle) {
+            updateLifecycle.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+                while(true) {
+                    appUpdater.check()
+                    delay(60_000L)
+                }
+            }
+        }
         val historyPending = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
         DisposableEffect(Unit) {
             onDispose { persistHistory() }
@@ -5494,9 +5504,8 @@ private fun NovelReaderPane(
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val readingTitle = normalizedNovelChapterTitle(chapter?.title.orEmpty(),chapter?.index ?: 0,text)
     val bodyTop = topInset + 56.dp
+    val paginationBottom = bottomInset + 28.dp
     val bodyBottom = bottomInset + if(chrome)124.dp else 28.dp
-    var menuAnchor by remember(chapterId) { mutableStateOf<Int?>(null) }
-    var chromeOriginalAnchor by remember(chapterId) { mutableStateOf<Int?>(null) }
     val headingStyle=TextStyle(color=fg,fontSize=(fontSp+4).sp,fontWeight=FontWeight.Bold,lineHeight=((fontSp+4)*gap).sp)
     val reading = remember(text, readingTitle) {
         val peeled = novelReadingBody(text, readingTitle)
@@ -5507,13 +5516,13 @@ private fun NovelReaderPane(
         fontSize = fontSp.sp,
         lineHeight = (fontSp * gap).sp,
     )
-    val leaves = remember(reading, readingTitle, fontSp, gap, box, turn, night, tone, bodyTop, bodyBottom) {
+    val leaves = remember(reading, readingTitle, fontSp, gap, box, turn, night, tone, bodyTop, paginationBottom) {
         if (reading.isBlank() || turn == "vertical" || box.width < 8 || box.height < 8) {
             emptyList()
         } else {
             val side = with(density) { 22.dp.roundToPx() }
             val top = with(density) { bodyTop.roundToPx() }
-            val bot = with(density) { bodyBottom.roundToPx() }
+            val bot = with(density) { paginationBottom.roundToPx() }
             val titleHeight=measurer.measure(AnnotatedString(readingTitle),style=headingStyle,constraints=Constraints(maxWidth=(box.width-side*2).coerceAtLeast(1)),maxLines=3).size.height + with(density) { 16.dp.roundToPx() }
             paginateNovel(
                 measurer,
@@ -5563,24 +5572,7 @@ private fun NovelReaderPane(
     }
     val scope = rememberCoroutineScope()
     fun setReaderChrome(show:Boolean) {
-        if(chrome==show)return
-        if(turn!="vertical" && leaves.isNotEmpty()) {
-            if(show) {
-                chromeOriginalAnchor=novelPageStart(reading,leaves,pagerState.currentPage)
-                menuAnchor=chromeOriginalAnchor
-            } else {
-                menuAnchor=chromeOriginalAnchor ?: novelPageStart(reading,leaves,pagerState.currentPage)
-                chromeOriginalAnchor=null
-            }
-        }
         chrome=show
-    }
-    LaunchedEffect(menuAnchor,leaves) {
-        val anchor=menuAnchor ?: return@LaunchedEffect
-        if(leaves.isEmpty())return@LaunchedEffect
-        val target=leaves.indices.lastOrNull { novelPageStart(reading,leaves,it)<=anchor } ?: 0
-        pagerState.scrollToPage(target)
-        menuAnchor=null
     }
     BackHandler {
         when {
@@ -5677,7 +5669,20 @@ private fun NovelReaderPane(
                         .padding(horizontal = 22.dp)
                         .padding(top=bodyTop,bottom=bodyBottom),
                 ) {
-                    Column {
+                    Column(Modifier.layout { measurable,constraints ->
+                        // Toolbars must not redivide the chapter or remove the end
+                        // of the current page. Fit the same full page into the gap.
+                        val normalHeight=(box.height-with(density) { (bodyTop+paginationBottom).roundToPx() }).coerceAtLeast(1)
+                        val scale=if(chrome)(constraints.maxHeight.toFloat()/normalHeight).coerceIn(0.1f,1f) else 1f
+                        val placeable=measurable.measure(constraints.copy(minWidth=constraints.maxWidth,minHeight=normalHeight,maxHeight=normalHeight))
+                        layout(constraints.maxWidth,constraints.maxHeight) {
+                            placeable.placeWithLayer(0,0) {
+                                scaleX=scale
+                                scaleY=scale
+                                transformOrigin=androidx.compose.ui.graphics.TransformOrigin(0.5f,0f)
+                            }
+                        }
+                    }) {
                     if(page==0) {
                         Text(readingTitle,style=headingStyle,maxLines=3,overflow=TextOverflow.Ellipsis)
                         Spacer(Modifier.height(16.dp))
@@ -5780,7 +5785,6 @@ private fun NovelReaderPane(
                                     scroll.scrollTo(y.coerceIn(0, scroll.maxValue))
                                 }
                             } else {
-                                chromeOriginalAnchor=novelPageStart(reading,leaves,target.coerceIn(0,leaves.lastIndex.coerceAtLeast(0)))
                                 scope.launch { runCatching { pagerState.scrollToPage(target.coerceIn(0, leaves.lastIndex.coerceAtLeast(0))) } }
                             }
                         },
@@ -8391,13 +8395,15 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
     val context=LocalContext.current
     val title=if(lang=="en")"What's new" else "更新日志"
     val changes=listOf(
-        "更换笔趣阁小说源，适配推荐、分类、搜索、完整目录及正文加载，优化详情页封面自动获取与缓存。",
+        "更换笔趣阁小说源。",
         "新增收藏自动分类，按已收藏作品显示类型及题材标签，支持直接收藏并手动整理到收藏夹。",
         "优化添加网站的内容解析、跳转处理和验证后的会话复用。",
-        "优化首次启动的书城展示，默认显示笔趣阁小说。",
         "适配底栏 Monet 配色，调整自定义颜色设置，精简存储空间说明及小说列表提示。",
         "移除书城功能菜单中的自动检测入口。",
-        "修复小说章节标题缺失及工具栏遮挡正文的问题，优化分页与阅读位置保持。"
+        "修复小说章节标题缺失及工具栏遮挡正文的问题，优化分页与阅读位置保持。",
+        "优化首次启动的书城展示，默认显示笔趣阁小说。",
+        "优化小说封面的详情页自动补取与缓存，支持滑动列表时自动加载，无可用封面时保留底部书名显示。",
+        "修复自动检查更新触发不及时的问题，增加应用回到前台后的检查及联网失败后的重试。"
     )
     Scaffold(topBar={SubTopBar(title,onBack,BarTitle.End)}) { padding ->
         LazyColumn(contentPadding=padding) {
