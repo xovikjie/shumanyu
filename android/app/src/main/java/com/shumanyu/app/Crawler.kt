@@ -176,7 +176,7 @@ object Sites {
     const val COPY = "copy"
 
     val defaults = listOf(
-        WebSite(BIQUGE, "笔趣阁", "https://www.biquges.cc/", true, kind = BIQUGE),
+        WebSite(BIQUGE, "笔趣阁", "https://m.biquge365.net/", true, kind = BIQUGE),
         WebSite(COPY, "拷贝漫画", "https://www.copy5000.com/", true, kind = COPY),
         WebSite(JM, "禁漫天堂", "https://18comic.vip/", true, kind = JM),
         WebSite(IKAN, "爱看韩漫", "https://www.ikanhm.top/", true, kind = IKAN),
@@ -211,6 +211,7 @@ object Sites {
     }
 
     fun catsFor(site: WebSite?): List<String> {
+        if (site != null && Biquge365.accepts(site.url)) return Biquge365.categories
         if (site != null && kindOf(site) == BIQUGE && site.url.contains("biquges.cc", true)) return biqugesCats
         return when (site?.let { kindOf(it) }) {
             XiuSources.KIND -> XiuSources.categories(requireNotNull(site).id)
@@ -350,11 +351,14 @@ object Crawler {
                 Sites.JJ -> tag(fetchCms("https://www.jjmh.top", "jj", siteId, category, onPartial), category)
                 Sites.ALBUM -> tag(fetchAlbum(siteId, category, onPartial), category)
                 Sites.COPY -> tag(fetchCopy(siteId, category, onPartial), category)
-                Sites.BIQUGE -> tag(fetchBqg5(siteId, category, novelHome(siteId, url), onPartial), category)
+                Sites.BIQUGE -> if (Biquge365.accepts(url)) tag(Biquge365.listing(category),category) else tag(fetchBqg5(siteId, category, novelHome(siteId, url), onPartial), category)
                 else -> {
                     val (html, err, finalUrl) = get(url)
                     if (err != null) emptyList<CrawledWork>() to err
-                    else tag(parseGeneric(html, finalUrl, siteId) to null, category)
+                    else {
+                        val parsed=parseGeneric(html,finalUrl,siteId).ifEmpty { WebsitePages.get(finalUrl)?.let { parseGeneric(it,finalUrl,siteId) }.orEmpty() }
+                        tag(parsed to if(parsed.isEmpty())"未解析到作品，可打开网站加载或完成验证后重试" else null,category)
+                    }
                 }
             }
             if (items.isEmpty()) items to err else fillMissingCovers(items, onPartial) to err
@@ -397,7 +401,7 @@ object Crawler {
                         val (html, err, finalUrl) = get("https://nsfwx.pics/?s=${enc(q)}")
                         if (err != null) emptyList() else parseAlbum(html, finalUrl, site.id)
                     }
-                    Sites.BIQUGE -> searchBqg5(q, site.id, novelHome(site.id, site.url))
+                    Sites.BIQUGE -> if(Biquge365.accepts(site.url)) Biquge365.search(q) else searchBqg5(q, site.id, novelHome(site.id, site.url))
                     Sites.COPY -> searchCopy(q, site.id)
                     else -> emptyList()
                 }
@@ -409,7 +413,11 @@ object Crawler {
             }
             if (out.size >= LISTING_CAP) break
         }
-        return out
+        // Mobile Biquge search returns text links only. Publish the results first,
+        // then resolve each book's own detail-page cover, just as category lists do.
+        return if (out.any { it.cover.isBlank() && Biquge365.accepts(it.href) }) {
+            fillMissingCovers(out, onPartial)
+        } else out
     }
 
     private fun tag(result: Pair<List<CrawledWork>, String?>, cat: String): Pair<List<CrawledWork>, String?> {
@@ -463,7 +471,7 @@ object Crawler {
             }
             if (isAlbumHref(href)) return fetchAlbumWork(href)
             if (isCopyHref(href)) return fetchCopyWork(href)
-            if (href.contains("biquge365.net", true)) return null to "这本书源已经移除"
+            if (Biquge365.accepts(href)) return Biquge365.detail(href)
             novelHomeOf(href)?.let { return fetchBqg5Work(href, it) }
             val (html, err, finalUrl) = get(href)
             if (err != null) {
@@ -629,11 +637,20 @@ object Crawler {
                 return disk
             }
         }
-        val bytes = downloadBytes(url) ?: return null
-        if (bytes.size < 200) return null
+        // Validate decoded dimensions: a 200 HTML challenge is not an image.
+        val candidates = listOfNotNull(url, BiqugeCoverBackups.forOriginal(url)).distinct()
+        var selected: ByteArray? = null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        if (bounds.outWidth < 16 || bounds.outHeight < 16) return null
+        for (candidate in candidates) {
+            val data = downloadBytes(candidate) ?: continue
+            if (data.size < 200) continue
+            BitmapFactory.decodeByteArray(data, 0, data.size, bounds)
+            if (bounds.outWidth >= 16 && bounds.outHeight >= 16) {
+                selected = data
+                break
+            }
+        }
+        val bytes = selected ?: return null
         val opts = BitmapFactory.Options().apply {
             inSampleSize = coverSample(bounds.outWidth, bounds.outHeight, 480)
             inPreferredConfig = Bitmap.Config.RGB_565
@@ -2355,6 +2372,7 @@ object Crawler {
     }
 
     fun fetchNovel(href: String): Pair<String, String?> {
+        if(Biquge365.accepts(href))return Biquge365.text(href)
         if(XiuSources.sourceId(href)!=null)return XiuSources.text(href)
         if (href.contains("#smyLegado=")) return "" to "该合集已移除"
         if (href.contains("#smySource=")) return "" to "该小说源已移除"
@@ -2378,14 +2396,14 @@ object Crawler {
         if (items.isEmpty()) return items
         // Show list-provided covers before fetching missing detail-page metadata.
         onPartial?.invoke(items)
-        prefetchCovers(items.take(8).map { it.cover })
+        runCatching { prefetchCovers(items.take(8).map { it.cover }) }
         val out = items.toMutableList()
         val jobs = ArrayList<Int>()
         for (i in out.indices) {
             val item = out[i]
             if (item.cover.isNotBlank() || !isSafe(item.href)) continue
             jobs.add(i)
-            if (jobs.size >= 24) break
+            if (!Biquge365.accepts(item.href) && jobs.size >= 24) break
         }
         if (jobs.isEmpty()) return out
         val pool = Executors.newFixedThreadPool(minOf(6, jobs.size))
@@ -2396,31 +2414,35 @@ object Crawler {
                 try {
                     val cover = peekPageCover(href)
                     if (cover.isBlank()) return@execute
-                    val snap = synchronized(out) {
+                    val updated = synchronized(out) {
                         val cur = out[index]
-                        if (cur.cover.isNotBlank()) return@synchronized null
+                        if (cur.cover.isNotBlank()) return@synchronized false
                         out[index] = cur.copy(cover = cover)
-                        ArrayList(out)
+                        // Publish in update order; image prefetch must not delay metadata.
+                        onPartial?.invoke(ArrayList(out))
+                        true
                     }
-                    if (snap != null) {
-                        prefetchCovers(listOf(cover))
-                        onPartial?.invoke(snap)
-                    }
+                    if (updated) runCatching { prefetchCovers(listOf(cover)) }
                 } catch (_: Exception) {
                 } finally {
                     latch.countDown()
                 }
             }
         }
-        latch.await(20, TimeUnit.SECONDS)
-        pool.shutdownNow()
+        try { latch.await(20, TimeUnit.SECONDS) } finally { pool.shutdownNow() }
         return synchronized(out) { ArrayList(out) }
     }
 
-    private fun peekPageCover(pageUrl: String): String {
-        if (!isSafe(pageUrl)) return ""
+    internal fun cachedPageCover(pageUrl: String): String {
+        ensureCoverDisk()
         val id = bqg5Key(pageUrl) ?: biqugeBookId(pageUrl) ?: pageUrl
-        biqugeCoverCache[id]?.takeIf { usableBiqugeCover(it) }?.let { return it }
+        return biqugeCoverCache[id]?.takeIf { usableBiqugeCover(it) }.orEmpty()
+    }
+
+    internal fun peekPageCover(pageUrl: String): String {
+        if (!isSafe(pageUrl)) return ""
+        cachedPageCover(pageUrl).takeIf { it.isNotBlank() }?.let { return it }
+        val id = bqg5Key(pageUrl) ?: biqugeBookId(pageUrl) ?: pageUrl
         var conn: HttpURLConnection? = null
         return try {
             conn = open(pageUrl, false, connectMs = 5000, readMs = 5000)
@@ -2433,7 +2455,7 @@ object Crawler {
             conn.setRequestProperty("Connection", "close")
             if (conn.responseCode !in 200..299) return ""
             val head = readNovelCoverHead(conn)
-            val cover = biqugeCoverFrom(head, pageUrl)
+            val cover = if(Biquge365.accepts(pageUrl)) metaContent(head,"og:image").takeIf { usableBiqugeCover(it) }.orEmpty() else biqugeCoverFrom(head, pageUrl)
             if (!usableBiqugeCover(cover)) return ""
             rememberCover(id, cover)
             cover
@@ -2628,7 +2650,7 @@ object Crawler {
         return if (b.find()) decode(b.group(1) ?: "") else ""
     }
 
-    private fun postForm(url: String, fields: Map<String, String>): Triple<String, String?, String> {
+    internal fun postForm(url: String, fields: Map<String, String>): Triple<String, String?, String> {
         var conn: HttpURLConnection? = null
         return try {
             conn = open(url, false)
@@ -2652,6 +2674,8 @@ object Crawler {
     }
 
     fun parseGeneric(html: String, base: String, siteId: String): List<CrawledWork> {
+        val enhanced=WebsitePages.parse(html,base,siteId)
+        if(enhanced.isNotEmpty())return enhanced
         val wall = detectWall(html)
         if (wall != null) return emptyList()
         val out = ArrayList<CrawledWork>()
@@ -2733,6 +2757,8 @@ object Crawler {
         return out
     }
 
+    internal fun webPage(url: String): Triple<String,String?,String> = if(isSafe(url))get(url) else Triple("","网址不安全或不支持",url)
+
     private fun get(url: String): Triple<String, String?, String> {
         fun once(lenient: Boolean) = getOnce(url, lenient)
         val first = runCatching { once(false) }.getOrElse { e ->
@@ -2740,6 +2766,7 @@ object Crawler {
             return runCatching { once(true) }.getOrElse { e2 -> Triple("", friendlyError(e2), url) }
         }
         if (first.second == null) return first
+        (WebsitePages.get(first.third) ?: WebsitePages.get(url))?.let { if(detectWall(it)==null)return Triple(it,null,first.third) }
         val retryable = first.second!!.let { err ->
             err.contains("超时") || err.contains("无法连接") || err.startsWith("抓取失败 5") || err.startsWith("抓取失败 429")
         }
@@ -2748,19 +2775,32 @@ object Crawler {
     }
 
     private fun getOnce(url: String, lenient: Boolean): Triple<String, String?, String> {
-        var conn: HttpURLConnection? = null
-        return try {
-            conn = open(url, lenient)
-            val code = conn.responseCode
-            val finalUrl = conn.url.toString()
-            if (code !in 200..299) return Triple("", "抓取失败 $code", finalUrl)
-            val html = readBody(conn)
-            if (html.length > 2_500_000) return Triple("", "页面过大", finalUrl)
-            val wall = detectWall(html)
-            if (wall != null) Triple(html, wall, finalUrl) else Triple(html, null, finalUrl)
-        } finally {
-            releaseConn(conn)
+        var target=url
+        val visited=hashSetOf<String>()
+        repeat(7) {
+            if(!isSafe(target) || !visited.add(target))return Triple("","网站跳转无效",target)
+            var conn:HttpURLConnection?=null
+            try {
+                conn=open(target,lenient)
+                conn.instanceFollowRedirects=false
+                val code=conn.responseCode
+                conn.headerFields.filterKeys { it?.equals("Set-Cookie",true)==true }.values.flatten().forEach { WebCookies.set(target,it) }
+                if(code in listOf(301,302,303,307,308)) {
+                    val location=conn.getHeaderField("Location") ?: return Triple("","网站跳转缺少地址",target)
+                    target=URL(URL(target),location).toString()
+                } else {
+                    if(code !in 200..299)return Triple("",if(code==403 || code==503)"网站需要验证，请打开网站完成验证后重试" else "抓取失败 $code",target)
+                    val html=readBody(conn)
+                    if(html.length>2_500_000)return Triple("","页面过大",target)
+                    val doc=org.jsoup.Jsoup.parse(html,target)
+                    val refresh=doc.selectFirst("meta[http-equiv=refresh]")?.attr("content").orEmpty()
+                    val next=Regex("(?i)url\\s*=\\s*['\"]?([^'\"]+)").find(refresh)?.groupValues?.get(1)?.trim()
+                    if(!next.isNullOrBlank()) target=URL(URL(target),next).toString()
+                    else return Triple(html,detectWall(html),target)
+                }
+            } finally { releaseConn(conn) }
         }
+        return Triple("","网站跳转次数过多",target)
     }
 
     private fun open(url: String, lenient: Boolean, connectMs: Int = 10000, readMs: Int = 14000): HttpURLConnection {
@@ -2772,6 +2812,7 @@ object Crawler {
         conn.connectTimeout = connectMs
         conn.readTimeout = readMs
         conn.instanceFollowRedirects = true
+        WebCookies.get(url).takeIf { it.isNotBlank() }?.let { conn.setRequestProperty("Cookie",it) }
         conn.setRequestProperty("User-Agent", UA)
         conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
         conn.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
@@ -2835,7 +2876,7 @@ object Crawler {
     private fun detectWall(html: String): String? {
         val t = html.lowercase()
         if ("cf-mitigated" in t || "just a moment" in t || "challenge-platform" in t || "cdn-cgi/challenge" in t) {
-            return "源站开启了防护，稍后再试"
+            return "网站需要验证，请打开网站完成验证后重试"
         }
         if ("the region has been denied" in t) return "当前地区无法访问该源"
         return null

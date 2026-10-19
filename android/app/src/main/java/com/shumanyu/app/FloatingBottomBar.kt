@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** Telegram-style floating navigation: a gently blurred capsule and a calm tinted selection. */
 @Composable
@@ -63,8 +64,10 @@ fun FloatingBottomBar(
     val index = selected.coerceIn(labels.indices)
     val shape = RoundedCornerShape(32.dp)
     val chipShape = RoundedCornerShape(28.dp)
-    val surface = if (dark) Color(0xFF202329) else Color(0xFFECEEF2)
-    val idle = if (dark) Color(0xFFE9EDF1) else Color(0xFF20262C)
+    val colors = MiuixTheme.colorScheme
+    val surface = lerp(colors.surfaceContainer,colors.primary,0.035f)
+    val readabilityBase = if(dark)surface.copy(alpha=0.82f).compositeOver(Color.White) else surface.copy(alpha=0.76f).compositeOver(Color.Black)
+    val idle = readableNavigationTint(colors.onSurface,readabilityBase)
     val chip = accent.copy(alpha = if (dark) 0.20f else 0.12f)
     val selectedTint = remember(accent, surface, dark) {
         val worstCase = if (dark) surface.copy(alpha = 0.82f).compositeOver(Color.White)
@@ -96,7 +99,7 @@ fun FloatingBottomBar(
             .height(64.dp)
             .shadow(8.dp, shape, clip = false)
             .then(background)
-            .border(0.5.dp, if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.045f), shape)
+            .border(0.5.dp, colors.onSurface.copy(alpha = if(dark)0.10f else 0.045f), shape)
             .clip(shape),
         contentAlignment = AbsoluteAlignment.CenterLeft,
     ) {

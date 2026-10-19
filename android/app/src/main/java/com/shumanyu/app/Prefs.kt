@@ -40,12 +40,43 @@ class Prefs(context: Context) {
             old.put("zoomMode","fit")
             p.edit().putString("reading",old.toString()).putBoolean("readerCompletePageV1",true).apply()
         }
+        migrateBiquge102()
+        migrateFavorites102()
         migrateV22()
         migrateColorOS17()
         migrateMiuix100()
         p.edit().remove("xiu2SourcesImportedV1").apply()
         context.getSharedPreferences("novel_source_settings", Context.MODE_PRIVATE).edit().clear().apply()
         if (p.contains("liquidGlass")) p.edit().remove("liquidGlass").apply()
+    }
+
+    private fun migrateFavorites102() {
+        if (!p.getBoolean("flatFavorites102", false)) {
+            favorites = (favorites + folders.flatMap { it.books }).distinct()
+            p.edit().putBoolean("flatFavorites102", true).apply()
+        }
+    }
+
+    private fun migrateBiquge102() {
+        if (p.getBoolean("biquge365V102", false)) return
+        val oldIds = runCatching { LocalStore.loadAllListings().filter { it.siteId == Sites.BIQUGE }.map { it.id }.toSet() }.getOrDefault(emptySet())
+        fun retired(id: String) = id in oldIds || id.startsWith("bq")
+        history = history.filterNot(::retired)
+        progress = progress.filterKeys { !retired(it) }
+        val read = readChapterKeys().filterNot { retired(it.substringBefore(':')) }
+        val sites = runCatching { JSONArray(p.getString("webSites", "[]")) }.getOrDefault(JSONArray())
+        for (i in 0 until sites.length()) {
+            val site = sites.getJSONObject(i)
+            if (site.optString("id") == Sites.BIQUGE) site.put("url", Biquge365.HOME+"/").put("lastError", "").put("itemCount", 0)
+        }
+        LocalStore.dropListing(Sites.BIQUGE)
+        p.edit().putString("webSites", sites.toString()).putString("readChapters", read.joinToString("\n")).putBoolean("biquge365V102", true).apply()
+    }
+
+    fun openStoreOnFirstLaunch(): Boolean {
+        if (p.getBoolean("firstStore102", false) || p.contains("storeBiqugeDefault")) return false
+        p.edit().putBoolean("firstStore102", true).apply()
+        return true
     }
 
     var colorMode: ColorSchemeMode

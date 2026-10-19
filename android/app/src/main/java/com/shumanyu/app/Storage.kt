@@ -78,11 +78,7 @@ fun StoragePane(lang: String, onBack: () -> Unit, onOpen: (String) -> Unit, gene
                 StorageCard(
                     title = when (lang) { "en" -> "Cached comics"; "zh-TW" -> "已緩存漫畫或小說"; else -> "已缓存漫画或小说" },
                     bytes = cacheBytes,
-                    summary = when (lang) {
-                        "en" -> "Covers and chapters saved while reading. Open to delete."
-                        "zh-TW" -> "閱讀時自動保存的封面和章節。點進去可以刪除。"
-                        else -> "阅读时自动保存的封面和章节。点进去可以删除。"
-                    },
+                    summary = "",
                     action = when (lang) { "en" -> "Manage"; "zh-TW" -> "管理"; else -> "管理" },
                     onAction = { onOpen("cache") },
                 )
@@ -91,11 +87,7 @@ fun StoragePane(lang: String, onBack: () -> Unit, onOpen: (String) -> Unit, gene
                 StorageCard(
                     title = when (lang) { "en" -> "Downloaded comics"; "zh-TW" -> "已下載漫畫或小說"; else -> "已下载漫画或小说" },
                     bytes = downBytes,
-                    summary = when (lang) {
-                        "en" -> "Titles you downloaded from the detail page. Open to delete."
-                        "zh-TW" -> "在作品頁下載的漫畫或小說。點進去可以刪除。"
-                        else -> "在作品页下载的漫画或小说。点进去可以删除。"
-                    },
+                    summary = "",
                     action = when (lang) { "en" -> "Manage"; "zh-TW" -> "管理"; else -> "管理" },
                     onAction = { onOpen("download") },
                 )
@@ -105,15 +97,6 @@ fun StoragePane(lang: String, onBack: () -> Unit, onOpen: (String) -> Unit, gene
                     Column(Modifier.padding(16.dp)) {
                         Text(when (lang) { "en" -> "Folders"; "zh-TW" -> "目錄位置"; else -> "目录位置" }, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(6.dp))
-                        Text(
-                            when (lang) {
-                                "en" -> "Where cached and downloaded titles are stored. You can change either folder."
-                                "zh-TW" -> "已緩存和已下載的漫畫、小說所在的系統目錄，方便查找。也可以分別更改位置。"
-                                else -> "已缓存和已下载的漫画、小说所在的系统目录，方便查找。也可以分别更改位置。"
-                            },
-                            fontSize = 13.sp,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        )
                         PathRow(
                             label = when (lang) { "en" -> "Cache"; "zh-TW" -> "緩存目錄"; else -> "缓存目录" },
                             path = cachePath,
@@ -297,8 +280,10 @@ private fun StorageCard(title: String, bytes: Long, summary: String, action: Str
             }
             Spacer(Modifier.height(8.dp))
             Text(formatBytes(bytes), fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(6.dp))
-            Text(summary, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+            if(summary.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(summary, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+            }
         }
     }
 }

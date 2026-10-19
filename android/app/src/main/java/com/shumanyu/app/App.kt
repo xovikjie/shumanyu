@@ -353,7 +353,7 @@ private fun copyOf(lang: String) = when (lang) {
     "zh-TW" -> Copy(
         "書架", "書城", "搜尋", "我的",
         "連接你的漫畫源", "漫畫、作者或類型",
-        "我的書架", "收藏夾", "全部", "只看收藏", "你最近沒有看過\n請去書城看一本唄",
+        "我的書架", "收藏", "全部", "只看收藏", "你最近沒有看過\n請去書城看一本唄",
         "熱門漫畫", "線上漫畫源 · 即時更新", "發現新故事", "搜尋書漫嶼", "推薦",
         "偏好設定", "深色主題", "跟隨系統", "淺色", "深色",
         "預測性返回", "從邊緣滑動預覽上一頁",
@@ -382,7 +382,7 @@ private fun copyOf(lang: String) = when (lang) {
     "en" -> Copy(
         "Library", "Store", "Search", "Me",
         "Connected sources", "Title, author or genre",
-        "My library", "Collections", "All", "Favorites", "Nothing here yet\nGo find a title in the store",
+        "My library", "Favorites", "All", "Favorites", "Nothing here yet\nGo find a title in the store",
         "Trending", "Online sources", "New stories", "Search ShuManYu", "Suggested",
         "Preferences", "Dark theme", "Follow system", "Light", "Dark",
         "Predictive back", "Swipe from the edge to preview the previous screen",
@@ -411,7 +411,7 @@ private fun copyOf(lang: String) = when (lang) {
     else -> Copy(
         "书架", "书城", "搜索", "我的",
         "连接你的漫画源", "漫画、作者或类型",
-        "我的书架", "收藏夹", "全部", "仅看收藏", "你最近没有看过\n请去书城看一本呗",
+        "我的书架", "收藏", "全部", "仅看收藏", "你最近没有看过\n请去书城看一本呗",
         "热门漫画", "在线漫画源 · 实时更新", "发现新故事", "搜索书漫屿", "推荐",
         "偏好设置", "深色主题", "跟随系统", "浅色", "深色",
         "预测性返回", "从边缘滑动预览上一页",
@@ -503,7 +503,7 @@ fun ShuManYuApp() {
         }
 
         var screen by remember { mutableStateOf<Screen>(Screen.Tabs) }
-        var tab by remember { mutableStateOf(Tab.Shelf) }
+        var tab by remember { mutableStateOf(if(prefs.openStoreOnFirstLaunch())Tab.Discover else Tab.Shelf) }
         val purgedBiquge = remember { prefs.purgeLegacyBiquge(); true }
         val library = remember { mutableStateListOf<String>().also { it.addAll(prefs.library.filter { id -> id !in NOVEL_IDS && (purgedBiquge) }) } }
         val favorites = remember { mutableStateListOf<String>().also { it.addAll(prefs.favorites.filter { id -> id !in NOVEL_IDS }) } }
@@ -929,6 +929,13 @@ fun ShuManYuApp() {
                             onCrawl = { site, cat, done -> crawlSite(site, cat, silent = true, onDone = done) },
                             onCrawlMore = { site, cat, done -> crawlSite(site, cat, silent = true, append = true, onDone = done) },
                             onSelectSite = { prefs.lastSiteId = it },
+                            onResolvedCovers = { resolved ->
+                                resolved.filter { it.cover.isNotBlank() }.forEach { item ->
+                                    val at=crawled.indexOfFirst { it.id==item.id }
+                                    if(at>=0 && crawled[at].cover.isBlank())crawled[at]=crawled[at].copy(cover=item.cover)
+                                }
+                                resolved.firstOrNull()?.siteId?.let { id -> LocalStore.saveListing(id,crawled.filter { it.siteId==id }) }
+                            },
                             onAddUrl = { name, raw ->
                                 var url = raw.trim()
                                 if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://$url"
@@ -991,7 +998,7 @@ fun ShuManYuApp() {
                             copy = copy,
                             lang = lang,
                             lib = gateLibrary.size,
-                            fav = folders.size,
+                            fav = favorites.size,
                             hist = gateHistory.size,
                             langLabel = when (langPref) {
                                 "system" -> copy.followSystem
@@ -1506,7 +1513,11 @@ fun ShuManYuApp() {
                     },
                     onWeb = { url, title -> openSite(url, title, s.id) },
                     foldersOn = true,
-                    onFolder = { openFolderSheet(s.id) },
+                    isFavorite = s.id in favorites,
+                    onFolder = {
+                        if(s.id in favorites) favorites.remove(s.id) else favorites.add(0,s.id)
+                        persistFav()
+                    },
                 )
             
             is Screen.RemoteReader ->
@@ -1525,7 +1536,7 @@ fun ShuManYuApp() {
                     onClose = { screen = Screen.Remote(s.workId) },
                     onChapter = { ch -> screen = Screen.RemoteReader(s.workId, ch, 0) },
                     onProgress = { ch, page -> markRead(s.workId, ch, page) },
-                    onFolder = { openFolderSheet(s.workId) },
+                    onFolder = { if(s.workId !in favorites) { favorites.add(0,s.workId);persistFav() } },
                     onCoverSaved = { path ->
                         val i = crawled.indexOfFirst { it.id == s.workId }
                         if (i >= 0) {
@@ -1752,7 +1763,11 @@ fun ShuManYuApp() {
                 FoldersPane(
                     lang = lang,
                     folders = folders.toList(),
+                    favoriteIds = favorites.toList(),
                     crawled = crawled,
+                    webSites = webSites,
+                    onFavoriteRemove = { id -> favorites.remove(id);persistFav();folders.indices.forEach { i -> folders[i]=folders[i].copy(books=folders[i].books.filterNot { it==id }) };saveFolders() },
+                    onAssign = { id -> openFolderSheet(id) },
                     onBack = { screen = Screen.Tabs },
                     onOpen = { screen = Screen.Folder(it) },
                     onCover = { openWork(it) },
@@ -2056,13 +2071,12 @@ private fun CornerMenu(expanded:Boolean,onExpandedChange:(Boolean)->Unit,actions
 @Composable
 private fun NativeListingFooter(count:Int,busy:Boolean,hasMore:Boolean,error:String,onMore:()->Unit,onSearch:()->Unit,bottomPadding:androidx.compose.ui.unit.Dp) {
     Column(Modifier.fillMaxWidth().padding(start=16.dp,end=16.dp,top=16.dp,bottom=bottomPadding),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)) {
-        Text("已加载${count}本",fontSize=13.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
         if(error.isNotBlank())Text(error,fontSize=13.sp,textAlign=TextAlign.Center,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
         when {
             busy -> Text("正在加载…",fontSize=14.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
             hasMore && error.isNotBlank() -> Button(onClick=onMore) { Text("重试") }
-            hasMore -> Text("继续下滑，自动加载",fontSize=13.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-            else -> Button(onClick=onSearch) { Text("搜索其他小说") }
+            hasMore -> Unit
+            else -> Unit
         }
     }
 }
@@ -3727,6 +3741,7 @@ private fun DiscoverPane(
     asList: Boolean = false,
     initialSiteId: String,
     onOpen: (String) -> Unit,
+    onResolvedCovers: (List<CrawledWork>) -> Unit,
     onSites: () -> Unit,
     onSearch: () -> Unit,
     onWeb: (String, String) -> Unit,
@@ -3800,7 +3815,14 @@ private fun DiscoverPane(
             val itemsPerRow = if (asList) 1 else cols
             val from = (first * itemsPerRow).coerceAtMost(cards.size)
             val to = ((last + 3) * itemsPerRow).coerceAtMost(cards.size)
-            if (from < to) Crawler.prefetchCovers(cards.subList(from, to).map { it.cover })
+            if (from < to) {
+                val visible=cards.subList(from,to).toList()
+                Crawler.prefetchCovers(visible.map { it.cover })
+                if(visible.any { it.cover.isBlank() && Biquge365.accepts(it.href) }) {
+                    val resolved=kotlinx.coroutines.runInterruptible(Dispatchers.IO) { Crawler.fillMissingCovers(visible) }
+                    onResolvedCovers(resolved)
+                }
+            }
         }
     }
     LaunchedEffect(activeSite) {
@@ -3912,7 +3934,12 @@ private fun DiscoverPane(
                             }
                         }
                         site != null && cards.isEmpty() ->
-                            EmptyFace("(｀・ω・´)", if (site.lastError.isNotBlank()) site.lastError else copy.emptyCat, Modifier.padding(top = discoverTop))
+                            Column(Modifier.fillMaxSize().padding(top=discoverTop),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
+                                Text(site.lastError.ifBlank { copy.emptyCat },Modifier.padding(24.dp),textAlign=TextAlign.Center)
+                                Button(onClick={ onWeb(site.url,siteLabel) }) { Text("打开网站") }
+                                Spacer(Modifier.height(10.dp))
+                                Button(onClick={retryListing++}) { Text("重试") }
+                            }
                         cards.isEmpty() -> EmptyFace("(´・ω・`)", copy.emptyCat, Modifier.padding(top = discoverTop))
                         else -> {
                             if (asList) {
@@ -4003,7 +4030,6 @@ private fun DiscoverPane(
                         "切换小说/漫画源" to { picking = true },
                         "网站管理" to onSites,
                         copy.addSite to { addOpen = true },
-                        checkLabel to onCheckSites,
                     ),
                 )
             }
@@ -4214,9 +4240,7 @@ private fun DiscoverListRow(w: CrawledWork, onOpen: () -> Unit) {
     ) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(64.dp).height(86.dp).clip(RoundedCornerShape(8.dp)).background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.06f))) {
-                if (w.cover.isNotBlank()) {
-                    SmartCover(w.cover, Modifier.fillMaxSize(), plate = true)
-                }
+                SmartCover(w.cover, Modifier.fillMaxSize(), plate = true, fallbackTitle = w.title)
             }
             Column(Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(
@@ -4422,48 +4446,27 @@ private fun SourceTab(label: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun NovelCoverPlate(title: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier.background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(modifier.background(MiuixTheme.colorScheme.surface),contentAlignment=Alignment.BottomStart) {
         Text(
             title,
-            modifier = Modifier.padding(horizontal = 8.dp),
-            color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-            fontSize = 13.sp,
-            lineHeight = 18.sp,
-            textAlign = TextAlign.Center,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis,
+            modifier=Modifier.fillMaxWidth().background(Color(0xCC000000)).padding(8.dp),
+            color=Color.White,
+            fontSize=13.sp,
+            maxLines=1,
+            overflow=TextOverflow.Ellipsis,
         )
     }
 }
 
 @Composable
 private fun StoreCover(title: String, cover: String) {
-    val known = cover.isNotBlank() && Crawler.peekCover(cover) != null
-    var ready by remember(cover) { mutableStateOf(known) }
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(MiuixTheme.colorScheme.surface))
+        SmartCover(cover,Modifier.matchParentSize(),plate=true)
         Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(3f / 4f)
-                .background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
-        )
-        if (cover.isNotBlank()) {
-            SmartCover(
-                cover,
-                Modifier.matchParentSize(),
-                plate = true,
-                onReady = { ready = true },
-            )
-        }
-        if (ready) {
-            Box(
-                Modifier.fillMaxWidth().align(Alignment.BottomStart).background(Color(0xCC000000)).padding(8.dp),
-            ) {
-                Text(title, color = Color.White, fontSize = 13.sp, maxLines = 2)
-            }
+            Modifier.fillMaxWidth().align(Alignment.BottomStart).background(Color(0xCC000000)).padding(8.dp),
+        ) {
+            Text(title,color=Color.White,fontSize=13.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
         }
     }
 }
@@ -4541,6 +4544,29 @@ private fun SearchPane(
             merged.values.filter { allowAdult || !Sites.adultWork(it, webSites) }.toList()
         }
     }
+    // Resolve text-only search results entering the viewport after the initial
+    // bounded search batch, without loading an entire result set before showing it.
+    LaunchedEffect(q, site?.id, remote, screenLive, searching) {
+        if (!screenLive || searching || remote.none { it.cover.isBlank() && Biquge365.accepts(it.href) }) return@LaunchedEffect
+        snapshotFlow {
+            val visible=listState.layoutInfo.visibleItemsInfo
+            (visible.firstOrNull()?.index ?: 0) to (visible.lastOrNull()?.index ?: 0)
+        }.collect { (first,last) ->
+            val from=(first*2).coerceAtMost(remote.size)
+            val to=((last+3)*2).coerceAtMost(remote.size)
+            if(from<to) {
+                val missing=remote.subList(from,to).filter { it.cover.isBlank() && Biquge365.accepts(it.href) }
+                if(missing.isNotEmpty()) {
+                    val resolved=kotlinx.coroutines.runInterruptible(Dispatchers.IO) { Crawler.fillMissingCovers(missing) }.filter { it.cover.isNotBlank() }
+                    if(resolved.isNotEmpty()) {
+                        val covers=resolved.associateBy { it.id }
+                        live=live.map { item -> covers[item.id]?.let { item.copy(cover=it.cover) } ?: item }
+                        onHits(resolved)
+                    }
+                }
+            }
+        }
+    }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(end = 12.dp),
@@ -4587,6 +4613,7 @@ private fun SearchPane(
                                         SmartCover(
                                             m.cover,
                                             Modifier.fillMaxWidth().aspectRatio(3f / 4f).clip(RoundedCornerShape(8.dp)),
+                                            fallbackTitle = m.title,
                                         )
                                         Text(
                                             realTitle(m.title),
@@ -4663,7 +4690,7 @@ private fun MinePane(
             MineRow(copy.themeSettings, copy.themeSettingsSum, onTheme),
             MineRow(readingLabel, readingSum, onReading),
             MineRow(copy.language, langLabel, onLanguage),
-            MineRow(when (lang) { "en" -> "Collections"; "zh-TW" -> "收藏夾"; else -> "收藏夹" }, "", onFolders),
+            MineRow(when (lang) { "en" -> "Favorites"; "zh-TW" -> "收藏"; else -> "收藏" }, "", onFolders),
         ),
         listOf(
             MineRow(copy.backup, copy.backupSum, onBackup),
@@ -4959,6 +4986,7 @@ private fun RemotePane(
     onReadChapter: (String, Int) -> Unit,
     onWeb: (String, String) -> Unit,
     foldersOn: Boolean,
+    isFavorite: Boolean,
     onFolder: () -> Unit,
 ) {
     val listed = crawled.find { it.id == id }
@@ -5142,6 +5170,7 @@ private fun RemotePane(
                                 .height(168.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable(enabled = !work?.cover.isNullOrBlank()) { coverOpen = true },
+                            fallbackTitle = work?.title?.takeIf { !isIdTitle(it) } ?: title0,
                         )
                         Column(Modifier.weight(1f).padding(top = 4.dp)) {
                             Text(work?.title?.takeIf { !isIdTitle(it) } ?: title0.ifBlank { work?.title ?: id }, style = MiuixTheme.textStyles.title2, maxLines = 3)
@@ -5195,10 +5224,8 @@ private fun RemotePane(
                     if (foldersOn) {
                         Spacer(Modifier.height(8.dp))
                         Button(onClick = onFolder, modifier = Modifier.fillMaxWidth()) {
-                            Text(when (copy.addShelf) {
-                                "Add to shelf" -> "Add to collection"
-                                else -> "加入收藏夹"
-                            })
+                            val novel = work?.let { webSites.find { site -> site.id == it.siteId }?.let { site -> Sites.isNovel(site) } == true } == true || Biquge365.accepts(work?.href.orEmpty())
+                            Text(if(copy.addShelf=="Add to shelf") { if(isFavorite) "Saved" else if(novel) "Save novel" else "Save comic" } else if(isFavorite) { if(novel) "已收藏小说" else "已收藏漫画" } else { if(novel) "收藏小说" else "收藏漫画" })
                         }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -5448,14 +5475,6 @@ private fun NovelReaderPane(
     val muted = fg.copy(alpha = 0.55f)
     val bar = if (dark) Color(0xFF242424) else Color(0xFFF6F1E4)
     val accent = Color(0xFFE67A2E)
-    BackHandler {
-        when {
-            catalog -> catalog = false
-            settings -> settings = false
-            chrome -> chrome = false
-            else -> onClose()
-        }
-    }
     LaunchedEffect(workId,chapterId,retry) {
         val href = chapter?.href
         if (href.isNullOrBlank()) {
@@ -5473,8 +5492,14 @@ private fun NovelReaderPane(
     }
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val reading = remember(text, chapter?.title) {
-        val peeled = novelReadingBody(text, chapter?.title.orEmpty())
+    val readingTitle = normalizedNovelChapterTitle(chapter?.title.orEmpty(),chapter?.index ?: 0,text)
+    val bodyTop = topInset + 56.dp
+    val bodyBottom = bottomInset + if(chrome)124.dp else 28.dp
+    var menuAnchor by remember(chapterId) { mutableStateOf<Int?>(null) }
+    var chromeOriginalAnchor by remember(chapterId) { mutableStateOf<Int?>(null) }
+    val headingStyle=TextStyle(color=fg,fontSize=(fontSp+4).sp,fontWeight=FontWeight.Bold,lineHeight=((fontSp+4)*gap).sp)
+    val reading = remember(text, readingTitle) {
+        val peeled = novelReadingBody(text, readingTitle)
         peeled.ifBlank { text }
     }
     val style = TextStyle(
@@ -5482,19 +5507,21 @@ private fun NovelReaderPane(
         fontSize = fontSp.sp,
         lineHeight = (fontSp * gap).sp,
     )
-    val leaves = remember(reading, fontSp, gap, box, turn, night, tone, topInset, bottomInset) {
+    val leaves = remember(reading, readingTitle, fontSp, gap, box, turn, night, tone, bodyTop, bodyBottom) {
         if (reading.isBlank() || turn == "vertical" || box.width < 8 || box.height < 8) {
             emptyList()
         } else {
             val side = with(density) { 22.dp.roundToPx() }
-            val top = with(density) { (topInset + 16.dp).roundToPx() }
-            val bot = with(density) { (bottomInset + 28.dp).roundToPx() }
+            val top = with(density) { bodyTop.roundToPx() }
+            val bot = with(density) { bodyBottom.roundToPx() }
+            val titleHeight=measurer.measure(AnnotatedString(readingTitle),style=headingStyle,constraints=Constraints(maxWidth=(box.width-side*2).coerceAtLeast(1)),maxLines=3).size.height + with(density) { 16.dp.roundToPx() }
             paginateNovel(
                 measurer,
                 reading,
                 style,
                 (box.width - side * 2).coerceAtLeast(1),
                 (box.height - top - bot).coerceAtLeast(1),
+                firstHeight=(box.height-top-bot-titleHeight).coerceAtLeast(1),
             )
         }
     }
@@ -5535,9 +5562,38 @@ private fun NovelReaderPane(
         }
     }
     val scope = rememberCoroutineScope()
+    fun setReaderChrome(show:Boolean) {
+        if(chrome==show)return
+        if(turn!="vertical" && leaves.isNotEmpty()) {
+            if(show) {
+                chromeOriginalAnchor=novelPageStart(reading,leaves,pagerState.currentPage)
+                menuAnchor=chromeOriginalAnchor
+            } else {
+                menuAnchor=chromeOriginalAnchor ?: novelPageStart(reading,leaves,pagerState.currentPage)
+                chromeOriginalAnchor=null
+            }
+        }
+        chrome=show
+    }
+    LaunchedEffect(menuAnchor,leaves) {
+        val anchor=menuAnchor ?: return@LaunchedEffect
+        if(leaves.isEmpty())return@LaunchedEffect
+        val target=leaves.indices.lastOrNull { novelPageStart(reading,leaves,it)<=anchor } ?: 0
+        pagerState.scrollToPage(target)
+        menuAnchor=null
+    }
+    BackHandler {
+        when {
+            catalog -> catalog = false
+            settings -> settings = false
+            chrome -> setReaderChrome(false)
+            else -> onClose()
+        }
+    }
+
     fun turnPage(delta: Int) {
         if (turn == "vertical") {
-            chrome = !chrome
+            setReaderChrome(!chrome)
             return
         }
         val next = pagerState.currentPage + delta
@@ -5584,18 +5640,20 @@ private fun NovelReaderPane(
             turn == "vertical" -> Column(
                 Modifier
                     .fillMaxSize()
+                    .padding(top=bodyTop,bottom=bodyBottom)
                     .verticalScroll(scroll)
                     .padding(horizontal = 22.dp)
-                    .padding(top = topInset + 16.dp, bottom = bottomInset + 28.dp)
-                    .clickable { chrome = !chrome },
+                    .clickable { setReaderChrome(!chrome) },
             ) {
+                Text(readingTitle,style=headingStyle,maxLines=3,overflow=TextOverflow.Ellipsis)
+                Spacer(Modifier.height(16.dp))
                 Text(reading, color = fg, fontSize = fontSp.sp, lineHeight = (fontSp * gap).sp)
             }
             else -> HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 beyondViewportPageCount = 1,
-                userScrollEnabled = turn != "none",
+                userScrollEnabled = turn != "none" && !chrome,
             ) { page ->
                 Box(
                     Modifier
@@ -5603,7 +5661,7 @@ private fun NovelReaderPane(
                         .pointerInput(page, turn, chrome) {
                             detectTapGestures { pos ->
                                 if (chrome || catalog || settings) {
-                                    chrome = false
+                                    setReaderChrome(false)
                                     catalog = false
                                     settings = false
                                     return@detectTapGestures
@@ -5612,19 +5670,25 @@ private fun NovelReaderPane(
                                 when {
                                     x < 0.28f -> turnPage(-1)
                                     x > 0.72f -> turnPage(1)
-                                    else -> chrome = true
+                                    else -> setReaderChrome(true)
                                 }
                             }
                         }
                         .padding(horizontal = 22.dp)
-                        .padding(top = topInset + 16.dp, bottom = bottomInset + 28.dp),
+                        .padding(top=bodyTop,bottom=bodyBottom),
                 ) {
+                    Column {
+                    if(page==0) {
+                        Text(readingTitle,style=headingStyle,maxLines=3,overflow=TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(16.dp))
+                    }
                     Text(
                         leaves.getOrNull(page).orEmpty(),
                         color = fg,
                         fontSize = fontSp.sp,
                         lineHeight = (fontSp * gap).sp,
                     )
+                    }
                 }
             }
         }
@@ -5633,6 +5697,12 @@ private fun NovelReaderPane(
         }
         if (dim > 0.01f) {
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
+        }
+        if(!chrome) {
+            Row(Modifier.align(Alignment.TopStart).fillMaxWidth().statusBarsPadding().height(48.dp).padding(horizontal=4.dp),verticalAlignment=Alignment.CenterVertically) {
+                IconButton(onClick=onClose) { Icon(Icons.Back,contentDescription="返回",tint=muted) }
+                Text(cached?.work?.title.orEmpty(),color=muted,fontSize=13.sp,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.weight(1f).padding(end=16.dp))
+            }
         }
         if (!chrome && text.isNotBlank()) {
             Row(
@@ -5660,20 +5730,14 @@ private fun NovelReaderPane(
                     .fillMaxWidth()
                     .background(bar)
                     .statusBarsPadding()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .height(48.dp)
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onClose) { Icon(Icons.Back, contentDescription = "返回", tint = fg) }
+                Spacer(Modifier.weight(1f))
                 Text(
-                    chapter?.title ?: cached?.work?.title.orEmpty(),
-                    modifier = Modifier.weight(1f).padding(end = 8.dp),
-                    color = fg,
-                    fontSize = 15.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    "加入收藏夹",
+                    if(cached?.work?.let { Sites.isNovel(WebSite(it.siteId,"",it.href,true)) }==true)"收藏小说" else "收藏漫画",
                     modifier = Modifier.clickable { onFolder() }.padding(horizontal = 10.dp, vertical = 8.dp),
                     color = fg,
                     fontSize = 15.sp,
@@ -5716,6 +5780,7 @@ private fun NovelReaderPane(
                                     scroll.scrollTo(y.coerceIn(0, scroll.maxValue))
                                 }
                             } else {
+                                chromeOriginalAnchor=novelPageStart(reading,leaves,target.coerceIn(0,leaves.lastIndex.coerceAtLeast(0)))
                                 scope.launch { runCatching { pagerState.scrollToPage(target.coerceIn(0, leaves.lastIndex.coerceAtLeast(0))) } }
                             }
                         },
@@ -5941,7 +6006,7 @@ private fun novelReadingBody(raw: String, title: String): String {
     }
     val head = compact(first)
     val want = compact(title)
-    val titled = want.length >= 4 && head.isNotBlank() && (head == want || head.startsWith(want) || head.endsWith(want) || head.contains(want))
+    val titled = want.isNotBlank() && head == want || (want.length >= 4 && head.isNotBlank() && (head.startsWith(want) || head.endsWith(want)))
     if (!titled) return trimmed
     return parts.drop(1).joinToString("\n").trim()
 }
@@ -5958,6 +6023,7 @@ private fun paginateNovel(
     style: TextStyle,
     width: Int,
     height: Int,
+    firstHeight: Int = height,
 ): List<String> {
     if (text.isBlank() || width <= 0 || height <= 0) return listOf(text)
     val pages = ArrayList<String>()
@@ -5974,7 +6040,7 @@ private fun paginateNovel(
                 style = style,
                 constraints = Constraints(maxWidth = width),
             ).size.height
-            if (h <= height) {
+            if (h <= if(pages.isEmpty())firstHeight else height) {
                 fit = mid
                 lo = mid + 1
             } else {
@@ -7917,7 +7983,20 @@ private fun WebPane(url: String, title: String, onBack: () -> Unit) {
                     settings.loadsImagesAutomatically = true
                     settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                     settings.userAgentString = Crawler.UA
-                    webViewClient = WebViewClient()
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view:WebView,finishedUrl:String) {
+                            super.onPageFinished(view,finishedUrl)
+                            CookieManager.getInstance().flush()
+                            fun capture() {
+                                if(view.url!=finishedUrl)return
+                                view.evaluateJavascript("document.documentElement.outerHTML") { result ->
+                                    runCatching { org.json.JSONArray("["+result+"]").optString(0) }.getOrNull()?.let { WebsitePages.save(finishedUrl,it) }
+                                }
+                            }
+                            capture()
+                            view.postDelayed({ capture() },2000)
+                        }
+                    }
                     webChromeClient = WebChromeClient()
                     loadUrl(url)
                 }
@@ -8135,7 +8214,7 @@ private fun ThemePane(
                     )
                     if (monetOn) {
                         Text(
-                            if (lang == "en") "Source color" else "主题色",
+                            if (lang == "en") "Custom color" else "自定义颜色",
                             modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                             fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
@@ -8305,18 +8384,20 @@ private fun IntroPane(
 
 private fun installedVersion(context:Context):String = runCatching {
     context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
-}.getOrDefault("1.0.1")
+}.getOrDefault("1.0.2")
 
 @Composable
 private fun NotesPane(lang: String, onBack: () -> Unit) {
     val context=LocalContext.current
     val title=if(lang=="en")"What's new" else "更新日志"
     val changes=listOf(
-        "修复漫画裁边误放大、白色区域误删和长图显示不完整的问题。",
-        "修复小说阅读进度恢复、切章位置和分类切换，增加加载失败后的重试操作。",
-        "新增速读谷、阅友小说源。",
-        "优化长目录加载、分页解析和失效小说链接过滤，移除不可用书源。",
-        "删除一些无用功能代码"
+        "更换笔趣阁小说源，适配推荐、分类、搜索、完整目录及正文加载，优化详情页封面自动获取与缓存。",
+        "新增收藏自动分类，按已收藏作品显示类型及题材标签，支持直接收藏并手动整理到收藏夹。",
+        "优化添加网站的内容解析、跳转处理和验证后的会话复用。",
+        "优化首次启动的书城展示，默认显示笔趣阁小说。",
+        "适配底栏 Monet 配色，调整自定义颜色设置，精简存储空间说明及小说列表提示。",
+        "移除书城功能菜单中的自动检测入口。",
+        "修复小说章节标题缺失及工具栏遮挡正文的问题，优化分页与阅读位置保持。"
     )
     Scaffold(topBar={SubTopBar(title,onBack,BarTitle.End)}) { padding ->
         LazyColumn(contentPadding=padding) {
@@ -8508,10 +8589,14 @@ private fun SmartCover(
     contentScale: ContentScale = ContentScale.Crop,
     plate: Boolean = false,
     onReady: (() -> Unit)? = null,
+    fallbackTitle: String = "",
 ) {
     val context = LocalContext.current
     var bmp by remember(src) { mutableStateOf(coverRam.get(src) ?: Crawler.peekCover(src)) }
-    LaunchedEffect(src) {
+    var failed by remember(src) { mutableStateOf(false) }
+    var retryImage by remember(src) { mutableIntStateOf(0) }
+    LaunchedEffect(src,retryImage) {
+        failed=false
         val hit = coverRam.get(src) ?: Crawler.peekCover(src)
         if (hit != null) {
             bmp = hit
@@ -8531,7 +8616,7 @@ private fun SmartCover(
                 else -> ""
             }
             when {
-                remote.isNotEmpty() -> Crawler.awaitCover(remote)
+                remote.isNotEmpty() -> if(retryImage>0)Crawler.downloadBitmap(remote,force=true) else Crawler.awaitCover(remote)
                 path.isNotEmpty() -> decodeCoverFile(path, 480)
                 src.isNotBlank() -> decodeCoverAsset(context.applicationContext, src, 480)
                 else -> null
@@ -8540,14 +8625,21 @@ private fun SmartCover(
         if (decoded != null) {
             coverRam.put(src, decoded)
             bmp = decoded
-        }
+        } else failed=true
     }
     val shot = remember(bmp) { bmp?.asImageBitmap() }
     if (shot != null) {
         Image(bitmap = shot, contentDescription = null, modifier = modifier, contentScale = contentScale)
         if (onReady != null) SideEffect { onReady() }
+    } else if (fallbackTitle.isNotBlank()) {
+        NovelCoverPlate(fallbackTitle, modifier)
     } else if (!plate) {
-        Box(modifier.background(MiuixTheme.colorScheme.surface))
+        Box(modifier.background(MiuixTheme.colorScheme.surface).clickable(enabled=failed && src.isNotBlank()) { retryImage++ },contentAlignment=Alignment.Center) {
+            if(failed)Column(horizontalAlignment=Alignment.CenterHorizontally) {
+                Text(if(src.isBlank())"暂无封面" else "封面暂不可用",fontSize=11.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                if(src.isNotBlank())Text("点击重试",fontSize=10.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
+            }
+        }
     }
 }
 
@@ -8595,6 +8687,10 @@ private fun FoldersPane(
     lang: String,
     folders: List<BookFolder>,
     crawled: List<CrawledWork>,
+    favoriteIds: List<String>,
+    webSites: List<WebSite>,
+    onFavoriteRemove: (String) -> Unit,
+    onAssign: (String) -> Unit,
     onBack: () -> Unit,
     onOpen: (String) -> Unit,
     onCover: (String) -> Unit,
@@ -8604,7 +8700,31 @@ private fun FoldersPane(
     var drop by remember { mutableStateOf<String?>(null) }
     var creating by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
-    val title = if (lang == "en") "Collections" else if (lang == "zh-TW") "收藏夾" else "收藏夹"
+    val title = if (lang == "en") "Favorites" else "收藏"
+    val ids = favoriteIds.distinct()
+    val works = ids.mapNotNull { id -> (crawled.find { it.id == id } ?: LocalStore.loadWork(id)?.work)?.let { id to it } }.toMap()
+    val tags = works.values.flatMap { favoriteTags(it) }.distinct().sorted()
+    var selectedTab by remember { mutableStateOf("__all") }
+    var editingBook by remember { mutableStateOf<String?>(null) }
+    val novelIds=works.values.filter { work ->
+        webSites.find { it.id==work.siteId }?.let { Sites.isNovel(it) } ?: isBiqugeWork(work.id,listOf(work))
+    }.map { it.id }.toSet()
+    val tabs = if(ids.isEmpty()) emptyList() else buildList {
+        if(folders.isNotEmpty())add("__folders" to "收藏夹")
+        add("__all" to if(lang=="en")"All" else "全部")
+        if(novelIds.isNotEmpty())add("__novels" to if(lang=="en")"Novels" else if(lang=="zh-TW")"小說" else "小说")
+        if(works.keys.any { it !in novelIds })add("__comics" to if(lang=="en")"Manga" else if(lang=="zh-TW")"漫畫" else "漫画")
+        addAll(tags.map { it to it })
+    }
+    LaunchedEffect(tabs,folders.isNotEmpty()) {
+        if(tabs.none { it.first==selectedTab })selectedTab=if(ids.isEmpty() && folders.isNotEmpty())"__folders" else "__all"
+    }
+    val shown = ids.filter { id -> when(selectedTab) {
+        "__all" -> true
+        "__novels" -> id in novelIds
+        "__comics" -> id !in novelIds
+        else -> works[id]?.let { selectedTab in favoriteTags(it) }==true
+    } }
     val createTitle = if (lang == "en") "New collection" else if (lang == "zh-TW") "建立收藏夾" else "创建收藏夹"
     val nameLabel = if (lang == "en") "Name" else if (lang == "zh-TW") "名稱" else "名称"
     val createWord = if (lang == "en") "Create" else if (lang == "zh-TW") "建立" else "创建"
@@ -8623,14 +8743,14 @@ private fun FoldersPane(
             )
         },
     ) { padding ->
-        if (folders.isEmpty()) {
-            EmptyFace(
-                "(´・ω・`)",
-                if (lang == "en") "No collections yet.\nTap + to create one." else "还没有收藏夹。\n点右上角 + 新建。",
-                Modifier.fillMaxSize().padding(padding),
-            )
-        } else {
-            LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            if(tabs.isNotEmpty())Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                tabs.forEach { (key,label) ->
+                    Text(label,modifier=Modifier.clip(RoundedCornerShape(18.dp)).background(if(selectedTab==key)MiuixTheme.colorScheme.primary.copy(alpha=0.13f) else Color.Transparent).clickable { selectedTab=key }.padding(horizontal=14.dp,vertical=12.dp),color=if(selectedTab==key)MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,fontWeight=if(selectedTab==key)FontWeight.Bold else FontWeight.Normal)
+                }
+            }
+            if(selectedTab=="__folders") {
+            LazyColumn(contentPadding = PaddingValues(bottom=24.dp), modifier = Modifier.fillMaxSize()) {
                 items(folders, key = { it.id }) { folder ->
                     Card(Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth()) {
                         Column(
@@ -8685,8 +8805,38 @@ private fun FoldersPane(
                 }
                 item { Spacer(Modifier.height(24.dp)) }
             }
+            } else if(shown.isEmpty()) {
+                EmptyFace("(´・ω・`)",if(lang=="en")"No favorites yet" else "暂无收藏",Modifier.fillMaxSize())
+            } else {
+                LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=24.dp)) {
+                    items(shown,key={it}) { id ->
+                        val work=works[id]
+                        Card(Modifier.padding(horizontal=12.dp,vertical=5.dp).fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth().combinedClickable(onClick={onCover(id)},onLongClick={editingBook=id}).padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
+                                SmartCover(coverOf(id,crawled),Modifier.width(58.dp).height(78.dp).clip(RoundedCornerShape(6.dp)))
+                                Column(Modifier.weight(1f).padding(horizontal=12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                                    Text(work?.title ?: id,maxLines=2,overflow=TextOverflow.Ellipsis)
+                                    Text(work?.let { favoriteTags(it).joinToString(" · ") }.orEmpty(),fontSize=12.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                }
+                                IconButton(onClick={editingBook=id}) { Text("⋯") }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+    editingBook?.let { id ->
+        OverlayScrim(onDismiss={editingBook=null}) {
+            Card(Modifier.padding(24.dp).fillMaxWidth()) {
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Button(onClick={editingBook=null;onAssign(id)},modifier=Modifier.fillMaxWidth()) { Text("加入收藏夹") }
+                    Button(onClick={editingBook=null;onFavoriteRemove(id)},modifier=Modifier.fillMaxWidth()) { Text("取消收藏") }
+                }
+            }
+        }
+    }
+
     if (creating) {
         OverlayScrim(onDismiss = { creating = false }) {
             Card(Modifier.padding(24.dp).fillMaxWidth()) {
@@ -8717,7 +8867,7 @@ private fun FoldersPane(
     if (id != null) {
         ConfirmSheet(
             title = if (lang == "en") "Delete folder?" else if (lang == "zh-TW") "刪除收藏夾？" else "删除收藏夹？",
-            message = if (lang == "en") "The books stay on the shelf." else "只删除收藏夹，漫画仍会留在书架。",
+            message = if (lang == "en") "Saved titles stay in Favorites." else "只删除收藏夹，作品仍保留在收藏中。",
             confirm = if (lang == "en") "Delete" else "删除",
             cancel = if (lang == "en") "Cancel" else "取消",
             onConfirm = {
@@ -9018,4 +9168,26 @@ private object Icons {
             moveTo(11f, 17f); curveTo(11f, 18.1f, 10.1f, 19f, 9f, 19f); curveTo(7.9f, 19f, 7f, 18.1f, 7f, 17f); curveTo(7f, 15.9f, 7.9f, 15f, 9f, 15f); curveTo(10.1f, 15f, 11f, 15.9f, 11f, 17f); close()
         }
     }.build()
+}
+
+internal fun favoriteTags(work: CrawledWork): List<String> =
+    (work.tags + work.genres.split(Regex("""[,，、/|\s]+""")))
+        .map { it.trim() }.filter { it.isNotBlank() && it !in setOf("推荐","推薦","全部","搜索","其他","小说","漫画") && !it.startsWith("__") }.distinct()
+
+internal fun normalizedNovelChapterTitle(title:String,index:Int,body:String=""):String {
+    val clean=title.trim().replace(Regex("""^\d+\s+(?=第)"""),"")
+    val heading=if(clean.isBlank() || clean.all { it.isDigit() }) "第${clean.toIntOrNull() ?: (index+1)}章" else clean
+    val first=body.trim().lineSequence().firstOrNull().orEmpty().trim().trimStart('　')
+    val generic=Regex("""^第[零〇一二三四五六七八九十百千万两\d\s]+[章节回]$""")
+    return if(generic.matches(heading) && first.length in 3..70 && first.startsWith(heading))first else heading
+}
+
+internal fun novelPageStart(body:String,pages:List<String>,page:Int):Int {
+    var offset=0
+    for(i in 0..page.coerceAtMost(pages.lastIndex)) {
+        val start=body.indexOf(pages[i],offset).coerceAtLeast(offset)
+        if(i==page)return start
+        offset=start+pages[i].length
+    }
+    return 0
 }
