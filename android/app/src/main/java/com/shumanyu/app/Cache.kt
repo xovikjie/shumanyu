@@ -8,6 +8,9 @@ import android.os.Looper
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import kotlinx.coroutines.sync.withLock
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import java.security.MessageDigest
 
 data class CachedChapter(
@@ -24,12 +27,13 @@ data class CachedWork(
     val fetchedAt: Long,
 )
 
-data class StoredTitle(val id: String, val title: String, val bytes: Long)
-
 object LocalStore {
     private lateinit var root: File
+    private lateinit var app: Context
 
     fun init(context: Context) {
+        app = context.applicationContext
+        downloadedIds = null
         val prefs = context.getSharedPreferences("shumanyu", Context.MODE_PRIVATE)
         val custom = prefs.getString("cachePath", "").orEmpty()
         val preferred = if (custom.isNotBlank()) File(custom) else defaultCache(context)
@@ -98,62 +102,106 @@ object LocalStore {
             if (from.absolutePath != dest.absolutePath) runCatching { from.deleteRecursively() }
         }
         context.getSharedPreferences("shumanyu", Context.MODE_PRIVATE).edit().putString("downloadPath", dest.absolutePath).apply()
+        downloadedIds = null
         return true
     }
 
-    fun cacheBytes(): Long = bytesOf(if (::root.isInitialized) root else return 0)
-
     fun downloadBytes(context: Context): Long = bytesOf(downloadRoot(context))
 
-    fun listCached(): List<StoredTitle> {
-        if (!::root.isInitialized) return emptyList()
-        val dir = File(root, "works")
-        if (!dir.exists()) return emptyList()
-        return dir.listFiles().orEmpty().mapNotNull { f ->
-            if (!f.isFile || !f.name.endsWith(".json")) return@mapNotNull null
-            runCatching {
-                val work = workFrom(JSONObject(f.readText()).getJSONObject("work"))
-                StoredTitle(work.id, work.title.ifBlank { work.id }, f.length())
-            }.getOrNull()
-        }.sortedBy { it.title }
-    }
-
-    fun deleteCached(id: String) {
-        if (!::root.isInitialized) return
-        val cached = loadWork(id)
-        workCache.remove(id)
-        File(File(root, "works"), safe(id) + ".json").delete()
-        val cover = cached?.work?.cover
-        if (!cover.isNullOrBlank()) File(File(root, "covers"), coverName(cover)).delete()
-    }
-
-    fun listDownloads(context: Context): List<StoredTitle> {
-        val dir = downloadRoot(context)
-        return dir.listFiles().orEmpty().mapNotNull { child ->
-            if (!child.isDirectory || child.name.startsWith(".")) return@mapNotNull null
-            val meta = File(child, "meta.json")
-            val title = if (meta.exists()) {
-                runCatching { JSONObject(meta.readText()).optString("title") }.getOrDefault("")
-            } else ""
-            StoredTitle(child.name, title.ifBlank { child.name }, bytesOf(child))
-        }.sortedBy { it.title }
-    }
-
-    fun deleteDownload(context: Context, id: String) {
-        File(downloadRoot(context), id).deleteRecursively()
-    }
-
-    fun clearCached() {
-        if (!::root.isInitialized) return
-        workCache.clear()
-        File(root, "works").listFiles()?.forEach { it.delete() }
-        File(root, "covers").listFiles()?.forEach { it.delete() }
-    }
-
-    fun clearDownloads(context: Context) {
-        downloadRoot(context).listFiles()?.forEach { child ->
-            if (child.name != ".probe") child.deleteRecursively()
+    /**
+     * Everything that is safe to throw away: image cache (covers and reader pages), store
+     * listings, loose files in the cache root, data of titles that are not on the shelf, in
+     * history or in favorites, the system cache dirs and half-written download pages.
+     */
+    private fun clearableFiles(context: Context, keep: Set<String>): List<File> {
+        val out = ArrayList<File>()
+        val keepFiles = keep.map(::safe).toSet()
+        if (::root.isInitialized) {
+            root.listFiles()?.forEach { f ->
+                when {
+                    f.isFile -> out.add(f)
+                    f.name == "covers" || f.name == "listings" -> out.addAll(f.walkTopDown().filter { it.isFile })
+                    f.name == "works" -> f.listFiles()?.forEach { w ->
+                        if (w.isFile && w.nameWithoutExtension !in keepFiles) out.add(w)
+                    }
+                    else -> out.addAll(f.walkTopDown().filter { it.isFile })
+                }
+            }
         }
+        // codeCacheDir 归系统管（HWUI 着色器/管线缓存、ART 等），运行中删掉不安全，也基本不占空间，不清。
+        listOfNotNull(context.cacheDir, context.externalCacheDir).forEach { dir ->
+            out.addAll(dir.walkTopDown().filter { it.isFile })
+        }
+        downloadRoot(context).walkTopDown().filter { it.isFile }.forEach { f ->
+            if (f.name == ".probe" || (f.extension == "jpg" && f.length() < 800) || f.extension == "part" || f.extension == "tmp") out.add(f)
+        }
+        return out
+    }
+
+    fun clearableBytes(context: Context, keep: Set<String>): Long = clearableFiles(context, keep).sumOf { it.length() }
+
+    private val clearLock = kotlinx.coroutines.sync.Mutex()
+
+    /** [clearCache] on the IO dispatcher; concurrent calls run one after another. */
+    suspend fun clearCacheAsync(context: Context, keep: Set<String>): Long =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            clearLock.withLock { runCatching { clearCache(context, keep) }.getOrElse { clearableBytes(context, keep) } }
+        }
+
+    /** Empties the cache for real; returns the bytes still left (≈0). Blocking: call off the main thread. */
+    fun clearCache(context: Context, keep: Set<String>): Long {
+        clearableFiles(context, keep).forEach { runCatching { it.delete() } }
+        val kept = keep.toSet()
+        workCache.keys.toList().forEach { if (it !in kept) workCache.remove(it) }
+        workOrder.removeAll { it !in kept }
+        Crawler.clearMemory()
+        if (::root.isInitialized) {
+            File(root, "covers").mkdirs()
+            File(root, "works").mkdirs()
+            File(root, "listings").mkdirs()
+        }
+        return clearableBytes(context, keep)
+    }
+
+    /**
+     * 删除全部已下载的漫画/小说（下载目录里的每本书连同 meta.json 记录），并清空「已下载」索引；
+     * 书架、历史、收藏和作品数据不动。IO 线程执行，与清理缓存共用一把锁，不会两次清理重叠。
+     * 返回下载目录剩余字节数。
+     */
+    suspend fun clearDownloadsAsync(context: Context): Long =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            clearLock.withLock {
+                runCatching {
+                    downloadRoot(context).listFiles()?.forEach { child ->
+                        if (child.name != ".probe") runCatching { child.deleteRecursively() }
+                    }
+                }
+                downloadedIds = null
+                downloadRev++
+                runCatching { downloadBytes(context) }.getOrDefault(0L)
+            }
+        }
+
+    /** 已下载作品的目录名（[fileSafe] 后的 id）；首次用到时扫一次下载目录，之后增量维护。 */
+    @Volatile private var downloadedIds: Set<String>? = null
+
+    /** 下载记录的版本号：下载完成或清理后 +1，书架据此重算「已下载」标记。 */
+    var downloadRev by androidx.compose.runtime.mutableIntStateOf(0)
+        private set
+
+    fun isDownloaded(id: String): Boolean {
+        if (!::app.isInitialized) return false
+        val ids = downloadedIds ?: runCatching {
+            downloadRoot(app).listFiles().orEmpty()
+                .filter { it.isDirectory && !it.name.startsWith(".") && File(it, "meta.json").exists() }
+                .map { it.name }.toSet()
+        }.getOrDefault(emptySet()).also { downloadedIds = it }
+        return safe(id) in ids
+    }
+
+    fun markDownloaded(id: String) {
+        downloadedIds = downloadedIds?.plus(safe(id))
+        downloadRev++
     }
 
     fun fileSafe(id: String) = safe(id)
@@ -173,16 +221,6 @@ object LocalStore {
         val arr = JSONArray()
         items.forEach { arr.put(workJson(it)) }
         File(File(root, "listings"), safe(siteId) + ".json").writeText(arr.toString())
-    }
-
-    fun loadListing(siteId: String): List<CrawledWork> {
-        if (!::root.isInitialized) return emptyList()
-        val f = File(File(root, "listings"), safe(siteId) + ".json")
-        if (!f.exists()) return emptyList()
-        return runCatching {
-            val arr = JSONArray(f.readText())
-            (0 until arr.length()).map { workFrom(arr.getJSONObject(it)) }
-        }.getOrDefault(emptyList())
     }
 
     fun loadAllListings(): List<CrawledWork> {
@@ -262,31 +300,6 @@ object LocalStore {
             val old = workOrder.removeAt(0)
             if (old != id) workCache.remove(old)
         }
-    }
-
-    fun dropLegacyNovels(): Set<String> {
-        if (!::root.isInitialized) return emptySet()
-        val dropped = HashSet<String>()
-        File(root, "listings").listFiles()?.forEach { f ->
-            val id = f.nameWithoutExtension
-            if (id == "biquge" || id.startsWith("biquge")) {
-                f.delete()
-                dropped.add(id)
-            }
-        }
-        File(root, "works").listFiles()?.forEach { f ->
-            val id = f.nameWithoutExtension
-            val text = if (id.startsWith("bq")) "" else runCatching { f.readText() }.getOrDefault("")
-            val novel = id.startsWith("bq") ||
-                text.contains("biquge365") ||
-                text.contains("bqg5.com") ||
-                text.contains("\"siteId\":\"biquge\"")
-            if (!novel) return@forEach
-            f.delete()
-            workCache.remove(id)
-            dropped.add(id)
-        }
-        return dropped
     }
 
     fun saveCover(url: String, bmp: Bitmap) {
@@ -371,6 +384,7 @@ object Downloader {
                 val book = File(LocalStore.downloadRoot(context), LocalStore.fileSafe(id))
                 book.mkdirs()
                 File(book, "meta.json").writeText(JSONObject().put("id", id).put("title", title).toString())
+                LocalStore.markDownloaded(id)
                 val total = chapters.size
                 chapters.forEachIndexed { idx, c ->
                     val pages = if (c.pages.isNotEmpty()) c.pages else Crawler.fetchPages(c.href).first

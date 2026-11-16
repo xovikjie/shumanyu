@@ -5,16 +5,12 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher_adaptive"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_adaptive"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ShuManYu"
         android:usesCleartextTraffic="true"
@@ -27,54 +23,11 @@
             android:enableOnBackInvokedCallback="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
-        <activity-alias
-            android:name=".IconDefault"
-            android:enabled="true"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_adaptive"
-            android:roundIcon="@mipmap/ic_launcher_adaptive"
-            android:targetActivity=".MainActivity">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias>
-        <activity-alias
-            android:name=".IconNight"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_night_adaptive"
-            android:roundIcon="@mipmap/ic_launcher_night_adaptive"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-        <activity-alias
-            android:name=".IconInk"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_ink_adaptive"
-            android:roundIcon="@mipmap/ic_launcher_ink_adaptive"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-        <activity-alias
-            android:name=".IconSoft"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_soft_adaptive"
-            android:roundIcon="@mipmap/ic_launcher_soft_adaptive"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
+        </activity>
     </application>
 </manifest>

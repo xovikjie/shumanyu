@@ -1,5 +1,7 @@
 package com.shumanyu.app
 
+import com.itos.coui.scroll.rememberCouiOverscrollEffect
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -7,17 +9,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.os.StatFs
 import android.provider.DocumentsContract
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,10 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,55 +34,63 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
+import kotlinx.coroutines.launch
 
 @Composable
-fun StoragePane(lang: String, onBack: () -> Unit, onOpen: (String) -> Unit, generation: Int = 0) {
+fun StoragePane(lang: String, keep: Set<String>, onBack: () -> Unit) {
     val context = LocalContext.current
     var tick by remember { mutableIntStateOf(0) }
-    val cacheBytes = remember(tick, generation) { LocalStore.cacheBytes() }
-    val downBytes = remember(tick, generation) { LocalStore.downloadBytes(context) }
+    var askClear by remember { mutableStateOf(false) }
+    var askDown by remember { mutableStateOf(false) }
+    var clearing by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // 目录遍历放到 IO 线程：缓存多时（外部存储走 FUSE）在主线程统计/删除会卡住界面直至被系统杀掉。
+    val sizes by androidx.compose.runtime.produceState(0L to 0L, tick) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { LocalStore.clearableBytes(context, keep) to LocalStore.downloadBytes(context) }.getOrDefault(0L to 0L)
+        }
+    }
+    val (clearable, downBytes) = sizes
     val cachePath = LocalStore.cachePath().ifBlank { LocalStore.defaultCache(context).absolutePath }
     val downPath = LocalStore.downloadRoot(context).absolutePath
     val pickCache = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) adoptTree(context, uri, download = false) { tick++ }
+        if (uri != null) adoptTree(context, uri, download = false, onOk = { tick++ }, onNeedAllFiles = { openAllFilesSettings(context) })
     }
     val pickDown = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) adoptTree(context, uri, download = true) { tick++ }
+        if (uri != null) adoptTree(context, uri, download = true, onOk = { tick++ }, onNeedAllFiles = { openAllFilesSettings(context) })
     }
     val title = when (lang) { "en" -> "Storage"; "zh-TW" -> "儲存空間"; else -> "存储空间" }
     Scaffold(topBar = { SubTopBar(title, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 StorageCard(
-                    title = when (lang) { "en" -> "Cached comics"; "zh-TW" -> "已緩存漫畫或小說"; else -> "已缓存漫画或小说" },
-                    bytes = cacheBytes,
-                    summary = "",
-                    action = when (lang) { "en" -> "Manage"; "zh-TW" -> "管理"; else -> "管理" },
-                    onAction = { onOpen("cache") },
+                    title = when (lang) { "en" -> "Cache"; "zh-TW" -> "快取"; else -> "缓存" },
+                    bytes = clearable,
+                    summary = when (lang) {
+                        "en" -> "Images, store lists, temporary and half-downloaded files. Shelf, history and favorites are kept."
+                        "zh-TW" -> "圖片快取、書城列表、暫存檔和未下載完的檔案。書架、歷史和收藏不受影響。"
+                        else -> "图片缓存、书城列表、临时文件和未下完的文件。书架、历史和收藏不受影响。"
+                    },
+                    action = when (lang) { "en" -> "Clear"; "zh-TW" -> "清理"; else -> "清理" },
+                    onAction = { askClear = true },
                 )
             }
             item {
                 StorageCard(
-                    title = when (lang) { "en" -> "Downloaded comics"; "zh-TW" -> "已下載漫畫或小說"; else -> "已下载漫画或小说" },
+                    title = when (lang) { "en" -> "Downloads"; "zh-TW" -> "下載"; else -> "下载" },
                     bytes = downBytes,
-                    summary = "",
-                    action = when (lang) { "en" -> "Manage"; "zh-TW" -> "管理"; else -> "管理" },
-                    onAction = { onOpen("download") },
+                    summary = when (lang) {
+                        "en" -> "Downloaded comics and novels. You'll need to download them again after clearing. Shelf, history and favorites are kept."
+                        "zh-TW" -> "已下載的漫畫或小說，清理後需重新下載。書架、歷史和收藏不受影響。"
+                        else -> "已下载的漫画或小说，清理后需重新下载。书架、历史和收藏不受影响。"
+                    },
+                    action = when (lang) { "en" -> "Clear"; "zh-TW" -> "清理"; else -> "清理" },
+                    onAction = { askDown = true },
                 )
             }
             item {
@@ -116,149 +117,58 @@ fun StoragePane(lang: String, onBack: () -> Unit, onOpen: (String) -> Unit, gene
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
-    }
-}
-
-@Composable
-fun StorageListPane(kind: String, lang: String, onBack: () -> Unit) {
-    val context = LocalContext.current
-    var tick by remember { mutableIntStateOf(0) }
-    var ask by remember { mutableIntStateOf(-1) }
-    var picking by remember { mutableStateOf(false) }
-    var selected by remember { mutableStateOf(setOf<String>()) }
-    var askAll by remember { mutableStateOf(false) }
-    var askBatch by remember { mutableStateOf(false) }
-    val items = remember(tick, kind) {
-        if (kind == "download") LocalStore.listDownloads(context) else LocalStore.listCached()
-    }
-    val title = if (kind == "download") {
-        when (lang) { "en" -> "Downloaded"; "zh-TW" -> "已下載"; else -> "已下载" }
-    } else {
-        when (lang) { "en" -> "Cached"; "zh-TW" -> "已緩存"; else -> "已缓存" }
-    }
-    val empty = when (lang) { "en" -> "Nothing here"; "zh-TW" -> "這裡是空的"; else -> "这里是空的" }
-    val batch = when (lang) { "en" -> "Delete selected"; "zh-TW" -> "批量刪除"; else -> "批量删除" }
-    val all = when (lang) { "en" -> "Delete all"; "zh-TW" -> "全部刪除"; else -> "全部删除" }
-    fun wipe(ids: Collection<String>) {
-        ids.forEach { id ->
-            if (kind == "download") LocalStore.deleteDownload(context, id) else LocalStore.deleteCached(id)
-        }
-    }
-    Scaffold(topBar = { SubTopBar(title, onBack) }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            if (items.isNotEmpty()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(18.dp),
-                ) {
-                    Text(batch, color = MiuixTheme.colorScheme.primary, modifier = Modifier.clickable {
-                        if (selected.isEmpty()) picking = true else askBatch = true
-                    })
-                    Text(all, color = Color(0xFFFF3B30), modifier = Modifier.clickable { askAll = true })
-                }
-            }
-            if (items.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(empty, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-                    items(items.size) { i ->
-                        val item = items[i]
-                        val on = item.id in selected
-                        Card(Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth()) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .pointerInput(item.id, picking) {
-                                        detectTapGestures(
-                                            onLongPress = {
-                                                picking = true
-                                                selected = if (on) selected - item.id else selected + item.id
-                                            },
-                                            onTap = {
-                                                if (picking) {
-                                                    selected = if (on) selected - item.id else selected + item.id
-                                                }
-                                            },
-                                        )
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                if (picking) {
-                                    Box(
-                                        Modifier
-                                            .size(18.dp)
-                                            .clip(CircleShape)
-                                            .background(if (on) MiuixTheme.colorScheme.primary else Color.Transparent)
-                                            .padding(1.dp),
-                                    )
-                                    Spacer(Modifier.width(10.dp))
-                                }
-                                Column(Modifier.weight(1f)) {
-                                    Text(item.title, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                    Text(formatBytes(item.bytes), fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                                }
-                                if (!picking) {
-                                    Text(
-                                        when (lang) { "en" -> "Delete"; "zh-TW" -> "刪除"; else -> "删除" },
-                                        color = Color(0xFFFF3B30),
-                                        modifier = Modifier.padding(start = 12.dp).clickable { ask = i },
-                                    )
-                                }
-                            }
+        if (askClear) {
+            ConfirmSheet(
+                title = when (lang) { "en" -> "Clear cache?"; "zh-TW" -> "確定清理快取嗎"; else -> "确定清理缓存吗" },
+                message = formatBytes(clearable),
+                confirm = when (lang) { "en" -> "Clear"; "zh-TW" -> "清理"; else -> "清理" },
+                cancel = when (lang) { "en" -> "Cancel"; "zh-TW" -> "取消"; else -> "取消" },
+                onConfirm = {
+                    // 先关弹窗，再在后台线程清理；弹窗退场动画结束后才刷新数字、弹轻提示，
+                    // 不让轻提示的背景采样和弹窗退场挤在同一帧。
+                    askClear = false
+                    if (!clearing) {
+                        clearing = true
+                        val app = context.applicationContext
+                        scope.launch {
+                            val started = android.os.SystemClock.uptimeMillis()
+                            val left = LocalStore.clearCacheAsync(app, keep)
+                            val wait = 450L - (android.os.SystemClock.uptimeMillis() - started)
+                            if (wait > 0) kotlinx.coroutines.delay(wait)
+                            clearing = false
+                            tick++
+                            CouiToast.show((when (lang) { "en" -> "Cleared, "; "zh-TW" -> "已清理，剩餘 "; else -> "已清理，剩余 " }) + formatBytes(left))
                         }
                     }
-                    item { Spacer(Modifier.height(24.dp)) }
-                }
-            }
-        }
-        if (ask in items.indices) {
-            val item = items[ask]
-            ConfirmSheet(
-                title = when (lang) { "en" -> "Delete?"; "zh-TW" -> "確定刪除嗎"; else -> "确定删除吗" },
-                message = item.title,
-                confirm = when (lang) { "en" -> "Delete"; "zh-TW" -> "刪除"; else -> "删除" },
-                cancel = when (lang) { "en" -> "Cancel"; "zh-TW" -> "取消"; else -> "取消" },
-                onConfirm = {
-                    wipe(listOf(item.id))
-                    ask = -1
-                    tick++
                 },
-                onDismiss = { ask = -1 },
+                onDismiss = { askClear = false },
             )
         }
-        if (askBatch && selected.isNotEmpty()) {
+        if (askDown) {
             ConfirmSheet(
-                title = batch,
-                message = "${selected.size}",
-                confirm = when (lang) { "en" -> "Delete"; "zh-TW" -> "刪除"; else -> "删除" },
+                title = when (lang) { "en" -> "Clear downloads?"; "zh-TW" -> "確定清理下載嗎"; else -> "确定清理下载吗" },
+                message = formatBytes(downBytes),
+                confirm = when (lang) { "en" -> "Clear"; "zh-TW" -> "清理"; else -> "清理" },
                 cancel = when (lang) { "en" -> "Cancel"; "zh-TW" -> "取消"; else -> "取消" },
                 onConfirm = {
-                    wipe(selected)
-                    selected = emptySet()
-                    picking = false
-                    askBatch = false
-                    tick++
+                    askDown = false
+                    if (Downloader.running) {
+                        CouiToast.show(when (lang) { "en" -> "A download is running, try again later"; "zh-TW" -> "正在下載，請稍後再清理"; else -> "正在下载，请稍后再清理" })
+                    } else if (!clearing) {
+                        clearing = true
+                        val app = context.applicationContext
+                        scope.launch {
+                            val started = android.os.SystemClock.uptimeMillis()
+                            val left = LocalStore.clearDownloadsAsync(app)
+                            val wait = 450L - (android.os.SystemClock.uptimeMillis() - started)
+                            if (wait > 0) kotlinx.coroutines.delay(wait)
+                            clearing = false
+                            tick++
+                            CouiToast.show((when (lang) { "en" -> "Cleared, "; "zh-TW" -> "已清理，剩餘 "; else -> "已清理，剩余 " }) + formatBytes(left))
+                        }
+                    }
                 },
-                onDismiss = { askBatch = false },
-            )
-        }
-        if (askAll) {
-            ConfirmSheet(
-                title = all,
-                message = "${items.size}",
-                confirm = when (lang) { "en" -> "Delete"; "zh-TW" -> "刪除"; else -> "删除" },
-                cancel = when (lang) { "en" -> "Cancel"; "zh-TW" -> "取消"; else -> "取消" },
-                onConfirm = {
-                    if (kind == "download") LocalStore.clearDownloads(context) else LocalStore.clearCached()
-                    selected = emptySet()
-                    picking = false
-                    askAll = false
-                    tick++
-                },
-                onDismiss = { askAll = false },
+                onDismiss = { askDown = false },
             )
         }
     }
@@ -273,8 +183,8 @@ private fun StorageCard(title: String, bytes: Long, summary: String, action: Str
                 Box(
                     Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                        .clickable(onClick = onAction)
+                        .background(AppTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+                        .couiClickable(onClick = onAction)
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                 ) { Text(action, fontSize = 14.sp) }
             }
@@ -282,7 +192,7 @@ private fun StorageCard(title: String, bytes: Long, summary: String, action: Str
             Text(formatBytes(bytes), fontSize = 28.sp, fontWeight = FontWeight.Bold)
             if(summary.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text(summary, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                Text(summary, fontSize = 13.sp, color = AppTheme.colorScheme.onSurfaceVariantSummary)
             }
         }
     }
@@ -291,54 +201,12 @@ private fun StorageCard(title: String, bytes: Long, summary: String, action: Str
 @Composable
 private fun PathRow(label: String, path: String, change: String, onCopy: () -> Unit, onChange: () -> Unit) {
     Column(Modifier.padding(top = 14.dp)) {
-        Text(label, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-        Text(path, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp).clickable(onClick = onCopy))
+        Text(label, fontSize = 13.sp, color = AppTheme.colorScheme.onSurfaceVariantSummary)
+        Text(path, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp).couiClickable(onClick = onCopy))
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(change, color = MiuixTheme.colorScheme.primary, modifier = Modifier.clickable(onClick = onChange))
-            Text("复制", color = MiuixTheme.colorScheme.primary, modifier = Modifier.clickable(onClick = onCopy))
+            Text(change, color = AppTheme.colorScheme.primary, modifier = Modifier.couiClickable(onClick = onChange))
+            Text("复制", color = AppTheme.colorScheme.primary, modifier = Modifier.couiClickable(onClick = onCopy))
         }
-    }
-}
-
-@Composable
-private fun Legend(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(4.dp))
-        Text(label, fontSize = 11.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-    }
-}
-
-@Composable
-private fun StorageRing(app: Long, used: Long, total: Long) {
-    val other = (used - app).coerceAtLeast(0L)
-    val free = (total - used).coerceAtLeast(0L)
-    Canvas(Modifier.fillMaxSize().padding(10.dp)) {
-        val stroke = 22.dp.toPx()
-        val arc = Size(size.width - stroke, size.height - stroke)
-        val top = Offset(stroke / 2, stroke / 2)
-        val style = Stroke(width = stroke, cap = StrokeCap.Butt)
-        val sum = (app + other + free).coerceAtLeast(1L).toFloat()
-        var start = -90f
-        fun sweep(part: Long) = 360f * part / sum
-        drawArc(Color(0xFFE6E6EB), start, 360f, false, top, arc, style = style)
-        val appSweep = sweep(app)
-        if (appSweep > 0.4f) {
-            drawArc(Color(0xFF3482FF), start, appSweep, false, top, arc, style = style)
-            start += appSweep
-        }
-        val otherSweep = sweep(other)
-        if (otherSweep > 0.4f) drawArc(Color(0xFFC56BFF), start, otherSweep, false, top, arc, style = style)
-    }
-}
-
-private fun storageLine(lang: String, app: Long, total: Long): String {
-    val pct = if (total <= 0) 0.0 else app * 100.0 / total
-    val text = if (pct < 0.1) "0.1" else String.format("%.1f", pct)
-    return when (lang) {
-        "en" -> "Using $text% of phone storage"
-        "zh-TW" -> "書漫嶼占手機儲存$text%"
-        else -> "书漫屿占手机存储$text%"
     }
 }
 
@@ -354,7 +222,7 @@ fun formatBytes(n: Long): String {
 private fun copyPath(context: Context, path: String) {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     cm.setPrimaryClip(ClipData.newPlainText("path", path))
-    Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+    CouiToast.show("已复制")
 }
 
 private fun treePath(uri: Uri): String? {
@@ -368,7 +236,7 @@ private fun treePath(uri: Uri): String? {
     return if (rel.isBlank()) root else "$root/$rel"
 }
 
-private fun adoptTree(context: Context, uri: Uri, download: Boolean, onOk: () -> Unit) {
+private fun adoptTree(context: Context, uri: Uri, download: Boolean, onOk: () -> Unit, onNeedAllFiles: () -> Unit = {}) {
     runCatching {
         context.contentResolver.takePersistableUriPermission(
             uri,
@@ -377,24 +245,20 @@ private fun adoptTree(context: Context, uri: Uri, download: Boolean, onOk: () ->
     }
     val path = treePath(uri)
     if (path == null) {
-        Toast.makeText(context, "无法识别这个文件夹", Toast.LENGTH_SHORT).show()
+        CouiToast.show("无法识别这个文件夹")
         return
     }
     val dir = File(path)
     val ok = if (download) LocalStore.useDownload(context, dir) else LocalStore.useCache(context, dir)
     if (ok) {
-        Toast.makeText(context, "目录已更改", Toast.LENGTH_SHORT).show()
+        CouiToast.show("目录已更改")
         onOk()
         return
     }
     if (Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager()) {
-        Toast.makeText(context, "请允许所有文件访问后再选一次目录", Toast.LENGTH_LONG).show()
-        val intent = Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-            data = Uri.parse("package:${context.packageName}")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        runCatching { context.startActivity(intent) }
+        CouiToast.show("需要所有文件访问才能写入这个目录", long = true)
+        onNeedAllFiles()
     } else {
-        Toast.makeText(context, "这个文件夹无法写入", Toast.LENGTH_SHORT).show()
+        CouiToast.show("这个文件夹无法写入")
     }
 }

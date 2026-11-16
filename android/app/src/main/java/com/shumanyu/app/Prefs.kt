@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
-import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 
 data class BookFolder(
     val id: String,
@@ -16,7 +15,7 @@ data class BookFolder(
 data class ShelfOpts(
     val sort: String = "acquired",
     val asc: Boolean = false,
-    val layout: String = "list",
+    val layout: String = "compact",
     val fDl: Boolean = false,
     val fUnread: Boolean = false,
     val fDone: Boolean = false,
@@ -33,6 +32,8 @@ class Prefs(context: Context) {
     private val p: SharedPreferences = context.getSharedPreferences("shumanyu", Context.MODE_PRIVATE)
 
     init {
+        // 预测性返回已固定开启（0.1.2 起无开关），清掉旧版本存下的设置。
+        if (p.contains("predictiveBack")) p.edit().remove("predictiveBack").apply()
         context.getSharedPreferences("legado_b778fe6b", Context.MODE_PRIVATE).edit().clear().apply()
         context.filesDir.listFiles()?.filter { it.name.startsWith("legado-b778fe6b") }?.forEach { it.delete() }
         if(!p.getBoolean("readerCompletePageV1",false)) {
@@ -40,14 +41,18 @@ class Prefs(context: Context) {
             old.put("zoomMode","fit")
             p.edit().putString("reading",old.toString()).putBoolean("readerCompletePageV1",true).apply()
         }
-        migrateBiquge102()
         migrateFavorites102()
         migrateV22()
-        migrateColorOS17()
-        migrateMiuix100()
+        migrateCopyOnly010()
+        migrateShelfCompact()
         p.edit().remove("xiu2SourcesImportedV1").apply()
         context.getSharedPreferences("novel_source_settings", Context.MODE_PRIVATE).edit().clear().apply()
-        if (p.contains("liquidGlass")) p.edit().remove("liquidGlass").apply()
+        p.edit()
+            .remove("liquidGlass").remove("liquid").remove("glassAlpha")
+            .remove("themeSeed").remove("themePalette").remove("themeSeedMigrated100").remove("themeColorOS17")
+            .remove("labSeen").remove("appBrowser").remove("folderLab").remove("foldersOfficial")
+            .remove("customSources").remove("histLayoutOn")
+            .apply()
     }
 
     private fun migrateFavorites102() {
@@ -57,52 +62,53 @@ class Prefs(context: Context) {
         }
     }
 
-    private fun migrateBiquge102() {
-        if (p.getBoolean("biquge365V102", false)) return
-        val oldIds = runCatching { LocalStore.loadAllListings().filter { it.siteId == Sites.BIQUGE }.map { it.id }.toSet() }.getOrDefault(emptySet())
-        fun retired(id: String) = id in oldIds || id.startsWith("bq")
-        history = history.filterNot(::retired)
-        progress = progress.filterKeys { !retired(it) }
-        val read = readChapterKeys().filterNot { retired(it.substringBefore(':')) }
-        val sites = runCatching { JSONArray(p.getString("webSites", "[]")) }.getOrDefault(JSONArray())
-        for (i in 0 until sites.length()) {
-            val site = sites.getJSONObject(i)
-            if (site.optString("id") == Sites.BIQUGE) site.put("url", Biquge365.HOME+"/").put("lastError", "").put("itemCount", 0)
+    /**
+     * 0.1.0: 拷贝漫画 became the only source. Drop the old 笔趣阁 listing cache; shelf and
+     * history entries are kept untouched. 0.1.3beta re-adds 禁漫天堂 / 爱看韩漫, so their
+     * saved works stay in place.
+     */
+    private fun migrateCopyOnly010() {
+        if (p.getBoolean("copyOnly010", false)) return
+        runCatching { LocalStore.dropListing("biquge") }
+        p.edit().putBoolean("copyOnly010", true).apply()
+    }
+
+    /** 0.1.3beta: 书架默认改为紧凑网格卡片视图，旧版本存下的列表布局迁移一次。 */
+    private fun migrateShelfCompact() {
+        if (p.getBoolean("shelfCompact1", false)) return
+        val raw = p.getString("shelfUi", "") ?: ""
+        if (raw.isBlank()) {
+            p.edit().putBoolean("shelfCompact1", true).apply()
+            return
         }
-        LocalStore.dropListing(Sites.BIQUGE)
-        p.edit().putString("webSites", sites.toString()).putString("readChapters", read.joinToString("\n")).putBoolean("biquge365V102", true).apply()
+        runCatching {
+            val o = JSONObject(raw)
+            if (o.optString("layout", "list") == "list") {
+                o.put("layout", "compact")
+                p.edit().putString("shelfUi", o.toString()).apply()
+            }
+        }
+        p.edit().putBoolean("shelfCompact1", true).apply()
     }
 
     fun openStoreOnFirstLaunch(): Boolean {
-        if (p.getBoolean("firstStore102", false) || p.contains("storeBiqugeDefault")) return false
+        if (p.getBoolean("firstStore102", false)) return false
         p.edit().putBoolean("firstStore102", true).apply()
         return true
     }
 
     var colorMode: ColorSchemeMode
         get() = runCatching {
-            ColorSchemeMode.valueOf(p.getString("colorMode", ColorSchemeMode.MonetSystem.name)!!)
-        }.getOrDefault(ColorSchemeMode.MonetSystem)
+            when (val raw = p.getString("colorMode", ColorSchemeMode.System.name)!!) {
+                // Monet colour picking was removed in 0.1.0; keep the light/dark choice.
+                "MonetSystem" -> ColorSchemeMode.System
+                "MonetLight" -> ColorSchemeMode.Light
+                "MonetDark" -> ColorSchemeMode.Dark
+                else -> ColorSchemeMode.valueOf(raw)
+            }
+        }.getOrDefault(ColorSchemeMode.System)
         set(v) {
             p.edit().putString("colorMode", v.name).apply()
-        }
-
-    var liquid: Boolean
-        get() = p.getBoolean("liquid", true)
-        set(v) {
-            p.edit().putBoolean("liquid", v).apply()
-        }
-
-    var predictiveBack: Boolean
-        get() = p.getBoolean("predictiveBack", true)
-        set(v) {
-            p.edit().putBoolean("predictiveBack", v).apply()
-        }
-
-    var glassAlpha: Float
-        get() = p.getFloat("glassAlpha", 0.45f).coerceIn(0.18f, 0.82f)
-        set(v) {
-            p.edit().putFloat("glassAlpha", v.coerceIn(0.18f, 0.82f)).apply()
         }
 
     var novelFont: Int
@@ -153,34 +159,10 @@ class Prefs(context: Context) {
             p.edit().putLong("lastBackupAt", v).apply()
         }
 
-    var labSeen: Boolean
-        get() = p.getBoolean("labSeen", false)
-        set(v) {
-            p.edit().putBoolean("labSeen", v).apply()
-        }
-
-    var folderLab: Boolean
-        get() = p.getBoolean("folderLab", true)
-        set(v) {
-            p.edit().putBoolean("folderLab", v).apply()
-        }
-
-    fun enableFoldersOfficial() {
-        if (!p.getBoolean("foldersOfficial", false)) {
-            p.edit().putBoolean("folderLab", true).putBoolean("foldersOfficial", true).apply()
-        }
-    }
-
     var incognito: Boolean
         get() = p.getBoolean("incognito", false)
         set(v) {
             p.edit().putBoolean("incognito", v).apply()
-        }
-
-    var allowAdult: Boolean
-        get() = p.getBoolean("allowAdult", false)
-        set(v) {
-            p.edit().putBoolean("allowAdult", v).apply()
         }
 
     var peekGuard: Boolean
@@ -189,40 +171,16 @@ class Prefs(context: Context) {
             p.edit().putBoolean("peekGuard", v).apply()
         }
 
-    var themeSeed: Int
-        get() = p.getInt("themeSeed", 0xFF3482FF.toInt())
-        set(v) {
-            p.edit().putInt("themeSeed", v).apply()
-        }
-
-    var themePalette: String
-        get() = p.getString("themePalette", "TonalSpot") ?: "TonalSpot"
-        set(v) {
-            p.edit().putString("themePalette", v).apply()
-        }
-
     var fontGear: String
         get() = p.getString("fontGear", "system") ?: "system"
         set(v) {
             p.edit().putString("fontGear", v).apply()
         }
 
-    var appBrowser: Boolean
-        get() = p.getBoolean("appBrowser", true)
-        set(v) {
-            p.edit().putBoolean("appBrowser", v).apply()
-        }
-
     var mineBanner: String
         get() = p.getString("mineBanner", "") ?: ""
         set(v) {
             p.edit().putString("mineBanner", v).apply()
-        }
-
-    var histLayoutOn: Boolean
-        get() = p.getBoolean("histLayoutOn", true)
-        set(v) {
-            p.edit().putBoolean("histLayoutOn", v).apply()
         }
 
     var histLayout: String
@@ -246,12 +204,6 @@ class Prefs(context: Context) {
     private fun coverBook(): JSONObject =
         runCatching { JSONObject(p.getString("coverBook", "{}") ?: "{}") }.getOrDefault(JSONObject())
 
-    fun coverOrig(id: String): String? =
-        coverBook().optJSONObject(id)?.optString("orig")?.takeIf { it.isNotBlank() }
-
-    fun coverPath(id: String): String? =
-        coverBook().optJSONObject(id)?.optString("path")?.takeIf { it.isNotBlank() }
-
     fun noteCover(id: String, path: String, original: String) {
         val o = coverBook()
         val item = o.optJSONObject(id) ?: JSONObject()
@@ -269,11 +221,6 @@ class Prefs(context: Context) {
         }.toList()
     }
 
-    var iconStyle: String
-        get() = p.getString("iconStyle", "default") ?: "default"
-        set(v) {
-            p.edit().putString("iconStyle", v).apply()
-        }
 
     var forceTablet: Boolean
         get() = p.getBoolean("forceTablet", false)
@@ -323,7 +270,7 @@ class Prefs(context: Context) {
                 ShelfOpts(
                     sort = o.optString("sort", "acquired"),
                     asc = o.optBoolean("asc", false),
-                    layout = o.optString("layout", "list"),
+                    layout = o.optString("layout", "compact"),
                     fDl = o.optBoolean("fDl", false),
                     fUnread = o.optBoolean("fUnread", false),
                     fDone = o.optBoolean("fDone", false),
@@ -421,168 +368,25 @@ class Prefs(context: Context) {
         p.edit().putString("readChapters", next.joinToString("\n")).apply()
     }
 
-    fun purgeLegacyBiquge() {
-        if (p.getBoolean("purgedBiqugeV012b2", false)) return
-        val bad = HashSet<String>()
-        bad.addAll(LocalStore.dropLegacyNovels())
-        fun mark(id: String) {
-            if (id.startsWith("bq")) bad.add(id)
-        }
-        library.forEach(::mark)
-        favorites.forEach(::mark)
-        history.forEach(::mark)
-        progress.keys.forEach(::mark)
-        folders.forEach { folder -> folder.books.forEach(::mark) }
-        if (bad.isNotEmpty()) {
-            library = library.filterNot { it in bad }
-            favorites = favorites.filterNot { it in bad }
-            history = history.filterNot { it in bad }
-            progress = progress.filterKeys { it !in bad }
-            folders = folders.map { folder -> folder.copy(books = folder.books.filterNot { it in bad }) }
-            val read = readChapterKeys().filterNot { key ->
-                val id = key.substringBefore(':')
-                id in bad || id.startsWith("bq")
-            }
-            val added = runCatching { JSONObject(p.getString("libAdded", "{}") ?: "{}") }.getOrDefault(JSONObject())
-            added.keys().asSequence().toList().forEach { key ->
-                if (key in bad || key.startsWith("bq")) added.remove(key)
-            }
-            p.edit()
-                .putString("readChapters", read.joinToString("\n"))
-                .putString("libAdded", added.toString())
-                .apply()
-        }
-        p.edit().putBoolean("purgedBiqugeV012b2", true).apply()
-    }
-
+    /** Built-in comic sources; only their last error and item count are persisted. */
     fun webSites(): List<WebSite> {
-        if (lastSiteId.startsWith("xiu2-")) lastSiteId = Sites.BIQUGE
-        if (!p.getBoolean("storeBiqugeDefault", false)) {
-            lastSiteId = Sites.BIQUGE
-            p.edit().putBoolean("storeBiqugeDefault", true).apply()
+        if (lastSiteId != Sites.COPY && lastSiteId != Sites.JM && lastSiteId != Sites.IKAN &&
+            lastSiteId != Sites.NOVEL
+        ) {
+            lastSiteId = Sites.COPY
         }
-        val parsed = runCatching {
-            val raw = p.getString("webSites", "[]") ?: "[]"
-            val arr = JSONArray(raw)
-            (0 until arr.length()).map { i ->
-                val o = arr.getJSONObject(i)
-                WebSite(
-                    o.getString("id"),
-                    o.getString("name").removeSuffix(".com"),
-                    o.optString("url"),
-                    o.optBoolean("enabled", true),
-                    o.optString("lastError"),
-                    o.optInt("itemCount"),
-                    o.optString("kind", "html"),
-                )
-            }
+        val saved = runCatching {
+            val arr = JSONArray(p.getString("webSites", "[]") ?: "[]")
+            (0 until arr.length()).map { arr.getJSONObject(it) }
         }.getOrDefault(emptyList())
-        val cleaned = parsed.filterNot { s ->
-            s.id == "ru" || s.kind == "ru" || s.url.contains("rumanhua", true) || s.name.contains("动漫大全")
+        return Sites.defaults.map { base ->
+            val s = saved.firstOrNull { it.optString("id") == base.id }
+            base.copy(
+                enabled = true,
+                lastError = s?.optString("lastError").orEmpty(),
+                itemCount = s?.optInt("itemCount") ?: 0,
+            )
         }
-        fun keepSite(s: WebSite): Boolean {
-            if (s.id == "legado-b778fe6b" || s.kind == "legado-b778fe6b" || s.id.startsWith("xiu2-") || s.kind == "legado-xiu2") return false
-            if (s.id == Sites.JM || s.name.contains("禁漫天堂") || Sites.kindOf(s) == Sites.JM) return true
-            if (s.id == Sites.JJ || s.kind == Sites.JJ || s.url.contains("jjmh.top", true) || s.name.contains("简简")) return false
-            if (s.id == Sites.ALBUM || s.kind == Sites.ALBUM || s.url.contains("nsfwx", true) || s.name.contains("相簿")) return false
-            if (s.name.trim() == "漫画源") return false
-            return true
-        }
-        fun droppedNovel(s: WebSite) = (
-            s.id == Sites.BIQUGE2 || s.id == Sites.BIQUGE3 ||
-                s.name == "笔趣阁2" || s.name == "笔趣阁3" ||
-                s.url.contains("biquge5200", true) || s.url.contains("8tsw.com", true))
-        val rawKept = cleaned.filter { keepSite(it) }
-        val kept = rawKept.filterNot { droppedNovel(it) || (it.id.startsWith("native22-") && XiuSources.rule(it.id)==null) }.toMutableList()
-        if(!p.getBoolean("native22AddedV1",false)) {
-            XiuSources.sites().forEach { site->if(kept.none { it.id==site.id })kept.add(site) }
-            p.edit().putBoolean("native22AddedV1",true).apply()
-        }
-        val dropped = kept != rawKept
-        val seedMore = !p.getBoolean("sitesSeededV201", false)
-        val purge203 = !p.getBoolean("sitesSeededV203", false)
-        val ensure205 = !p.getBoolean("sitesSeededV205", false)
-        val ensure010 = !p.getBoolean("sitesSeededV010", false)
-        val ensure012 = !p.getBoolean("sitesSeededV012", false)
-        val ensure013 = !p.getBoolean("sitesSeededV013", false)
-        val ensure100 = !p.getBoolean("sitesSeededV100", false)
-        if (!p.getBoolean("sitesSeededV23", false) || seedMore || purge203 || ensure205 || ensure010 || ensure012 || ensure013 || ensure100 || dropped || kept.size != cleaned.size) {
-            val merged = kept.toMutableList()
-            merged.removeAll { it.id in setOf("island", "harbor", "mist") }
-            Sites.defaults.forEach { d ->
-                val idx = merged.indexOfFirst { s ->
-                    s.id == d.id || urlsMatch(s.url, d.url) ||
-                        (d.id == Sites.JM && (s.name.contains("禁漫天堂") || s.kind == Sites.JM)) ||
-                        (d.id == Sites.IKAN && (s.kind == Sites.IKAN || s.url.contains("ikanhm", true) || s.name.contains("爱看韩漫") || s.name.contains("爱看漫画"))) ||
-                        (d.id == Sites.BIQUGE && (s.id == Sites.BIQUGE || s.url.contains("biquge365", true) || s.url.contains("bqg5.com", true) || s.name == "笔趣阁"))
-                }
-                val isJm = d.id == Sites.JM || Sites.kindOf(d) == Sites.JM
-                if (isJm) {
-                    if (idx < 0) merged.add(0, d)
-                } else if (idx >= 0) {
-                    val cur = merged[idx]
-                    if (cur.url.isBlank()) {
-                        merged[idx] = cur.copy(name = d.name, url = d.url, kind = d.kind)
-                    } else if (cur.kind.isBlank() || cur.kind == "html") {
-                        merged[idx] = cur.copy(kind = d.kind)
-                    }
-                } else {
-                    merged.add(d)
-                }
-            }
-            merged.forEachIndexed { i, s ->
-                if (s.id == Sites.IKAN && s.name != "爱看韩漫") merged[i] = s.copy(name = "爱看韩漫")
-            }
-            if (ensure012) {
-                val builtin = Sites.defaults.first { it.id == Sites.BIQUGE }
-                val bqIdx = merged.indexOfFirst { s ->
-                    s.id == Sites.BIQUGE ||
-                        (s.kind == Sites.BIQUGE && (s.url.contains("biquge365", true) || s.url.contains("bqg5.com", true)))
-                }
-                if (bqIdx >= 0) {
-                    val cur = merged[bqIdx]
-                    merged[bqIdx] = cur.copy(name = builtin.name, url = builtin.url, kind = Sites.BIQUGE)
-                } else {
-                    merged.add(0, builtin)
-                }
-                val hasCopy = merged.any { s ->
-                    s.id == Sites.COPY || s.kind == Sites.COPY ||
-                        s.url.contains("copy5000", true) || s.name.contains("拷贝漫画")
-                }
-                if (!hasCopy) {
-                    val copy = Sites.defaults.first { it.id == Sites.COPY }
-                    val at = merged.indexOfFirst { it.id == Sites.BIQUGE }.let { if (it < 0) 0 else it + 1 }
-                    merged.add(at, copy)
-                }
-            }
-            if (ensure100) {
-                val builtin = Sites.defaults.first { it.id == Sites.BIQUGE }
-                val bqIdx = merged.indexOfFirst { s ->
-                    s.id == Sites.BIQUGE || s.name == "笔趣阁" || s.url.contains("bqg5.com", true)
-                }
-                if (bqIdx >= 0) {
-                    val cur = merged[bqIdx]
-                    merged[bqIdx] = cur.copy(name = builtin.name, url = builtin.url, kind = Sites.BIQUGE)
-                }
-            }
-            merged.removeAll { droppedNovel(it) }
-            if (merged.none { it.id == lastSiteId }) {
-                lastSiteId = merged.firstOrNull { it.id == Sites.JM }?.id.orEmpty()
-            }
-            setWebSites(merged)
-            p.edit()
-                .putBoolean("sitesSeededV23", true)
-                .putBoolean("sitesSeededV201", true)
-                .putBoolean("sitesSeededV203", true)
-                .putBoolean("sitesSeededV205", true)
-                .putBoolean("sitesSeededV010", true)
-                .putBoolean("sitesSeededV012", true)
-                .putBoolean("sitesSeededV013", true)
-                .putBoolean("sitesSeededV100", true)
-                .apply()
-            return merged
-        }
-        return kept.ifEmpty { Sites.defaults.also { setWebSites(it) } }
     }
 
     fun setWebSites(list: List<WebSite>) {
@@ -602,44 +406,6 @@ class Prefs(context: Context) {
         p.edit().putString("webSites", arr.toString()).apply()
     }
 
-    fun sourceEnabled(id: String, default: Boolean = true) = p.getBoolean("src_$id", default)
-
-    fun setSourceEnabled(id: String, enabled: Boolean) {
-        p.edit().putBoolean("src_$id", enabled).apply()
-    }
-
-    fun customSources(): List<Source> {
-        val raw = p.getString("customSources", "[]") ?: "[]"
-        return runCatching {
-            val arr = JSONArray(raw)
-            (0 until arr.length()).map { i ->
-                val o = arr.getJSONObject(i)
-                Source(
-                    o.getString("id"),
-                    o.getString("name"),
-                    o.optString("summary"),
-                    o.optBoolean("enabled", true),
-                    o.optString("url"),
-                )
-            }
-        }.getOrDefault(emptyList())
-    }
-
-    fun setCustomSources(list: List<Source>) {
-        val arr = JSONArray()
-        list.forEach { s ->
-            arr.put(
-                JSONObject()
-                    .put("id", s.id)
-                    .put("name", s.name)
-                    .put("summary", s.summary)
-                    .put("enabled", s.enabled)
-                    .put("url", s.url),
-            )
-        }
-        p.edit().putString("customSources", arr.toString()).apply()
-    }
-
     fun reading(): ReadingPrefs {
         val raw = p.getString("reading", "") ?: ""
         if (raw.isBlank()) return ReadingPrefs()
@@ -651,29 +417,23 @@ class Prefs(context: Context) {
                 modeHint = o.optBoolean("modeHint", false),
                 navOverlay = o.optBoolean("navOverlay", false),
                 pageAnim = o.optBoolean("pageAnim", true),
-                rotation = o.optString("rotation", "lock-portrait"),
+                rotation = rotationOf(o.optString("rotation", "portrait")),
                 bgColor = o.optString("bgColor", "black"),
                 fullscreen = o.optBoolean("fullscreen", true),
                 keepScreenOn = o.optBoolean("keepScreenOn", true),
                 showPageNum = o.optBoolean("showPageNum", true),
                 skipRead = o.optBoolean("skipRead", false),
-                skipFiltered = o.optBoolean("skipFiltered", true),
                 chapterTransition = o.optBoolean("chapterTransition", true),
                 navLayout = o.optString("navLayout", "default"),
                 reverseTap = o.optString("reverseTap", "none"),
                 zoomMode = o.optString("zoomMode", "fit"),
                 zoomPos = o.optString("zoomPos", "auto"),
-                cropEdges = o.optBoolean("cropEdges", false),
-                splitDouble = o.optBoolean("splitDouble", false),
                 webtoonNav = o.optString("webtoonNav", "default"),
                 webtoonReverseTap = o.optString("webtoonReverseTap", "none"),
                 sidePad = o.optString("sidePad", "none"),
                 hideSens = o.optString("hideSens", "low"),
-                webtoonCrop = o.optBoolean("webtoonCrop", false),
-                webtoonSplit = o.optBoolean("webtoonSplit", false),
                 tapTurn = o.optBoolean("tapTurn", true),
                 volumeTurn = o.optBoolean("volumeTurn", false),
-                longPressMenu = o.optBoolean("longPressMenu", true),
                 savePageFolder = o.optBoolean("savePageFolder", false),
                 filterOn = o.optBoolean("filterOn", false),
                 filterR = o.optDouble("filterR", 0.0).toFloat(),
@@ -685,7 +445,6 @@ class Prefs(context: Context) {
                 invert = o.optBoolean("invert", false),
                 brightnessOn = o.optBoolean("brightnessOn", false),
                 brightness = o.optDouble("brightness", 0.0).toFloat(),
-                barInk = o.optString("barInk", "blue"),
             )
         }.getOrDefault(ReadingPrefs())
     }
@@ -703,23 +462,17 @@ class Prefs(context: Context) {
             .put("keepScreenOn", r.keepScreenOn)
             .put("showPageNum", r.showPageNum)
             .put("skipRead", r.skipRead)
-            .put("skipFiltered", r.skipFiltered)
             .put("chapterTransition", r.chapterTransition)
             .put("navLayout", r.navLayout)
             .put("reverseTap", r.reverseTap)
             .put("zoomMode", r.zoomMode)
             .put("zoomPos", r.zoomPos)
-            .put("cropEdges", r.cropEdges)
-            .put("splitDouble", r.splitDouble)
             .put("webtoonNav", r.webtoonNav)
             .put("webtoonReverseTap", r.webtoonReverseTap)
             .put("sidePad", r.sidePad)
             .put("hideSens", r.hideSens)
-            .put("webtoonCrop", r.webtoonCrop)
-            .put("webtoonSplit", r.webtoonSplit)
             .put("tapTurn", r.tapTurn)
             .put("volumeTurn", r.volumeTurn)
-            .put("longPressMenu", r.longPressMenu)
             .put("savePageFolder", r.savePageFolder)
             .put("filterOn", r.filterOn)
             .put("filterR", r.filterR.toDouble())
@@ -731,22 +484,10 @@ class Prefs(context: Context) {
             .put("invert", r.invert)
             .put("brightnessOn", r.brightnessOn)
             .put("brightness", r.brightness.toDouble())
-            .put("barInk", r.barInk)
         p.edit().putString("reading", o.toString()).apply()
     }
 
-    fun exportJson(library: List<String>, favorites: List<String>, sources: List<Source>): String {
-        val src = JSONArray()
-        sources.forEach { s ->
-            src.put(
-                JSONObject()
-                    .put("id", s.id)
-                    .put("name", s.name)
-                    .put("summary", s.summary)
-                    .put("enabled", s.enabled)
-                    .put("url", s.url),
-            )
-        }
+    fun exportJson(library: List<String>, favorites: List<String>): String {
         val hist = JSONArray(history)
         val prog = JSONObject()
         progress.forEach { (k, pr) ->
@@ -759,33 +500,15 @@ class Prefs(context: Context) {
                     .put("at", pr.at),
             )
         }
-        val sites = JSONArray()
-        webSites().forEach { s ->
-            sites.put(
-                JSONObject()
-                    .put("id", s.id)
-                    .put("name", s.name)
-                    .put("url", s.url)
-                    .put("enabled", s.enabled)
-                    .put("lastError", s.lastError)
-                    .put("itemCount", s.itemCount)
-                    .put("kind", s.kind),
-            )
-        }
         return JSONObject()
             .put("v", 4)
             .put("colorMode", colorMode.name)
-            .put("liquid", liquid)
-            .put("glassAlpha", glassAlpha)
-            .put("predictiveBack", predictiveBack)
             .put("lang", lang)
             .put("backupFreq", backupFreq)
             .put("library", JSONArray(library))
             .put("favorites", JSONArray(favorites))
             .put("history", hist)
             .put("progress", prog)
-            .put("webSites", sites)
-            .put("sources", src)
             .put("reading", p.getString("reading", "{}") ?: "{}")
             .toString(2)
     }
@@ -793,12 +516,9 @@ class Prefs(context: Context) {
     fun importJson(json: String): BackupData? {
         return runCatching {
             val o = JSONObject(json)
-            o.optString("colorMode").takeIf { it.isNotBlank() }?.let {
-                runCatching { colorMode = ColorSchemeMode.valueOf(it) }
+            o.optString("colorMode").takeIf { it.isNotBlank() }?.let { raw ->
+                runCatching { colorMode = ColorSchemeMode.valueOf(raw.removePrefix("Monet")) }
             }
-            if (o.has("liquid")) liquid = o.getBoolean("liquid")
-            if (o.has("glassAlpha")) glassAlpha = o.getDouble("glassAlpha").toFloat()
-            if (o.has("predictiveBack")) predictiveBack = o.getBoolean("predictiveBack")
             if (o.has("lang")) lang = o.getString("lang")
             if (o.has("backupFreq")) backupFreq = o.getString("backupFreq")
             fun arr(key: String) = o.optJSONArray(key)?.let { a ->
@@ -817,24 +537,6 @@ class Prefs(context: Context) {
                     }
                 }
             }
-            if (o.has("webSites")) {
-                val sa = o.optJSONArray("webSites")
-                if (sa != null) {
-                    val list = (0 until sa.length()).map { i ->
-                        val s = sa.getJSONObject(i)
-                        WebSite(
-                            s.getString("id"),
-                            s.getString("name"),
-                            s.optString("url"),
-                            s.optBoolean("enabled", true),
-                            s.optString("lastError"),
-                            s.optInt("itemCount"),
-                            s.optString("kind", "html"),
-                        )
-                    }
-                    setWebSites(list)
-                }
-            }
             if (o.has("reading")) {
                 val r = o.opt("reading")
                 when (r) {
@@ -842,14 +544,7 @@ class Prefs(context: Context) {
                     is String -> if (r.isNotBlank()) p.edit().putString("reading", r).apply()
                 }
             }
-            val srcArr = o.optJSONArray("sources")
-            val src = if (srcArr != null) {
-                (0 until srcArr.length()).map { i ->
-                    val s = srcArr.getJSONObject(i)
-                    Source(s.getString("id"), s.getString("name"), s.optString("summary"), s.optBoolean("enabled", true), s.optString("url"))
-                }
-            } else emptyList()
-            BackupData(lib, fav, hist, src)
+            BackupData(lib, fav, hist)
         }.getOrNull()
     }
 
@@ -864,29 +559,14 @@ class Prefs(context: Context) {
         p.edit().putBoolean("clearedNovelsV22", true).apply()
     }
 
-    private fun migrateMiuix100() {
-        if (p.getBoolean("themeMiuix100", false)) return
-        val seed = p.getInt("themeSeed", 0xFF00A870.toInt())
-        val edit = p.edit().putBoolean("themeMiuix100", true)
-        if (seed == 0xFF00A870.toInt()) edit.putInt("themeSeed", 0xFF3482FF.toInt())
-        edit.apply()
-    }
-
-    private fun migrateColorOS17() {
-        if (p.getBoolean("themeColorOS17", false)) return
-        val seed = p.getInt("themeSeed", 0xFF00A870.toInt())
-        val edit = p.edit().putBoolean("themeColorOS17", true)
-        if (!p.contains("themeSeed") || seed == 0xFF3482FF.toInt()) {
-            edit.putInt("themeSeed", 0xFF00A870.toInt())
-        }
-        edit.apply()
-    }
-
     private fun csv(key: String, fallback: String) =
         (p.getString(key, fallback) ?: fallback).split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
-    private fun urlsMatch(a: String, b: String): Boolean {
-        fun n(s: String) = s.removePrefix("https://").removePrefix("http://").trimEnd('/')
-        return n(a).contains(n(b)) || n(b).contains(n(a))
-    }
+}
+
+/** 旋转只保留 跟随系统/竖屏/横屏；旧的「锁定竖屏/锁定横屏」与竖屏/横屏效果相同，迁移过去。 */
+internal fun rotationOf(raw: String) = when (raw) {
+    "lock-portrait", "" -> "portrait"
+    "lock-landscape" -> "landscape"
+    else -> raw
 }

@@ -1,7 +1,5 @@
 package com.shumanyu.app
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -13,8 +11,6 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
@@ -24,9 +20,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         LocalStore.init(this)
         AppLog.init(this)
-        XiuSources.init(this)
         Notify.ensureChannel(this)
-        requestStartupPerms()
         applyPeek(peekOn())
         window.decorView.post { followSystemRefresh() }
         enableEdgeToEdge()
@@ -152,23 +146,4 @@ class MainActivity : ComponentActivity() {
         shield = v
     }
 
-    private fun requestStartupPerms() {
-        val prefs = getSharedPreferences("shumanyu", MODE_PRIVATE)
-        if (prefs.getBoolean("permsAskedV22", false)) return
-        prefs.edit().putBoolean("permsAskedV22", true).apply()
-        val needed = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= 33) {
-            needed += Manifest.permission.POST_NOTIFICATIONS
-            needed += Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            needed += Manifest.permission.READ_EXTERNAL_STORAGE
-            needed += Manifest.permission.WRITE_EXTERNAL_STORAGE
-        }
-        val missing = needed.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (missing.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), 22)
-        }
-    }
 }

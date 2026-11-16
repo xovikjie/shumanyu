@@ -1,5 +1,10 @@
 pluginManagement {
     repositories {
+        // The build box sits behind a slow route to Google/Maven Central; Aliyun mirrors
+        // first, the canonical repositories stay as fallbacks.
+        maven("https://maven.aliyun.com/repository/gradle-plugin")
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://maven.aliyun.com/repository/central")
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -9,6 +14,9 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://maven.aliyun.com/repository/central")
+        maven("https://maven.aliyun.com/repository/public")
         google()
         mavenCentral()
     }
@@ -16,17 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "ShuManYu"
 include(":app")
-
-// Miuix main sources pinned in third_party/miuix/UPSTREAM.md.
-include(":miuix-core")
-project(":miuix-core").projectDir = file("third_party/miuix/miuix-core")
-include(":miuix-shader")
-project(":miuix-shader").projectDir = file("third_party/miuix/miuix-shader")
-include(":miuix-squircle")
-project(":miuix-squircle").projectDir = file("third_party/miuix/miuix-squircle")
-include(":miuix-ui")
-project(":miuix-ui").projectDir = file("third_party/miuix/miuix-ui")
-include(":miuix-preference")
-project(":miuix-preference").projectDir = file("third_party/miuix/miuix-preference")
-include(":miuix-icons")
-project(":miuix-icons").projectDir = file("third_party/miuix/miuix-icons")

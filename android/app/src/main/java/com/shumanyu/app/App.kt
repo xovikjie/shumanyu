@@ -1,5 +1,53 @@
 package com.shumanyu.app
 
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.foundation.selection.selectable
+
+import com.itos.coui.shape.CouiCapsuleShape
+
+import com.itos.coui.effect.couiButtonFeedback
+
+import androidx.compose.foundation.border
+
+import com.itos.coui.shape.CouiShape
+
+import com.itos.coui.topappbar.TopAppBarSurface
+
+import com.itos.coui.text.Text as CouiText
+
+import com.itos.coui.text.CouiTextKind
+
+import com.itos.coui.layout.Item
+
+import com.itos.coui.checkbox.Checkbox
+import com.itos.coui.radiobutton.RadioButton
+
+import com.itos.coui.theme.CouiTheme
+
+import com.itos.coui.dialog.CouiDialogPlacement
+
+import com.itos.coui.dialog.CouiDialogAction
+
+
+import com.itos.coui.scroll.rememberCouiOverscrollEffect
+
+import com.itos.coui.scroll.couiVerticalScroll
+
+import com.itos.coui.layout.Group
+
+import com.itos.coui.icons.CouiIcons
+import com.itos.coui.effect.CouiFloatingRenderer
+import com.itos.coui.menu.CouiMenuItem
+import com.itos.coui.menu.Menu
+import com.itos.coui.menu.couiMenuAnchor
+import com.itos.coui.menu.rememberCouiMenuAnchor
+import com.itos.coui.navigation.CouiNavigationItem
+import com.itos.coui.navigation.NavigationBar
+import com.itos.coui.backdrop.CouiBackdrop
+import com.itos.coui.backdrop.couiBackdrop
+import com.itos.coui.backdrop.rememberCouiBackdrop
+
 import android.app.Activity
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.layout.layout
@@ -16,10 +64,6 @@ import android.os.Build
 import android.provider.MediaStore
 import android.graphics.drawable.ColorDrawable
 import android.view.WindowManager
-import android.webkit.CookieManager
-import android.webkit.WebStorage
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -35,12 +79,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -63,9 +104,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.os.Handler
 import android.os.Looper
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -77,8 +115,11 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,6 +128,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -177,7 +219,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
@@ -196,26 +237,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import androidx.compose.runtime.snapshots.Snapshot
 import kotlin.math.roundToInt
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.SmallTopAppBar
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.basic.Search
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.RadioButtonPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.theme.ColorSchemeMode
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ColorFilter
@@ -223,254 +244,137 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import top.yukonga.miuix.kmp.theme.ThemeController
-import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 
 private val LocalScreenLive = compositionLocalOf { true }
 
-private enum class Tab { Shelf, History, Discover, Mine }
+internal enum class Tab { Shelf, History, Discover, Mine }
 
 private sealed interface Screen {
     data object Tabs : Screen
     data object Search : Screen
+    /** Independent local search page for 书架 ("shelf") or 历史 ("history"). */
+    data class LocalSearch(val scope: String) : Screen
     data class Remote(val id: String) : Screen
     data class RemoteReader(val workId: String, val chapterId: String, val page: Int = 0) : Screen
-    data object Sources : Screen
-    data object Sites : Screen
-    data class Web(val url: String, val title: String, val backTo: String = "") : Screen
+    data object SourcePick : Screen
     data object Backup : Screen
     data object Theme : Screen
     data object Reading : Screen
     data object Language : Screen
     data object Feedback : Screen
     data object Intro : Screen
-    data object Lab : Screen
     data object More : Screen
     data object Folders : Screen
-    data object Oss : Screen
     data object Notes : Screen
     data object Font : Screen
-    data object Gate : Screen
     data class Folder(val id: String) : Screen
     data object Banner : Screen
     data object Storage : Screen
-    data class StorageBin(val kind: String) : Screen
 }
 
-private data class Copy(
+internal data class Copy(
     val shelf: String,
     val discover: String,
     val search: String,
     val mine: String,
-    val discoverSub: String,
-    val searchSub: String,
-    val myShelf: String,
     val favOnly: String,
     val all: String,
-    val onlyFav: String,
     val emptyShelf: String,
-    val hot: String,
-    val onlineSrc: String,
-    val findStories: String,
-    val searchHint: String,
-    val recommend: String,
-    val prefs: String,
-    val darkTheme: String,
     val followSystem: String,
     val light: String,
     val dark: String,
-    val predictive: String,
-    val predictiveSum: String,
-    val dataBackup: String,
-    val sources: String,
-    val sourcesSum: String,
     val backup: String,
     val backupSum: String,
-    val about: String,
     val appearance: String,
-    val appearanceSum: String,
     val language: String,
     val startRead: String,
-    val fav: String,
-    val faved: String,
     val addShelf: String,
     val inShelf: String,
     val catalogTitle: String,
-    val prev: String,
     val next: String,
-    val export: String,
-    val restore: String,
     val reset: String,
-    val addSource: String,
-    val sourceName: String,
-    val sourceNote: String,
-    val importBtn: String,
-    val designBody: String,
     val zhCN: String,
     val zhTW: String,
     val en: String,
-    val weekly: String,
     val history: String,
     val historySub: String,
     val bookstore: String,
-    val animeAll: String,
-    val siteList: String,
-    val addSite: String,
-    val siteUrl: String,
-    val noSites: String,
     val emptyCat: String,
-    val clearHistory: String,
-    val reserved: String,
-    val crawlNow: String,
     val emptyHistory: String,
     val offline: String,
-    val featured: String,
-    val manage: String,
     val loading: String,
     val newChapters: String,
-    val help: String,
-    val helpBody: String,
-    val fillSite: String,
-    val checkSites: String,
-    val newSites: String,
-    val gotIt: String,
     val cancel: String,
-    val siteName: String,
-    val checking: String,
     val feedback: String,
     val feedbackSum: String,
-    val copyLog: String,
-    val shareLog: String,
-    val searchEmpty: String,
     val themeSettings: String,
     val themeSettingsSum: String,
     val intro: String,
-    val introSum: String,
     val introBody: String,
     val noNewChapters: String,
-    val checkingUpdates: String,
 )
 
-private fun copyOf(lang: String) = when (lang) {
+internal fun copyOf(lang: String) = when (lang) {
     "zh-TW" -> Copy(
         "書架", "書城", "搜尋", "我的",
-        "連接你的漫畫源", "漫畫、作者或類型",
-        "我的書架", "收藏", "全部", "只看收藏", "你最近沒有看過\n請去書城看一本唄",
-        "熱門漫畫", "線上漫畫源 · 即時更新", "發現新故事", "搜尋書漫嶼", "推薦",
-        "偏好設定", "深色主題", "跟隨系統", "淺色", "深色",
-        "預測性返回", "從邊緣滑動預覽上一頁",
-        "資料源與備份", "線上漫畫源", "筆趣閣小說 · 書城直接看",
-        "備份與還原", "匯出 / 還原本機資料",
-        "關於", "介面", "MIUIX", "語言",
-        "開始閱讀", "收藏", "已收藏", "加入書架", "已加入書架", "目錄",
-        "上一頁", "下一頁", "匯出本機資料", "從文字還原", "重設本機資料",
-        "匯入自訂資料源", "源名稱", "JSON / URL 備註", "解鎖更多精彩內容",
-        "書漫嶼介面回到 MIUIX：系統藍、紙感底和底欄。",
-        "簡體中文", "繁體中文", "English", "本週閱讀與儲存都在這台裝置上",
-        "歷史", "看過的都會留在這裡", "書城", "目錄", "網站列表", "新增網站", "網站地址",
-        "還沒有網站。填寫地址後將自動抓取漫畫目錄。", "該分類暫無內容，新增網站後自動抓取",
-        "清空歷史", "已預留，填寫網址後抓取", "抓取目錄",
-        "你最近還沒有看誒", "目前沒有網路，已顯示離線內容",
-        "精選網站", "管理", "正在載入…", "發現新章節",
-        "使用幫助",
-        "此功能支援數千來自網路上的漫畫站，在使用此功能前，需要針對你想看的漫畫站製作「收錄規則」，或者匯入網友製作的規則\n\n小提醒：\n1. 不是所有添加的網站都會出現在此，有些網站只支援搜尋功能\n2. 按「▼」可以按分組查看網站，可以在網站管理中設定分組\n3. 長按網站的名稱可以刪除或置頂\n4. 「自動檢查」可以清除失效無用網站\n5. 建議每隔一段時間做一次全面的「自動檢查」，實驗證明有些網站時好時壞\n6. 不定期會有可以匯入的新來源，有空打開「匯入網站」功能看看",
-        "填寫網站", "檢查網站", "新增網站", "知道了", "取消", "網站名稱", "正在檢查…",
-        "回饋", "提取問題日誌", "複製日誌", "分享日誌", "輸入書名搜尋",
-        "主題設定", "深色、圖示與取色",
-        "軟體介紹", "書漫嶼是什麼",
-        "書漫嶼是一款集成漫畫和小說源的應用，目前還處於早期階段，漫畫源、小說源以及各項功能還在持續更新中....\n\n軟體僅供學習交流，請勿用於商業用途。\n\n建議與反饋：https://t.me/shumanyu1",
-        "暫無新章節", "正在檢查更新…",
+        "收藏", "全部", "書架空空如也", "跟隨系統",
+        "淺色", "深色", "備份與還原", "匯出 / 還原本機資料",
+        "介面", "語言", "開始閱讀", "加入書架",
+        "已加入書架", "目錄", "下一頁", "重設本機資料",
+        "簡體中文", "繁體中文", "English", "歷史",
+        "看過的都會留在這裡", "書城", "該分類暫無內容", "您暫時沒有瀏覽記錄",
+        "目前沒有網路，已顯示離線內容", "正在載入…", "發現新章節", "取消",
+        "回饋", "提取問題日誌", "主題設定", "深色模式與背景欄",
+        "軟體介紹", "書漫嶼是一款集成漫畫和小說源的應用，目前還處於早期階段，漫畫源、小說源以及各項功能還在持續更新中....\n\n軟體僅供學習交流，請勿用於商業用途。\n\n建議與反饋：https://t.me/shumanyu1", "暫無新章節",
     )
     "en" -> Copy(
         "Library", "Store", "Search", "Me",
-        "Connected sources", "Title, author or genre",
-        "My library", "Favorites", "All", "Favorites", "Nothing here yet\nGo find a title in the store",
-        "Trending", "Online sources", "New stories", "Search ShuManYu", "Suggested",
-        "Preferences", "Dark theme", "Follow system", "Light", "Dark",
-        "Predictive back", "Swipe from the edge to preview the previous screen",
-        "Sources & backup", "Online sources", "Biquge novels in the store",
-        "Backup & restore", "Export or restore local data",
-        "About", "Appearance", "MIUIX", "Language",
-        "Read", "Save", "Saved", "Add to shelf", "On shelf", "Chapters",
-        "Prev", "Next", "Export data", "Restore from text", "Reset local data",
-        "Add a custom source", "Source name", "JSON / URL note", "Add source",
-        "The interface is back on MIUIX: system blue, a paper surface, and a bottom bar.",
-        "Simplified Chinese", "Traditional Chinese", "English", "Reading and storage stay on this device",
-        "History", "Everything you’ve read stays here", "Store", "Catalog", "Sites", "Add site", "Website URL",
-        "No websites yet. Add a URL to fetch listings.", "Nothing in this category yet",
-        "Clear history", "Reserved — fill in a URL to crawl", "Crawl",
-        "You haven't read anything lately", "You're offline — showing saved titles",
-        "Featured sites", "Manage", "Loading…", "New chapters",
-        "Help",
-        "This bookstore can crawl thousands of comic sites. Add a site URL, or import a friend's rules, before browsing.\n\nTips:\n1. Not every added site appears here — some only support search\n2. Use ▼ to group sites in site management\n3. Long-press a name to pin or delete it\n4. Auto-check removes dead sites\n5. Run a full check now and then; some sites flicker\n6. New sources show up in Import from time to time",
-        "Add site", "Check sites", "New sites", "Got it", "Cancel", "Site name", "Checking…",
-        "Feedback", "Export problem logs", "Copy log", "Share log", "Type a title to search",
-        "Theme", "Dark, icon and Monet",
-        "About", "What this app is",
-        "ShuManYu is an early app for manga and novel sources. Sources and features are still being updated....\n\nFor study and exchange only. Not for commercial use.\n\nFeedback: https://t.me/shumanyu1",
-        "No new chapters", "Checking for updates…",
+        "Favorites", "All", "Your shelf is empty", "Follow system",
+        "Light", "Dark", "Backup & restore", "Export or restore local data",
+        "Appearance", "Language", "Read", "Add to shelf",
+        "On shelf", "Chapters", "Next", "Reset local data",
+        "Simplified Chinese", "Traditional Chinese", "English", "History",
+        "Everything you’ve read stays here", "Store", "Nothing in this category yet", "No browsing history yet",
+        "You're offline — showing saved titles", "Loading…", "New chapters", "Cancel",
+        "Feedback", "Export problem logs", "Theme", "Dark mode and header",
+        "About", "ShuManYu is an early app for manga and novel sources. Sources and features are still being updated....\n\nFor study and exchange only. Not for commercial use.\n\nFeedback: https://t.me/shumanyu1", "No new chapters",
     )
     else -> Copy(
         "书架", "书城", "搜索", "我的",
-        "连接你的漫画源", "漫画、作者或类型",
-        "我的书架", "收藏", "全部", "仅看收藏", "你最近没有看过\n请去书城看一本呗",
-        "热门漫画", "在线漫画源 · 实时更新", "发现新故事", "搜索书漫屿", "推荐",
-        "偏好设置", "深色主题", "跟随系统", "浅色", "深色",
-        "预测性返回", "从边缘滑动预览上一页",
-        "数据源与备份", "在线漫画源", "笔趣阁小说 · 书城直接看",
-        "备份与恢复", "导出 / 恢复本地数据",
-        "关于", "界面", "MIUIX", "语言",
-        "开始阅读", "收藏", "已收藏", "加入书架", "已加入书架", "目录",
-        "上一页", "下一页", "导出本地数据", "从文本恢复", "重置本地数据",
-        "导入自定义数据源", "源名称", "JSON / URL 备注", "解锁更多精彩内容",
-        "书漫屿界面回到 MIUIX：系统蓝、纸感底和底栏。",
-        "简体中文", "繁体中文", "English", "本周阅读与存储都在这台设备上",
-        "历史", "看过的都会留在这里", "书城", "目录", "网站列表", "添加网站", "网站地址",
-        "还没有网站。填写地址后将自动抓取漫画目录。", "该分类暂无内容，添加网站后自动抓取",
-        "清空历史", "已预留，填写网址后抓取", "抓取目录",
-        "你最近还没有看诶", "当前没有网络，已显示离线内容",
-        "精选网站", "管理", "正在加载…", "发现新章节",
-        "使用帮助",
-        "此功能支持数千个来自网络的漫画站。使用前请针对想看的漫画站填写网址，或导入朋友制作的规则。\n\n小提醒：\n1. 不是所有添加的网站都会出现在此，有些网站只支持搜索\n2. 按「▼」可以按分组查看网站，可以在网站管理中设定分组\n3. 长按网站名称可以删除或置顶\n4. 「自动检查」可以清除失效无用网站\n5. 建议每隔一段时间做一次全面检查，有些网站时好时坏\n6. 不定期会有可以导入的新来源，有空打开「填写网站」看看",
-        "填写网站", "检查网站", "新增网站", "知道了", "取消", "网站名称", "正在检查…",
-        "反馈", "提取问题日志", "复制日志", "分享日志", "输入书名搜索",
-        "主题设置", "深色、图标与取色",
-        "软件介绍", "书漫屿是什么",
-        "书漫屿是一款集成漫画和小说源的应用，目前还处于早期阶段，漫画源、小说源以及各项功能还在持续更新中....\n\n软件仅供学习交流，请勿用于商业用途。\n\n建议与反馈：https://t.me/shumanyu1",
-        "暂无新章节", "正在检查更新…",
+        "收藏", "全部", "书架空空如也", "跟随系统",
+        "浅色", "深色", "备份与恢复", "导出 / 恢复本地数据",
+        "界面", "语言", "开始阅读", "加入书架",
+        "已加入书架", "目录", "下一页", "重置本地数据",
+        "简体中文", "繁体中文", "English", "历史",
+        "看过的都会留在这里", "书城", "该分类暂无内容", "您暂时没有浏览记录",
+        "当前没有网络，已显示离线内容", "正在加载…", "发现新章节", "取消",
+        "反馈", "提取问题日志", "主题设置", "深色模式与背景栏",
+        "软件介绍", "书漫屿是一款集成漫画和小说源的应用，目前还处于早期阶段，漫画源、小说源以及各项功能还在持续更新中....\n\n软件仅供学习交流，请勿用于商业用途。\n\n建议与反馈：https://t.me/shumanyu1", "暂无新章节",
     )
 }
 
 @Composable
 fun ShuManYuApp() {
     val context = LocalContext.current
-    val prefs = remember { Prefs(context).also { it.enableFoldersOfficial() } }
+    val prefs = remember { Prefs(context) }
     var colorMode by remember { mutableStateOf(prefs.colorMode) }
     var langPref by remember { mutableStateOf(prefs.lang) }
     val lang = resolveLang(langPref, LocalConfiguration.current)
-    var predictive by remember { mutableStateOf(prefs.predictiveBack) }
     var incognito by remember { mutableStateOf(prefs.incognito) }
-    var allowAdult by remember { mutableStateOf(prefs.allowAdult) }
     var peekGuard by remember { mutableStateOf(prefs.peekGuard) }
-    var iconStyle by remember { mutableStateOf(prefs.iconStyle) }
     val forceTablet = remember { prefs.forceTablet }
     var tabletAsked by remember { mutableStateOf(prefs.forceTablet) }
-    var themeSeed by remember { mutableIntStateOf(prefs.themeSeed) }
-    var themePalette by remember { mutableStateOf(prefs.themePalette) }
     var fontGear by remember { mutableStateOf(prefs.fontGear) }
     var histLayout by remember { mutableStateOf(prefs.histLayout) }
-    var appBrowser by remember { mutableStateOf(prefs.appBrowser) }
     var mineBanner by remember { mutableStateOf(prefs.mineBanner) }
-    var storageRev by remember { mutableIntStateOf(0) }
     val copy = remember(lang) { copyOf(lang) }
-    val paletteStyle = remember(themePalette) {
-        runCatching { ThemePaletteStyle.valueOf(themePalette) }.getOrDefault(ThemePaletteStyle.TonalSpot)
+    val systemDark = isSystemInDarkTheme()
+    val dark = when (colorMode) {
+        ColorSchemeMode.Dark -> true
+        ColorSchemeMode.Light -> false
+        ColorSchemeMode.System -> systemDark
     }
-    val controller = remember(colorMode, themeSeed, paletteStyle) {
-        ThemeController(colorMode, keyColor = Color(themeSeed), paletteStyle = paletteStyle)
-    }
-
-    MiuixTheme(controller = controller) {
+    com.itos.coui.theme.CouiTheme(darkTheme = dark, colorScheme = couiScheme(dark)) {
         val baseDensity = LocalDensity.current
         val fontScale = when (fontGear) {
             "s" -> 0.85f
@@ -478,13 +382,8 @@ fun ShuManYuApp() {
             "l" -> 1.18f
             else -> baseDensity.fontScale
         }
-        CompositionLocalProvider(LocalDensity provides Density(baseDensity.density, fontScale = fontScale)) {
-        val systemDark = isSystemInDarkTheme()
-        val dark = when (colorMode) {
-            ColorSchemeMode.MonetDark, ColorSchemeMode.Dark -> true
-            ColorSchemeMode.MonetLight, ColorSchemeMode.Light -> false
-            else -> systemDark
-        }
+        CompositionLocalProvider(androidx.compose.foundation.LocalIndication provides NoPressIndication, LocalDensity provides Density(baseDensity.density, fontScale = fontScale)) {
+        FirstLaunchPermissions(lang)
         val view = LocalView.current
         SideEffect {
             val window = (view.context as Activity).window
@@ -506,42 +405,25 @@ fun ShuManYuApp() {
 
         var screen by remember { mutableStateOf<Screen>(Screen.Tabs) }
         var tab by remember { mutableStateOf(if(prefs.openStoreOnFirstLaunch())Tab.Discover else Tab.Shelf) }
-        val purgedBiquge = remember { prefs.purgeLegacyBiquge(); true }
-        val library = remember { mutableStateListOf<String>().also { it.addAll(prefs.library.filter { id -> id !in NOVEL_IDS && (purgedBiquge) }) } }
+        val library = remember { mutableStateListOf<String>().also { it.addAll(prefs.library.filter { id -> id !in NOVEL_IDS }) } }
         val favorites = remember { mutableStateListOf<String>().also { it.addAll(prefs.favorites.filter { id -> id !in NOVEL_IDS }) } }
         val history = remember { mutableStateListOf<String>().also { it.addAll(prefs.history.filter { id -> id !in NOVEL_IDS }) } }
         val readProgress = remember { mutableStateMapOf<String, Progress>().also { it.putAll(prefs.progress) } }
         val webSites = remember { mutableStateListOf<WebSite>().also { it.addAll(prefs.webSites()) } }
-        val crawled = remember {
-            mutableStateListOf<CrawledWork>().also { list ->
-                list.addAll(
-                    LocalStore.loadAllListings().filter { w ->
-                        w.siteId != "legado-b778fe6b" && !w.siteId.startsWith("xiu2-") && w.siteId != "ru" && w.siteId != Sites.BIQUGE2 && w.siteId != Sites.BIQUGE3 &&
-                            !w.href.contains("rumanhua", true) && !w.id.startsWith("ru")
-                    },
-                )
-            }
+        val crawled = remember { mutableStateListOf<CrawledWork>().also { it.addAll(LocalStore.loadAllListings()) } }
+        var storeSite by remember {
+            mutableStateOf(
+                prefs.lastSiteId.takeIf { it == Sites.NOVEL || it == Sites.JM || it == Sites.IKAN }
+                    ?: Sites.COPY,
+            )
         }
         LaunchedEffect(Unit) {
             prefs.customCover = true
             prefs.savePhotos = true
-            LocalStore.dropListing(Sites.BIQUGE2)
-            LocalStore.dropListing(Sites.BIQUGE3)
-            LocalStore.dropListing("xiu2-collection")
-            LocalStore.dropListing("legado-b778fe6b")
             applyCoverMode(context, prefs, crawled, true)
-        }
-        val sources = remember {
-            mutableStateListOf<Source>().also { list ->
-                defaultSources().forEach { s ->
-                    list.add(s.copy(enabled = prefs.sourceEnabled(s.id, s.enabled)))
-                }
-                list.addAll(prefs.customSources())
-            }
         }
         var query by remember { mutableStateOf("") }
         var discoverCols by remember { mutableIntStateOf(2) }
-        val enabledIds = sources.filter { it.enabled }.map { it.id }.toSet()
         var online by remember { mutableStateOf(Net.online(context)) }
 
         fun persistLibrary() { prefs.library = library.toList() }
@@ -566,22 +448,16 @@ fun ShuManYuApp() {
         DisposableEffect(Unit) {
             onDispose { persistHistory() }
         }
-        fun persistSources() {
-            sources.filter { s -> defaultSources().none { it.id == s.id } }.let { prefs.setCustomSources(it) }
-            sources.forEach { prefs.setSourceEnabled(it.id, it.enabled) }
-        }
         fun persistSites() { prefs.setWebSites(webSites.toList()) }
         val folders = remember { mutableStateListOf<BookFolder>().also { it.addAll(prefs.folders) } }
         var folderBook by remember { mutableStateOf<String?>(null) }
         fun saveFolders() { prefs.folders = folders.toList() }
         fun openFolderSheet(id: String) { folderBook = id }
         var histMenu by remember { mutableStateOf(false) }
-        var histFind by remember { mutableStateOf(false) }
         var histQ by remember { mutableStateOf("") }
         var histPick by remember { mutableStateOf(false) }
         val histSelected = remember { mutableStateListOf<String>() }
         var histAsk by remember { mutableStateOf("") }
-        var shelfFind by remember { mutableStateOf(false) }
         var shelfQ by remember { mutableStateOf("") }
         var shelfPick by remember { mutableStateOf(false) }
         val shelfSelected = remember { mutableStateListOf<String>() }
@@ -607,48 +483,21 @@ fun ShuManYuApp() {
                 shelfMenu = false
             }
         }
-        val nativeCrawls=remember { mutableMapOf<String,Thread>() }
-        fun crawlSite(site: WebSite, category: String = "推荐", silent: Boolean = true, append: Boolean = false, onDone: () -> Unit = {}) {
+        fun crawlSite(site: WebSite, category: String = "推荐", silent: Boolean = true, onDone: () -> Unit = {}) {
             if (!Net.online(context)) {
-                if (!silent) Toast.makeText(context, copy.offline, Toast.LENGTH_SHORT).show()
+                if (!silent) CouiToast.show(copy.offline)
                 onDone()
                 return
             }
-            fun applyListing(category: String, items: List<CrawledWork>, replaceBin: Boolean = false) {
+            fun applyListing(category: String, items: List<CrawledWork>) {
                 if (items.isEmpty()) return
-                val copySite = Sites.kindOf(site) == Sites.COPY
-                val stamp = if (copySite) null else listingBin(category)
+                val ranked = category != "推荐" && category != "推薦"
                 val tagged = items.map { item ->
                     val withCat = if (item.cat.isBlank()) item.copy(cat = category) else item
-                    if (Sites.kindOf(site) == XiuSources.KIND) {
-                        XiuSources.forCategory(withCat, category)
-                    } else if (copySite && category != "推荐" && category != "推薦") {
-                        withCat.copy(listed = withCat.listed.filterNot { tagEq(it, category) } + category)
-                    } else when {
-                        stamp == null -> withCat
-                        binFits(withCat, stamp) ->
-                            withCat.copy(listed = withCat.listed.filterNot { tagEq(it, stamp) } + stamp)
-                        sameTag(withCat.cat, stamp) && withCat.cat != "推荐" && withCat.cat != "推薦" ->
-                            withCat.copy(cat = "")
-                        else -> withCat
-                    }
+                    if (ranked) withCat.copy(listed = withCat.listed.filterNot { tagEq(it, category) } + category) else withCat
                 }
                 val byId = LinkedHashMap<String, CrawledWork>()
                 crawled.filter { it.siteId == site.id && it.cat != "搜索" }.forEach { byId[it.id] = it }
-                if (replaceBin && stamp != null) {
-                    val incoming = tagged.map { it.id }.toHashSet()
-                    for ((id, prev) in byId) {
-                        if (id in incoming) continue
-                        if (!prev.listed.any { tagEq(it, stamp) } && !tagEq(prev.cat, stamp)) continue
-                        val nextListed = prev.listed.filterNot { tagEq(it, stamp) }
-                        val nextCat = when {
-                            prev.cat == "推荐" || prev.cat == "推薦" -> prev.cat
-                            tagEq(prev.cat, stamp) -> "全部"
-                            else -> prev.cat
-                        }
-                        byId[id] = prev.copy(listed = nextListed, cat = nextCat)
-                    }
-                }
                 for (item in tagged) {
                     val prev = byId[item.id]
                     byId[item.id] = if (prev == null) item else mergeListed(prev, item, category)
@@ -674,7 +523,7 @@ fun ShuManYuApp() {
                     pending = null
                     applyListing(category, snap)
                 }
-                val (items, err) = if(append) XiuSources.more(site.id,category) else Crawler.fetch(site.url, site.id, category) { partial ->
+                val (items, err) = Crawler.fetch(site.url, site.id, category) { partial ->
                     if (partial.isEmpty()) return@fetch
                     main.post {
                         patchCovers(partial)
@@ -695,7 +544,7 @@ fun ShuManYuApp() {
                         webSites[i] = webSites[i].copy(lastError = err.orEmpty(), itemCount = items.size)
                     }
                     if (items.isNotEmpty()) {
-                        applyListing(category, items, replaceBin = !append)
+                        applyListing(category, items)
                         patchCovers(items)
                         LocalStore.saveListing(site.id, crawled.filter { it.siteId == site.id })
                     } else if (err != null) {
@@ -703,12 +552,11 @@ fun ShuManYuApp() {
                     }
                     persistSites()
                     if (!silent && err != null && items.isEmpty()) {
-                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                        CouiToast.show(err)
                     }
                     onDone()
                 }
             }
-            if(Sites.kindOf(site)==XiuSources.KIND)nativeCrawls.put(site.id,worker)?.interrupt()
             worker.start()
         }
         LaunchedEffect(Unit) {
@@ -718,26 +566,18 @@ fun ShuManYuApp() {
         fun pinDetailBack() {
             detailBack = when (val s = screen) {
                 Screen.Search -> Screen.Search
+                is Screen.LocalSearch -> s
                 Screen.Folders -> Screen.Folders
                 is Screen.Folder -> s
                 is Screen.Remote, is Screen.RemoteReader -> detailBack
                 else -> Screen.Tabs
             }
         }
-        var adultBlock by remember { mutableStateOf(false) }
         fun openWork(id: String) {
-            if (!allowAdult && isHiddenAdult(id, crawled, webSites)) {
-                adultBlock = true
-                return
-            }
             pinDetailBack()
             screen = Screen.Remote(id)
         }
         fun openRead(id: String) {
-            if (!allowAdult && isHiddenAdult(id, crawled, webSites)) {
-                adultBlock = true
-                return
-            }
             val disk = LocalStore.loadWork(id)
             val chs = disk?.chapters?.sortedBy { it.index }.orEmpty()
             val saved = readProgress[id]
@@ -750,13 +590,10 @@ fun ShuManYuApp() {
                 openWork(id)
             }
         }
-        fun openSite(url: String, title: String, backTo: String = "") {
+        /** Opens a page in the system browser (the in-app browser was removed in 0.1.0). */
+        fun openSite(url: String) {
             if (url.isBlank()) return
-            if (appBrowser) {
-                screen = Screen.Web(url, title, backTo)
-            } else {
-                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-            }
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
         }
         fun markRead(id: String, chapterId: String, page: Int) {
             val m = catalog.find { it.id == id }
@@ -776,16 +613,15 @@ fun ShuManYuApp() {
             }
         }
 
-        fun refreshLibrary() {
+        fun startRefreshLibrary() {
             if (shelfBusy) return
             if (!Net.online(context)) {
-                Toast.makeText(context, copy.offline, Toast.LENGTH_SHORT).show()
+                CouiToast.show(copy.offline)
                 return
             }
             val ids = library.toList()
             shelfBusy = true
-            val icon = AppIcons.mipmap(iconStyle)
-            ShelfNotes.hold("更新中...", icon)
+            CouiToast.hold("更新中...")
             Notify.live(context, 0, ids.size, "更新中...")
             Thread {
                 val news = ArrayList<ChapterBump>()
@@ -807,32 +643,25 @@ fun ShuManYuApp() {
                         },
                     )
                     if (found.isEmpty()) {
-                        ShelfNotes.flash("没有章节更新诶😩", icon)
+                        CouiToast.show("没有章节更新诶😩")
                     } else {
-                        ShelfNotes.flash("有章节更新快去通知栏看看是哪一本！", icon)
+                        CouiToast.show("有章节更新快去通知栏看看是哪一本！")
                         found.forEach { Notify.chapter(context, it.title, it.index, it.chapterTitle) }
                     }
                 }
             }.start()
         }
+        fun refreshLibrary() = startRefreshLibrary()
 
         val shelfScroll = rememberLazyListState()
         val histScroll = rememberLazyListState()
         val discoverScroll = rememberLazyListState()
         val discoverCat = remember { mutableStateOf("推荐") }
         val mineScroll = rememberLazyListState()
-        val discoverSiteScroll = rememberScrollState()
         val libraryKey = library.joinToString(",")
         val historyKey = history.joinToString(",")
-        val crawledKey = crawled.joinToString(",") { "${it.id}:${it.siteId}" }
-        val gateLibrary = remember(libraryKey, crawledKey, allowAdult) {
-            val raw = library.toList()
-            if (allowAdult) raw else raw.filter { !isHiddenAdult(it, crawled, webSites) }
-        }
-        val gateHistory = remember(historyKey, crawledKey, allowAdult) {
-            val raw = history.toList()
-            if (allowAdult) raw else raw.filter { !isHiddenAdult(it, crawled, webSites) }
-        }
+        val gateLibrary = remember(libraryKey) { library.toList() }
+        val gateHistory = remember(historyKey) { history.toList() }
         val tabContent: @Composable (PaddingValues) -> Unit = { padding ->
             Column(Modifier.fillMaxSize()) {
                 if (!online) {
@@ -840,10 +669,10 @@ fun ShuManYuApp() {
                         copy.offline,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MiuixTheme.colorScheme.surface)
+                            .background(AppTheme.colorScheme.surface)
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         fontSize = 13.sp,
-                        color = MiuixTheme.colorScheme.primary,
+                        color = AppTheme.colorScheme.primary,
                     )
                 }
                 Box(Modifier.weight(1f)) {
@@ -858,7 +687,6 @@ fun ShuManYuApp() {
                             opts = shelfOpts,
                             selecting = shelfPick,
                             selected = shelfSelected.toSet(),
-                            query = shelfQ,
                             refreshing = shelfBusy,
                             tablet = forceTablet,
                             onOpen = { openWork(it) },
@@ -901,7 +729,6 @@ fun ShuManYuApp() {
                             padding = padding,
                             copy = copy,
                             lang = lang,
-                            query = histQ,
                             history = gateHistory,
                             progress = readProgress,
                             crawled = crawled,
@@ -925,83 +752,21 @@ fun ShuManYuApp() {
                         Tab.Discover -> DiscoverPane(
                             padding = padding,
                             copy = copy,
+                            lang = lang,
                             crawled = crawled,
                             webSites = webSites,
+                            storeSite = storeSite,
                             online = online,
-                            allowAdult = allowAdult,
                             cols = discoverCols,
                             asList = forceTablet,
-                            initialSiteId = prefs.lastSiteId,
                             onOpen = { openWork(it) },
-                            onSites = { screen = Screen.Sites },
                             onSearch = { screen = Screen.Search },
-                            onWeb = { url, title -> openSite(url, title) },
+                            onPickSource = { screen = Screen.SourcePick },
+                            onWeb = { openSite(it) },
                             onToggleCols = { discoverCols = if (discoverCols == 2) 3 else 2 },
                             onCrawl = { site, cat, done -> crawlSite(site, cat, silent = true, onDone = done) },
-                            onCrawlMore = { site, cat, done -> crawlSite(site, cat, silent = true, append = true, onDone = done) },
-                            onSelectSite = { prefs.lastSiteId = it },
-                            onResolvedCovers = { resolved ->
-                                resolved.filter { it.cover.isNotBlank() }.forEach { item ->
-                                    val at=crawled.indexOfFirst { it.id==item.id }
-                                    if(at>=0 && crawled[at].cover.isBlank())crawled[at]=crawled[at].copy(cover=item.cover)
-                                }
-                                resolved.firstOrNull()?.siteId?.let { id -> LocalStore.saveListing(id,crawled.filter { it.siteId==id }) }
-                            },
-                            onAddUrl = { name, raw ->
-                                var url = raw.trim()
-                                if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://$url"
-                                if (!Crawler.isSafe(url)) {
-                                    Toast.makeText(context, if (lang == "en") "Unsupported URL" else "网址不安全或不支持", Toast.LENGTH_SHORT).show()
-                                    return@DiscoverPane
-                                }
-                                val host = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
-                                val dup = webSites.any { s ->
-                                    val h = runCatching { java.net.URL(s.url).host.lowercase() }.getOrDefault("")
-                                    h.isNotBlank() && h == host
-                                }
-                                if (dup) {
-                                    Toast.makeText(context, if (lang == "en") "Already added" else if (lang == "zh-TW") "已經新增過" else "已经添加过", Toast.LENGTH_SHORT).show()
-                                    return@DiscoverPane
-                                }
-                                val id = "site-${System.currentTimeMillis()}"
-                                val named = name.ifBlank { siteNameFrom(url) }
-                                val kind = Sites.kindOf(WebSite("tmp", named, url))
-                                val site = WebSite(id, named, url, true, kind = kind)
-                                webSites.add(site)
-                                persistSites()
-                                crawlSite(site, "推荐", silent = false) {
-                                    val n = webSites.find { it.id == id }?.itemCount ?: 0
-                                    if (n > 0) Toast.makeText(context, if (lang == "en") "Fetched $n" else "抓到 $n 部", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            onCheckSites = {
-                                if (webSites.isEmpty()) return@DiscoverPane
-                                Toast.makeText(context, copy.checking, Toast.LENGTH_SHORT).show()
-                                val snapshot = webSites.toList()
-                                Thread {
-                                    val rows = snapshot.map { s ->
-                                        val err = if (s.url.isBlank()) "没有网址" else Crawler.ping(s.url)
-                                        s.id to err
-                                    }
-                                    Handler(Looper.getMainLooper()).post {
-                                        rows.forEach { (id, err) ->
-                                            val i = webSites.indexOfFirst { it.id == id }
-                                            if (i >= 0) webSites[i] = webSites[i].copy(lastError = err.orEmpty())
-                                        }
-                                        persistSites()
-                                        val ok = rows.count { it.second == null }
-                                        val msg = when (lang) {
-                                            "en" -> "OK $ok / ${rows.size}"
-                                            "zh-TW" -> "可用 $ok / ${rows.size}"
-                                            else -> "可用 $ok / ${rows.size}"
-                                        }
-                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                    }
-                                }.start()
-                            },
                             listState = discoverScroll,
                             catState = discoverCat,
-                            siteScroll = discoverSiteScroll,
                             bleedBottom = !forceTablet,
                         )
                         Tab.Mine -> MinePane(
@@ -1017,16 +782,6 @@ fun ShuManYuApp() {
                                 "en" -> copy.en
                                 else -> copy.zhCN
                             },
-                            labTitle = when (lang) {
-                                "en" -> "Lab"
-                                "zh-TW" -> "實驗室"
-                                else -> "实验室"
-                            },
-                            labSum = when (lang) {
-                                "en" -> "Experimental"
-                                "zh-TW" -> "實驗功能"
-                                else -> "实验功能"
-                            },
                             onTheme = { screen = Screen.Theme },
                             onReading = { screen = Screen.Reading },
                             readingLabel = moreOf(lang).reading,
@@ -1041,7 +796,6 @@ fun ShuManYuApp() {
                             onHistory = { tab = Tab.History },
                             onIntro = { screen = Screen.Intro },
                             onFeedback = { screen = Screen.Feedback },
-                            onLab = { screen = Screen.Lab },
                             onStorage = { screen = Screen.Storage },
                             onBackup = { screen = Screen.Backup },
                             onMore = { screen = Screen.More },
@@ -1053,10 +807,11 @@ fun ShuManYuApp() {
             }
         }
 
-        fun visibleHistoryIds(): List<String> {
-            val q = histQ.trim()
-            if (q.isBlank()) return history.toList()
-            return history.filter { id ->
+        fun visibleHistoryIds(): List<String> = history.toList()
+        fun titleHits(ids: List<String>, raw: String): List<String> {
+            val q = raw.trim()
+            if (q.isBlank()) return emptyList()
+            return ids.filter { id ->
                 val m = catalog.find { it.id == id }
                 val w = crawled.find { it.id == id }
                 val diskTitle = LocalStore.loadWork(id)?.work?.title
@@ -1067,14 +822,9 @@ fun ShuManYuApp() {
             Screen.Search -> Screen.Tabs
             is Screen.Remote -> detailBack
             is Screen.RemoteReader -> Screen.Remote(s.workId)
-            Screen.Sources -> Screen.Lab
-            is Screen.Web -> if (s.backTo.isNotBlank()) Screen.Remote(s.backTo) else Screen.Tabs
-            is Screen.StorageBin -> Screen.Storage
             is Screen.Folder -> Screen.Folders
-            Screen.Oss -> Screen.Intro
             Screen.Notes -> Screen.Intro
             Screen.Font -> Screen.More
-            Screen.Gate -> Screen.More
             Screen.Banner -> Screen.Theme
             else -> Screen.Tabs
         }
@@ -1085,17 +835,15 @@ fun ShuManYuApp() {
                     query = ""
                     screen = Screen.Tabs
                 }
+                is Screen.LocalSearch -> {
+                    if (s.scope == "shelf") shelfQ = "" else histQ = ""
+                    screen = Screen.Tabs
+                }
                 is Screen.Remote -> screen = detailBack
                 is Screen.RemoteReader -> screen = Screen.Remote(s.workId)
-                Screen.Sources -> screen = Screen.Lab
-                Screen.Sites -> screen = Screen.Tabs
-                is Screen.Web -> screen = if (s.backTo.isNotBlank()) Screen.Remote(s.backTo) else Screen.Tabs
-                is Screen.StorageBin -> screen = Screen.Storage
                 is Screen.Folder -> screen = Screen.Folders
-                Screen.Oss -> screen = Screen.Intro
                 Screen.Notes -> screen = Screen.Intro
                 Screen.Font -> screen = Screen.More
-                Screen.Gate -> screen = Screen.More
                 Screen.Banner -> screen = Screen.Theme
                 else -> screen = Screen.Tabs
             }
@@ -1113,35 +861,29 @@ fun ShuManYuApp() {
         }
         NavigationBackHandler(
             state = navState,
-            isBackEnabled = predictive && screen != Screen.Tabs,
+            isBackEnabled = screen != Screen.Tabs,
             onBackCompleted = { leaveScreen() },
         )
-        BackHandler(enabled = !predictive && screen != Screen.Tabs) { leaveScreen() }
         fun screenToken(s: Screen): String = when (s) {
             Screen.Tabs -> "tabs"
             Screen.Search -> "search"
+            is Screen.LocalSearch -> "local-search:${s.scope}"
             is Screen.Remote -> "remote:${s.id}"
             is Screen.RemoteReader -> "reader:${s.workId}:${s.chapterId}"
-            Screen.Sources -> "sources"
-            Screen.Sites -> "sites"
-            is Screen.Web -> "web:${s.url}"
+            Screen.SourcePick -> "source-pick"
             Screen.Backup -> "backup"
             Screen.Theme -> "theme"
             Screen.Reading -> "reading"
             Screen.Language -> "language"
             Screen.Feedback -> "feedback"
             Screen.Intro -> "intro"
-            Screen.Lab -> "lab"
             Screen.More -> "more"
             Screen.Folders -> "folders"
-            Screen.Oss -> "oss"
             Screen.Notes -> "notes"
             Screen.Font -> "font"
-            Screen.Gate -> "gate"
             Screen.Banner -> "banner"
             is Screen.Folder -> "folder:${s.id}"
             Screen.Storage -> "storage"
-            is Screen.StorageBin -> "bin:${s.kind}"
         }
         fun layerChain(s: Screen): List<Screen> {
             val out = ArrayList<Screen>(4)
@@ -1162,162 +904,148 @@ fun ShuManYuApp() {
         fun Draw(which: Screen, live: Boolean) {
         when (val s = which) {
             Screen.Tabs -> {
-                val topBar: @Composable () -> Unit = {
+                val topBar: @Composable (CouiBackdrop?) -> Unit = { tabBackdrop ->
                     when (tab) {
                         Tab.Discover -> Unit
-                        Tab.History -> Column(Modifier.fillMaxWidth()) {
-                            AlignTitleBar(if (histPick) "已选 ${histSelected.size}" else copy.history, opaque = false) {
+                        Tab.History -> FloatingTabHeader(
+                            backdrop = tabBackdrop,
+                            title = if (histPick) "已选 ${histSelected.size}" else copy.history,
+                            actions = {
                                 if (histPick) {
-                                    Text(
-                                        if (lang == "en") "Cancel" else "取消",
-                                        color = MiuixTheme.colorScheme.onSurface,
-                                        modifier = Modifier
-                                            .clickable {
-                                                histPick = false
-                                                histSelected.clear()
-                                            }
-                                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                                    )
-                                    Text(
-                                        if (lang == "en") "All" else "全选",
-                                        color = MiuixTheme.colorScheme.primary,
-                                        modifier = Modifier
-                                            .clickable {
-                                                histSelected.clear()
-                                                histSelected.addAll(visibleHistoryIds())
-                                            }
-                                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                                    )
-                                } else {
-                                    IconButton(onClick = {
-                                        histFind = !histFind
-                                        if (!histFind) histQ = ""
-                                    }) {
-                                        Icon(MiuixIcons.Basic.Search, contentDescription = copy.search, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                                    ToolbarTextButton(if (lang == "en") "Cancel" else "取消") {
+                                        histPick = false
+                                        histSelected.clear()
                                     }
+                                    ToolbarGap()
+                                    ToolbarTextButton(if (lang == "en") "All" else "全选", accent = true) {
+                                        histSelected.clear()
+                                        histSelected.addAll(visibleHistoryIds())
+                                    }
+                                } else {
+                                    IconButton(onClick = { histQ = ""; screen = Screen.LocalSearch("history") }) {
+                                        Icon(CouiIcons.Outlined.Search, contentDescription = if (lang == "en") "Search" else "搜索", tint = AppTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                                    }
+                                    ToolbarGap()
                                     CornerMenu(
                                         expanded = histMenu,
                                         onExpandedChange = { histMenu = it },
                                         actions = listOf(
-                                            (if (histLayout == "h") {
-                                                if (lang == "en") "Vertical layout" else "改为竖排"
-                                            } else {
-                                                if (lang == "en") "Horizontal layout" else "改为横排"
-                                            }) to {
+                                            MenuAction(
+                                                if (histLayout == "h") (if (lang == "en") "Vertical layout" else "切换竖排") else (if (lang == "en") "Horizontal layout" else "切换横排"),
+                                                ShuIcons.Rows,
+                                            ) {
                                                 histLayout = if (histLayout == "h") "v" else "h"
                                                 prefs.histLayout = histLayout
                                             },
-                                            moreOf(lang).clearAllHistory to { histAsk = "all" },
-                                            moreOf(lang).batchDeleteHistory to {
+                                            MenuAction(moreOf(lang).batchDeleteHistory, ShuIcons.SelectMany) {
                                                 histPick = true
                                                 histSelected.clear()
                                                 histSelected.addAll(visibleHistoryIds())
                                             },
+                                            MenuAction(moreOf(lang).clearAllHistory, ShuIcons.Trash, dividerBefore = true) { histAsk = "all" },
                                         ),
                                     )
                                 }
-                            }
-                            if (histFind && !histPick) {
-                                TextField(
-                                    value = histQ,
-                                    onValueChange = { histQ = it },
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
-                                    label = if (lang == "en") "Search comics and novels in history" else if (lang == "zh-TW") "搜尋歷史漫畫、小說" else "搜索历史漫画、小说",
-                                )
-                            }
-                        }
-                        Tab.Shelf -> Column(Modifier.fillMaxWidth()) {
-                            AlignTitleBar(if (shelfPick) "已选 ${shelfSelected.size}" else copy.shelf, opaque = false) {
-                            if (shelfPick) {
-                                Text(
-                                    if (lang == "en") "Cancel" else "取消",
-                                    color = MiuixTheme.colorScheme.onSurface,
-                                    modifier = Modifier
-                                        .clickable {
-                                            shelfPick = false
-                                            shelfSelected.clear()
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                                )
-                                Text(
-                                    if (lang == "en") "All" else "全选",
-                                    color = MiuixTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .clickable {
-                                            shelfSelected.clear()
-                                            shelfSelected.addAll(library)
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                                )
-                            } else {
-                                IconButton(onClick = {
-                                    shelfFind = !shelfFind
-                                    if (!shelfFind) shelfQ = ""
-                                }) {
-                                    Icon(MiuixIcons.Basic.Search, contentDescription = copy.search, tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
-                                }
-                                IconButton(onClick = { shelfSheet = true }) {
-                                    Icon(
-                                        Icons.Filter,
-                                        contentDescription = "筛选",
-                                        tint = if (shelfOpts.filtering) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(24.dp),
+                            },
+                        )
+                        Tab.Shelf -> FloatingTabHeader(
+                            backdrop = tabBackdrop,
+                            title = if (shelfPick) "已选 ${shelfSelected.size}" else copy.shelf,
+                            actions = {
+                                if (shelfPick) {
+                                    ToolbarTextButton(if (lang == "en") "Cancel" else "取消") {
+                                        shelfPick = false
+                                        shelfSelected.clear()
+                                    }
+                                    ToolbarGap()
+                                    ToolbarTextButton(if (lang == "en") "All" else "全选", accent = true) {
+                                        shelfSelected.clear()
+                                        shelfSelected.addAll(library)
+                                    }
+                                } else {
+                                    IconButton(onClick = { shelfQ = ""; screen = Screen.LocalSearch("shelf") }) {
+                                        Icon(CouiIcons.Outlined.Search, contentDescription = if (lang == "en") "Search" else "搜索", tint = AppTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                                    }
+                                    ToolbarGap()
+                                    IconButton(onClick = { shelfSheet = true }) {
+                                        Icon(
+                                            CouiIcons.Outlined.ListFilter,
+                                            contentDescription = "筛选",
+                                            tint = if (shelfOpts.filtering) AppTheme.colorScheme.primary else AppTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(24.dp),
+                                        )
+                                    }
+                                    ToolbarGap()
+                                    IconButton(onClick = { refreshLibrary() }) {
+                                        Icon(ShuIcons.Refresh, contentDescription = "刷新", tint = AppTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                                    }
+                                    ToolbarGap()
+                                    CornerMenu(
+                                        expanded = shelfMenu,
+                                        onExpandedChange = { shelfMenu = it },
+                                        actions = listOf(
+                                            MenuAction(if (lang == "en") "Select to remove" else if (lang == "zh-TW") "批量刪除" else "批量删除", ShuIcons.SelectMany) {
+                                                shelfPick = true
+                                                shelfSelected.clear()
+                                            },
+                                            MenuAction(if (lang == "en") "Clear shelf" else if (lang == "zh-TW") "清空書架" else "清空书架", ShuIcons.Trash, dividerBefore = true) {
+                                                shelfAskAll = true
+                                            },
+                                        ),
                                     )
                                 }
-                                IconButton(onClick = { refreshLibrary() }) {
-                                    Icon(Icons.Rotate, contentDescription = "刷新", tint = MiuixTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
-                                }
-                                CornerMenu(
-                                    expanded = shelfMenu,
-                                    onExpandedChange = { shelfMenu = it },
-                                    actions = listOf(
-                                        (if (lang == "en") "Select to remove" else if (lang == "zh-TW") "批量刪除" else "批量删除") to {
-                                            shelfPick = true
-                                            shelfSelected.clear()
-                                        },
-                                        (if (lang == "en") "Remove all" else if (lang == "zh-TW") "全部刪除" else "全部删除") to {
-                                            shelfAskAll = true
-                                        },
-                                    ),
-                                )
-                            }
-                            }
-                            if (shelfFind && !shelfPick) {
-                                TextField(
-                                    value = shelfQ,
-                                    onValueChange = { shelfQ = it },
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
-                                    label = if (lang == "en") "Search this shelf" else if (lang == "zh-TW") "搜尋當前書架" else "搜索当前书架",
-                                )
-                            }
-                        }
+                            },
+                        )
                         Tab.Mine -> Unit
                     }
                 }
         val floatingBar = !forceTablet
-        val navigationBackdrop = rememberLayerBackdrop()
         Box(Modifier.fillMaxSize()) {
-                key(colorMode, dark, themeSeed) {
+                key(colorMode, dark) {
                 Box(Modifier.fillMaxSize()) {
                 Row(
-                    Modifier
-                        .fillMaxSize()
-                        .layerBackdrop(navigationBackdrop),
+                    Modifier.fillMaxSize(),
                 ) {
                     if (forceTablet) {
                         TabletRail(tab = tab, copy = copy, onTab = { tab = it })
                     }
                     Scaffold(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        containerColor = MiuixTheme.colorScheme.surface,
+                        containerColor = AppTheme.colorScheme.surface,
                         topBar = {},
-                        bottomBar = {},
+                        bottomBar = {
+                            Box(Modifier.bottomBarVeil()) {
+                            if (floatingBar) {
+                                    // COUI 的底栏中间胶囊固定为左右附件预留 2×56dp + 间距；
+                                    // 本应用不用左右附件，把这部分宽度补回给底栏，胶囊就能按
+                                    // 16dp 页面边距铺满，同时保留官方的玻璃材质与拖拽动效。
+                                    val renderer = androidx.compose.runtime.remember { CouiFloatingRenderer() }
+                                    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                        // 胶囊目标宽度：左右各留 16dp，最多 300dp；比默认的 243dp 宽，
+                                        // 又不会像铺满那样显得过宽。
+                                        val capsule = minOf(maxWidth - 32.dp, 300.dp)
+                                        NavigationBar(
+                                            modifier = Modifier.requiredWidth(capsule + 168.dp),
+                                            renderer = renderer,
+                                            items = listOf(
+                                                CouiNavigationItem(copy.shelf, icon = ShuIcons.BookOpenOutlined, selectedIcon = CouiIcons.Filled.BookOpen),
+                                                CouiNavigationItem(copy.history, icon = ShuIcons.HistoryOutlined, selectedIcon = ShuIcons.HistoryFilled),
+                                                CouiNavigationItem(copy.discover, icon = ShuIcons.StoreOutlined, selectedIcon = ShuIcons.StoreFilled),
+                                                CouiNavigationItem(copy.mine, icon = ShuIcons.UserCircleOutlined, selectedIcon = CouiIcons.Filled.UserCircle),
+                                            ),
+                                            selectedIndex = tab.ordinal,
+                                            onSelection = { tab = Tab.entries[it] },
+                                            dark = dark,
+                                        )
+                                    }
+                                }
+                            }
+                        },
                     ) { scaffoldPad ->
                         var headPx by remember { mutableIntStateOf(0) }
                         val density = LocalDensity.current
                         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                        val gestureBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                        val bottomPad = if (floatingBar) gestureBottom + 64.dp + 16.dp else scaffoldPad.calculateBottomPadding()
+                        val bottomPad = scaffoldPad.calculateBottomPadding()
                         val barShown = tab == Tab.Shelf || tab == Tab.History
                         val barTop = if (headPx == 0) statusTop + 56.dp else with(density) { headPx.toDp() }
                         val contentPad = when (tab) {
@@ -1325,36 +1053,26 @@ fun ShuManYuApp() {
                             Tab.Discover -> PaddingValues(top = statusTop, bottom = bottomPad)
                             else -> PaddingValues(top = barTop, bottom = bottomPad)
                         }
+                        val tabBackdrop = rememberCouiBackdrop()
                         Box(Modifier.fillMaxSize()) {
-                            Box(Modifier.fillMaxSize()) { tabContent(contentPad) }
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .then(if (barShown) Modifier.couiBackdrop(tabBackdrop) else Modifier)
+                                    .background(AppTheme.colorScheme.surface),
+                            ) { tabContent(contentPad) }
                             if (barShown) {
                                 Box(
                                     Modifier
                                         .align(Alignment.TopCenter)
                                         .fillMaxWidth()
-                                        .background(MiuixTheme.colorScheme.surface)
                                         .onSizeChanged { headPx = it.height },
                                 ) {
-                                    topBar()
+                                    topBar(tabBackdrop)
                                 }
                             }
                         }
                     }
-                }
-                if (floatingBar) {
-                    FloatingBottomBar(
-                        backdrop = navigationBackdrop,
-                        selected = tab.ordinal,
-                        labels = listOf(copy.shelf, copy.history, copy.discover, copy.mine),
-                        icons = listOf(Icons.Book, Icons.Clock, Icons.Store, Icons.User),
-                        onSelect = { tab = Tab.entries[it] },
-                        accent = MiuixTheme.colorScheme.primary,
-                        dark = dark,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .navigationBarsPadding()
-                            .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                    )
                 }
                 }
                 }
@@ -1468,6 +1186,67 @@ fun ShuManYuApp() {
                 }
                 }
             }
+            is Screen.LocalSearch -> {
+                val shelfScope = s.scope == "shelf"
+                val q = if (shelfScope) shelfQ else histQ
+                val hits = remember(q, library.toList(), gateHistory, crawled.size) {
+                    titleHits(if (shelfScope) gateLibrary else gateHistory, q)
+                }
+                val searchList = rememberLazyListState()
+                SearchPage(
+                    query = q,
+                    onQuery = { if (shelfScope) shelfQ = it else histQ = it },
+                    hint = if (shelfScope) {
+                        if (lang == "en") "Search this shelf" else if (lang == "zh-TW") "搜尋書架" else "搜索书架"
+                    } else {
+                        if (lang == "en") "Search history" else if (lang == "zh-TW") "搜尋瀏覽記錄" else "搜索浏览记录"
+                    },
+                    cancel = copy.cancel,
+                    onCancel = { leaveScreen() },
+                ) { pad ->
+                    when {
+                        q.isBlank() -> Unit
+                        hits.isEmpty() -> EmptyState("(´・ω・`)", if (lang == "en") "No matching titles" else "没有找到相关的书", Modifier.padding(pad))
+                        shelfScope -> ShelfPane(
+                            padding = pad,
+                            copy = copy,
+                            library = hits,
+                            crawled = crawled,
+                            progress = readProgress,
+                            prefs = prefs,
+                            opts = ShelfOpts(),
+                            selecting = false,
+                            selected = emptySet(),
+                            onOpen = { openWork(it) },
+                            onToggle = {},
+                            onLong = {},
+                            onManual = {},
+                            onReorder = {},
+                            onTrash = {},
+                            onRefresh = {},
+                            refreshing = false,
+                            tablet = forceTablet,
+                            listState = searchList,
+                        )
+                        else -> HistoryPane(
+                            padding = pad,
+                            copy = copy,
+                            lang = lang,
+                            history = hits,
+                            progress = readProgress,
+                            crawled = crawled,
+                            selecting = false,
+                            selected = emptySet(),
+                            onOpen = { openWork(it) },
+                            onToggle = {},
+                            onLong = {},
+                            onTrash = {},
+                            layout = histLayout,
+                            listState = searchList,
+                        )
+                    }
+                }
+            }
             Screen.Search -> 
                 SearchPane(
                     copy = copy,
@@ -1475,8 +1254,7 @@ fun ShuManYuApp() {
                     onQuery = { query = it },
                     crawled = crawled,
                     webSites = webSites,
-                    allowAdult = allowAdult,
-                    siteId = prefs.lastSiteId,
+                    siteId = storeSite,
                     onBack = {
                         query = ""
                         screen = Screen.Tabs
@@ -1522,7 +1300,7 @@ fun ShuManYuApp() {
                         markRead(s.id, chId, page)
                         screen = Screen.RemoteReader(s.id, chId, page)
                     },
-                    onWeb = { url, title -> openSite(url, title, s.id) },
+                    onWeb = { url, _ -> openSite(url) },
                     foldersOn = true,
                     isFavorite = s.id in favorites,
                     onFolder = {
@@ -1558,32 +1336,24 @@ fun ShuManYuApp() {
                     },
                 )
             
-            Screen.Sources -> 
-                SourcesPane(copy, sources, onBack = { screen = Screen.Lab }, onChange = { persistSources() })
-            
-            Screen.Sites -> 
-                SitesPane(
-                    copy = copy,
-                    webSites = webSites,
-                    crawled = crawled,
-                    allowAdult = allowAdult,
+            Screen.SourcePick ->
+                SourcePickPane(
+                    lang = lang,
+                    selected = storeSite,
+                    onPick = {
+                        storeSite = it
+                        prefs.lastSiteId = it
+                        screen = Screen.Tabs
+                    },
                     onBack = { screen = Screen.Tabs },
-                    onChange = { persistSites() },
                 )
-            
-            is Screen.Web -> {
-                val back = { if (s.backTo.isNotBlank()) screen = Screen.Remote(s.backTo) else screen = Screen.Tabs }
-                
-                    WebPane(url = s.url, title = s.title, onBack = back)
-                
-            }
+
             Screen.Backup -> 
                 BackupPane(
                     copy = copy,
                     prefs = prefs,
                     library = library,
                     favorites = favorites,
-                    sources = sources,
                     onBack = { screen = Screen.Tabs },
                     onImported = { data ->
                         library.clear(); library.addAll(data.library.filter { it !in NOVEL_IDS }); persistLibrary()
@@ -1592,13 +1362,7 @@ fun ShuManYuApp() {
                         readProgress.clear(); readProgress.putAll(prefs.progress)
                         persistHistory()
                         webSites.clear(); webSites.addAll(prefs.webSites())
-                        if (data.sources.isNotEmpty()) {
-                            sources.clear()
-                            sources.addAll(data.sources)
-                            persistSources()
-                        }
                         colorMode = prefs.colorMode
-                        predictive = prefs.predictiveBack
                         langPref = prefs.lang
                     },
                 )
@@ -1609,24 +1373,7 @@ fun ShuManYuApp() {
                     lang = lang,
                     colorMode = colorMode,
                     onMode = { colorMode = it; prefs.colorMode = it },
-                    iconStyle = iconStyle,
-                    onIcon = {
-                        iconStyle = it
-                        prefs.iconStyle = it
-                        AppIcons.apply(context, it)
-                    },
-                    seed = themeSeed,
-                    onSeed = {
-                        themeSeed = it
-                        prefs.themeSeed = it
-                    },
-                    palette = themePalette,
-                    onPalette = {
-                        themePalette = it
-                        prefs.themePalette = it
-                    },
                     onBanner = { screen = Screen.Banner },
-                    prefs = prefs,
                     onBack = { screen = Screen.Tabs },
                 )
             
@@ -1637,7 +1384,6 @@ fun ShuManYuApp() {
                 IntroPane(
                     copy = copy,
                     onBack = { screen = Screen.Tabs },
-                    onOss = { screen = Screen.Oss },
                     onNotes = { screen = Screen.Notes },
                 )
             
@@ -1656,46 +1402,16 @@ fun ShuManYuApp() {
                     onBack = { screen = Screen.Tabs },
                 )
             
-            Screen.Lab -> 
-                LabPane(
-                    lang = lang,
-                    title = when (lang) {
-                        "en" -> "Lab"
-                        "zh-TW" -> "實驗室"
-                        else -> "实验室"
-                    },
-                    onBack = { screen = Screen.Tabs },
-                    seen = prefs.labSeen,
-                    onAck = { prefs.labSeen = true },
-                    appBrowser = appBrowser,
-                    onAppBrowser = {
-                        appBrowser = it
-                        prefs.appBrowser = it
-                    },
-                )
-            
             Screen.Storage -> 
                 StoragePane(
                     lang = lang,
+                    keep = (library + favorites + history + folders.flatMap { it.books }).toSet(),
                     onBack = { screen = Screen.Tabs },
-                    onOpen = { screen = Screen.StorageBin(it) },
-                    generation = storageRev,
                 )
-            
-            is Screen.StorageBin -> 
-                StorageListPane(kind = s.kind, lang = lang, onBack = {
-                    storageRev++
-                    screen = Screen.Storage
-                })
             
             Screen.More -> 
                 MorePane(
                     lang = lang,
-                    predictive = predictive,
-                    onPredictive = {
-                        predictive = it
-                        prefs.predictiveBack = it
-                    },
                     incognito = incognito,
                     onIncognito = {
                         incognito = it
@@ -1718,23 +1434,11 @@ fun ShuManYuApp() {
                             "zh-TW" -> "重新開啟應用後生效"
                             else -> "重启应用后生效"
                         }
-                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        CouiToast.show(msg)
                     },
-                    onOpenGate = { screen = Screen.Gate },
                     onBack = { screen = Screen.Tabs },
                 )
 
-            Screen.Gate ->
-                GatePane(
-                    lang = lang,
-                    allowAdult = allowAdult,
-                    onAllowAdult = {
-                        allowAdult = it
-                        prefs.allowAdult = it
-                    },
-                    onBack = { screen = Screen.More },
-                )
-            
             is Screen.Folder -> {
                 val folder = folders.find { it.id == s.id }
                 FolderPane(
@@ -1795,9 +1499,6 @@ fun ShuManYuApp() {
                     },
                 )
             
-            Screen.Oss -> 
-                OssPane(lang = lang, onBack = { screen = Screen.Intro })
-
             Screen.Notes ->
                 NotesPane(lang = lang, onBack = { screen = Screen.Intro })
             
@@ -1840,58 +1541,134 @@ fun ShuManYuApp() {
         }
         }
         val layers = remember(screen, detailBack) { layerChain(screen) }
-        val pageBg = MiuixTheme.colorScheme.surface.copy(alpha = 1f)
+        val pageBg = AppTheme.colorScheme.surface.copy(alpha = 1f)
         val shellBg = if (screen is Screen.RemoteReader) Color.Black else pageBg
         SideEffect {
             val window = (view.context as Activity).window
             window.setBackgroundDrawable(ColorDrawable(shellBg.toArgb()))
         }
-        val visibleLayers = if (backActive && layers.size >= 2) layers.takeLast(2) else listOf(layers.last())
-        Box(Modifier.fillMaxSize().background(shellBg)) {
-            visibleLayers.forEachIndexed { index, layer ->
-                val top = index == visibleLayers.lastIndex
+        // ---- 页面转场：一镜到底展开 / 收回（Expand.kt），与预测性返回手势整合 ----
+        val rootSize = remember { arrayOf(androidx.compose.ui.geometry.Size.Zero) }
+        val gesture = remember { androidx.compose.animation.core.Animatable(0f) }
+        val lastEdge = remember { intArrayOf(NavigationEvent.EDGE_NONE) }
+        if (backActive) lastEdge[0] = backEdge
+        LaunchedEffect(backActive, backProgress) {
+            if (backActive) gesture.snapTo(backProgress)
+            else if (gesture.value > 0f) gesture.animateTo(0f, tween(220, easing = PageMotion.FadeEase))
+        }
+        val shiftPx = with(density) { backShift.toPx() }
+        fun edgeShift(edge: Int, t: Float): Float = when (edge) {
+            NavigationEvent.EDGE_LEFT -> shiftPx * t
+            NavigationEvent.EDGE_RIGHT -> -shiftPx * t
+            else -> 0f
+        }
+        val nav = remember { PageNav(layers) { screenToken(it) } }
+        var navTick by remember { mutableIntStateOf(0) }
+        // 读一次 navTick：转场结束时 +1，触发重组以回到静止的单层绘制。
+        check(navTick >= 0)
+        val gNow = androidx.compose.runtime.snapshots.Snapshot.withoutReadObservation { gesture.value }
+        val transit = nav.update(
+            layers,
+            rootSize[0],
+            gestureV = 1f - PageMotion.GESTURE_SHRINK * gNow,
+            fallbackScale = 1f - 0.1f * gNow,
+            fallbackShift = edgeShift(lastEdge[0], gNow),
+        )
+        val anim = remember(transit?.id) { androidx.compose.animation.core.Animatable(transit?.from ?: 1f) }
+        LaunchedEffect(transit?.id) {
+            val t = transit ?: return@LaunchedEffect
+            // 新页在进度 0（不可见）的那一帧里完成首次组合与测量；之后每帧只改图层参数，不再重组二级页。
+            val ms = when {
+                t.origin == null -> PageMotion.FALLBACK_MS
+                t.kind == TransitKind.Open -> PageMotion.OPEN_MS
+                else -> PageMotion.CLOSE_MS
+            }
+            anim.animateTo(if (t.kind == TransitKind.Open) 1f else 0f, tween(ms, easing = PageMotion.MoveEase))
+            nav.finish(t.id)
+            navTick++
+        }
+        val gestureOn = backActive || gesture.isRunning
+        val gestureOrigin = if (transit == null && gestureOn && layers.size >= 2) {
+            nav.originOf(screenToken(layers.last()), screenToken(layers[layers.lastIndex - 1]), rootSize[0])
+        } else null
+        // 0 = 静止的顶层，1 = 下层，2 = 正在展开/收回的页，3 = 预测性返回中跟手的顶层
+        val drawn: List<Pair<Screen, Int>> = when {
+            transit != null -> listOf(transit.under to 1, transit.page to 2)
+            gestureOn && layers.size >= 2 -> listOf(layers[layers.lastIndex - 1] to 1, layers.last() to 3)
+            else -> listOf(layers.last() to 0)
+        }
+        val toastBackdrop = rememberCouiBackdrop()
+        val screenCorner = rememberScreenCornerPx()
+        Box(
+            Modifier
+                .fillMaxSize()
+                .onSizeChanged { rootSize[0] = androidx.compose.ui.geometry.Size(it.width.toFloat(), it.height.toFloat()) }
+                .background(shellBg),
+        ) {
+            // 轻提示的玻璃材质只采样「页面层」：录制背景的这一层里不能包含轻提示自己，
+            // 否则提示胶囊会去画一张含有它自己的快照（0.1.0/0.1.1 真机上弹出轻提示即闪退）。
+            // 常开录制：轻提示弹出的那一帧背景就已录好，不会去画一张还没录过的空层。
+            Box(Modifier.fillMaxSize().then(if (useFloatingChrome) Modifier.couiBackdrop(toastBackdrop) else Modifier)) {
+            drawn.forEach { (layer, role) ->
                 key(screenToken(layer)) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .then(
-                                if (top && backProgress > 0f) {
-                                    Modifier.graphicsLayer {
-                                        val s = 1f - 0.1f * backProgress
-                                        scaleX = s
-                                        scaleY = s
-                                        translationX = when (backEdge) {
-                                            NavigationEvent.EDGE_LEFT -> backShift.toPx() * backProgress
-                                            NavigationEvent.EDGE_RIGHT -> -backShift.toPx() * backProgress
-                                            else -> 0f
-                                        }
-                                        transformOrigin = TransformOrigin.Center
-                                    }
-                                } else {
-                                    Modifier
-                                },
-                            )
-                            .background(if (layer is Screen.RemoteReader) Color.Black else pageBg)
-                            .then(
-                                if (top) {
-                                    Modifier
-                                } else {
-                                    Modifier.pointerInput(Unit) {
-                                        awaitPointerEventScope {
-                                            while (true) {
-                                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                                event.changes.forEach { it.consume() }
-                                            }
-                                        }
-                                    }
-                                },
-                            ),
-                    ) {
-                        CompositionLocalProvider(LocalScreenLive provides top) {
-                            Draw(layer, live = top)
+                    val bg = if (layer is Screen.RemoteReader) Color.Black else pageBg
+                    val motion = when (role) {
+                        2 -> transit!!.let { t ->
+                            Modifier.expandTransform(t.origin, bg, t.fallbackScale, t.fallbackShift, screenCorner) { anim.value }
+                        }
+                        3 -> if (gestureOrigin != null) {
+                            Modifier.expandTransform(gestureOrigin, bg, screenCorner = screenCorner) { 1f - PageMotion.GESTURE_SHRINK * gesture.value }
+                        } else {
+                            Modifier.graphicsLayer {
+                                val p = gesture.value
+                                val sc = 1f - 0.1f * p
+                                scaleX = sc
+                                scaleY = sc
+                                translationX = edgeShift(lastEdge[0], p)
+                                transformOrigin = TransformOrigin.Center
+                                // 跟手缩小时保持屏幕圆角（随缩放换算，视觉半径不变），松手回满屏后才恢复直角。
+                                roundedPage(p > 0f, screenCorner / sc)
+                            }
+                        }
+                        else -> Modifier
+                    }
+                    val live = when (role) {
+                        1 -> transit?.kind == TransitKind.Close
+                        2 -> transit?.kind == TransitKind.Open
+                        else -> true
+                    }
+                    Box(Modifier.fillMaxSize().then(motion).background(bg)) {
+                        CompositionLocalProvider(LocalScreenLive provides live) {
+                            Draw(layer, live = live)
                         }
                     }
+                    if (role == 1) {
+                        // 下层随上层展开轻微压暗（COUI 一镜到底的背景层），只在绘制阶段读进度。
+                        Box(
+                            Modifier.fillMaxSize().drawBehind {
+                                val v = if (transit != null) anim.value else 1f - PageMotion.GESTURE_SHRINK * gesture.value
+                                drawRect(Color.Black.copy(alpha = 0.12f * v.coerceIn(0f, 1f)))
+                            }.then(
+                                if (transit == null) Modifier.pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                                    }
+                                } else Modifier,
+                            ),
+                        )
+                    }
                 }
+            }
+            if (transit != null) {
+                // 转场期间不接受点按，避免在动画中途再次跳转。
+                Box(
+                    Modifier.fillMaxSize().pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                        }
+                    },
+                )
+            }
             }
         if (folderBook != null) {
             FolderPickSheet(
@@ -1917,32 +1694,6 @@ fun ShuManYuApp() {
                 onDismiss = { folderBook = null },
             )
         }
-        if (adultBlock) {
-            BackHandler { adultBlock = false }
-            ConfirmSheet(
-                title = when (lang) {
-                    "en" -> "Restricted content"
-                    "zh-TW" -> "限制級內容"
-                    else -> "限制级内容"
-                },
-                message = when (lang) {
-                    "en" -> "To view this, open More settings and turn on Restricted content."
-                    "zh-TW" -> "如需查看該限制級內容，請去更多設定裡面打開限制級功能開關。"
-                    else -> "如需查看该限制级内容，请去更多设置。"
-                },
-                confirm = when (lang) {
-                    "en" -> "Settings"
-                    "zh-TW" -> "去設定"
-                    else -> "去设置"
-                },
-                cancel = copy.cancel,
-                onConfirm = {
-                    adultBlock = false
-                    screen = Screen.More
-                },
-                onDismiss = { adultBlock = false },
-            )
-        }
         appUpdater.available?.let { release ->
             BackHandler { appUpdater.later() }
             ConfirmSheet(
@@ -1954,7 +1705,7 @@ fun ShuManYuApp() {
                 onDismiss = { appUpdater.later() },
             )
         }
-        NoteHost()
+        CouiToastHost(if (useFloatingChrome) toastBackdrop else null)
         }
         }
     }
@@ -1969,147 +1720,65 @@ internal fun SubTopBar(
     align: BarTitle = BarTitle.End,
     actions: @Composable () -> Unit = {},
 ) {
-    if (align == BarTitle.Below) {
+    val large = align == BarTitle.Below
+    if (large) {
         TopAppBar(
             title = title,
             navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.Back, contentDescription = title) }
+                IconButton(onClick = onBack) { Icon(CouiIcons.Outlined.Back, contentDescription = "返回") }
             },
             actions = { actions() },
         )
-        return
-    }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(MiuixTheme.colorScheme.surface)
-            .statusBarsPadding()
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack) { Icon(Icons.Back, contentDescription = title) }
-        if (align == BarTitle.Center) {
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                Text(
-                    title,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MiuixTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Box(contentAlignment = Alignment.Center) { actions() }
-        } else {
-            Text(
-                title,
-                modifier = Modifier.weight(1f).padding(end = 18.dp),
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Medium,
-                color = MiuixTheme.colorScheme.onSurface,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            actions()
-        }
-    }
-}
-
-@Composable
-private fun AlignTitleBar(title: String, opaque: Boolean = true, actions: @Composable () -> Unit = {}) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .then(if (opaque) Modifier.background(MiuixTheme.colorScheme.surface) else Modifier)
-            .statusBarsPadding()
-            .heightIn(min = 56.dp)
-            .padding(start = 26.dp, end = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            fontSize = MiuixTheme.textStyles.title1.fontSize,
-            fontWeight = FontWeight.Normal,
-            color = MiuixTheme.colorScheme.onSurface,
-            maxLines = 1,
+    } else {
+        SmallTopAppBar(
+            title = title,
+            navigationIcon = {
+                IconButton(onClick = onBack) { Icon(CouiIcons.Outlined.Back, contentDescription = "返回") }
+            },
+            actions = { actions() },
         )
-        actions()
     }
 }
 
 @Composable
-private fun OverflowButton(expanded: Boolean, onClick: () -> Unit) {
-    Box(Modifier.size(44.dp).clickable(interactionSource=remember { MutableInteractionSource() },indication=null,onClick=onClick),contentAlignment=Alignment.Center) {
-        val tint=MiuixTheme.colorScheme.onSurface
-        Canvas(Modifier.size(18.dp)) {
-            drawCircle(tint,style=Stroke(width=1.4.dp.toPx()))
-            repeat(3) { i -> drawCircle(tint,size.minDimension*0.065f,Offset(center.x+(i-1)*size.minDimension*0.22f,center.y)) }
+internal fun CornerMenu(expanded: Boolean, onExpandedChange: (Boolean) -> Unit, actions: List<MenuAction>) {
+    val anchor = rememberCouiMenuAnchor()
+    val anchorAt = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
+    val anchorRadius = with(LocalDensity.current) { 20.dp.toPx() }
+    Box(Modifier.couiMenuAnchor(anchor).onPlaced { anchorAt[0] = it }) {
+        IconButton(onClick = { onExpandedChange(!expanded) }) {
+            Icon(CouiIcons.Outlined.More, contentDescription = "更多", tint = AppTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
         }
-    }
-}
-
-@Composable
-private fun CornerMenu(expanded:Boolean,onExpandedChange:(Boolean)->Unit,actions:List<Pair<String,()->Unit>>) {
-    val window=LocalWindowInfo.current
-    var fromRight by remember { mutableStateOf(true) }
-    var anchorHeight by remember { mutableIntStateOf(0) }
-    Box(Modifier.onGloballyPositioned { coords ->
-        fromRight=coords.positionInWindow().x>window.containerSize.width/2f
-        anchorHeight=coords.size.height
-    }) {
-        OverflowButton(expanded=expanded,onClick={onExpandedChange(!expanded)})
-        if(expanded && actions.isNotEmpty()) {
-            Popup(alignment=if(fromRight)Alignment.TopEnd else Alignment.TopStart,offset=IntOffset(0,anchorHeight),
-                onDismissRequest={onExpandedChange(false)},properties=PopupProperties(focusable=true,dismissOnBackPress=true,dismissOnClickOutside=true,clippingEnabled=true)) {
-                Column(Modifier.padding(top=4.dp,end=8.dp).widthIn(max=280.dp).width(IntrinsicSize.Max)
-                    .shadow(6.dp,RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp))
-                    .background(MiuixTheme.colorScheme.surface).padding(vertical=4.dp)) {
-                    actions.forEachIndexed { index,(label,act) ->
-                        if(index>0)Box(Modifier.fillMaxWidth().padding(horizontal=12.dp).height(0.5.dp).background(MiuixTheme.colorScheme.onSurface.copy(alpha=0.08f)))
-                        Box(Modifier.fillMaxWidth().heightIn(min=48.dp).clickable { onExpandedChange(false);act() }.padding(horizontal=16.dp,vertical=12.dp),contentAlignment=Alignment.CenterStart) {
-                            Text(label,color=MiuixTheme.colorScheme.onSurface,fontSize=15.sp)
-                        }
-                    }
+        Menu(
+            expanded = expanded && actions.isNotEmpty(),
+            onDismissRequest = { onExpandedChange(false) },
+            items = actions.mapIndexed { index, a ->
+                CouiMenuItem(value = index, text = a.label, icon = a.icon, dividerBefore = a.dividerBefore)
+            },
+            onItemClick = { item ->
+                onExpandedChange(false)
+                // 菜单项打开的页面从右上角菜单按钮处展开。
+                anchorAt[0]?.takeIf { it.isAttached }?.let { c ->
+                    val p = c.positionInRoot()
+                    ExpandOrigin.arm(androidx.compose.ui.geometry.Rect(p.x, p.y, p.x + c.size.width, p.y + c.size.height), anchorRadius)
                 }
-            }
-        }
+                actions[item.value].onClick()
+            },
+            anchor = anchor,
+        )
     }
 }
 
-@Composable
-private fun NativeListingFooter(count:Int,busy:Boolean,hasMore:Boolean,error:String,onMore:()->Unit,onSearch:()->Unit,bottomPadding:androidx.compose.ui.unit.Dp) {
-    Column(Modifier.fillMaxWidth().padding(start=16.dp,end=16.dp,top=16.dp,bottom=bottomPadding),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)) {
-        if(error.isNotBlank())Text(error,fontSize=13.sp,textAlign=TextAlign.Center,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-        when {
-            busy -> Text("正在加载…",fontSize=14.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-            hasMore && error.isNotBlank() -> Button(onClick=onMore) { Text("重试") }
-            hasMore -> Unit
-            else -> Unit
-        }
-    }
-}
+/** One entry of a page's 更多 (COUI floating) menu. */
+internal data class MenuAction(
+    val label: String,
+    val icon: ImageVector,
+    val dividerBefore: Boolean = false,
+    val onClick: () -> Unit,
+)
 
 @Composable
-private fun EmptyFace(face: String, message: String, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 32.dp)) {
-            Text(face, fontSize = 40.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-            Spacer(Modifier.height(14.dp))
-            Text(
-                message,
-                fontSize = 14.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShelfPane(
+internal fun ShelfPane(
     padding: PaddingValues,
     copy: Copy,
     library: List<String>,
@@ -2119,7 +1788,6 @@ private fun ShelfPane(
     opts: ShelfOpts,
     selecting: Boolean,
     selected: Set<String>,
-    query: String = "",
     onOpen: (String) -> Unit,
     onToggle: (String) -> Unit,
     onLong: (String) -> Unit,
@@ -2132,14 +1800,10 @@ private fun ShelfPane(
     listState: LazyListState,
 ) {
     val lang = resolveLang(prefs.lang, LocalConfiguration.current)
-    val metas = remember(library.joinToString(","), progress.entries.joinToString { "${it.key}:${it.value.chapterId}:${it.value.page}:${it.value.at}" }, crawled.joinToString { "${it.id}:${it.title}" }, opts) {
+    val metas = remember(library.joinToString(","), progress.entries.joinToString { "${it.key}:${it.value.chapterId}:${it.value.page}:${it.value.at}" }, crawled.joinToString { "${it.id}:${it.title}" }, opts, LocalStore.downloadRev) {
         library.mapIndexedNotNull { index, id -> shelfMeta(index, id, crawled, progress, prefs) }
     }
-    val q = query.trim()
-    val shown = remember(metas, opts, q) {
-        val base = filterShelf(metas, opts)
-        if (q.isBlank()) base else base.filter { it.title.contains(q, ignoreCase = true) }
-    }
+    val shown = remember(metas, opts) { filterShelf(metas, opts) }
     var dragId by remember { mutableStateOf<String?>(null) }
     var hover by remember { mutableIntStateOf(-1) }
     var finger by remember { mutableStateOf(Offset.Zero) }
@@ -2228,20 +1892,20 @@ private fun ShelfPane(
     ) {
         if (library.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding)) {
-                EmptyFace("ఠ_ఠ", copy.emptyShelf)
+                EmptyState("¯\\_(ツ)_/¯", copy.emptyShelf)
             }
         } else if (shown.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding)) {
-                EmptyFace("(´・ω・`)", copy.emptyCat)
+                EmptyState("(´・ω・`)", copy.emptyCat)
             }
         } else if (opts.layout == "list") {
-            LazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+            LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
                 if (opts.count) {
                     item {
                         Text(
                             shelfWord(lang, "total").replace("%d", shown.size.toString()),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
                             fontSize = 13.sp,
                         )
                     }
@@ -2291,13 +1955,13 @@ private fun ShelfPane(
                 item { Spacer(Modifier.height(28.dp)) }
             }
         } else {
-            LazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+            LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
                 if (opts.count) {
                     item {
                         Text(
                             shelfWord(lang, "total").replace("%d", shown.size.toString()),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
                             fontSize = 13.sp,
                         )
                     }
@@ -2384,18 +2048,7 @@ private fun ShelfPane(
         }
     }
     if (selecting && selected.isNotEmpty()) {
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = padding.calculateBottomPadding() + 16.dp)
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFFF3B30))
-                .clickable(onClick = onTrash),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Trash, contentDescription = "移除", tint = Color.White, modifier = Modifier.size(26.dp))
-        }
+        CouiDangerFab(ShuIcons.Trash, "移除", onTrash, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = padding.calculateBottomPadding() + 16.dp))
     }
     }
 }
@@ -2462,7 +2115,7 @@ private fun shelfMeta(
         author = m?.author ?: w?.author ?: disk?.work?.author.orEmpty(),
         genre = genre,
         local = disk != null || m != null,
-        downloaded = chapters.any { it.pages.isNotEmpty() },
+        downloaded = LocalStore.isDownloaded(id),
         unread = unread,
         done = blob.contains("完结") || blob.contains("完結"),
         readAt = p?.at ?: 0L,
@@ -2539,6 +2192,7 @@ private fun ShelfCell(
     Box(
         Modifier
             .zIndex(if (shiftX != 0f || shiftY != 0f) 1f else 0f)
+            .expandSource(16.dp)
             .onGloballyPositioned { placeN.value(it.positionInWindow()) }
             .onSizeChanged { sizeN.value(it.width.toFloat(), it.height.toFloat()) },
     ) {
@@ -2553,7 +2207,7 @@ private fun ShelfCell(
             Box(
                 Modifier
                     .matchParentSize()
-                    .clickable { clickN.value() }
+                    .couiClickable { clickN.value() }
                     .pointerInput(id) {
                         var moved = false
                         var travel = 0f
@@ -2590,6 +2244,8 @@ private fun ShelfGridTile(
     hits: Boolean = true,
 ) {
     Card(
+        Modifier.couiPress(hits),
+        cornerRadius = 16.dp,
         onClick = if (!hits) null else {
             { if (selecting) onToggle(m.id) else onOpen(m.id) }
         },
@@ -2600,19 +2256,19 @@ private fun ShelfGridTile(
         Box {
             SmartCover(m.cover, Modifier.fillMaxWidth().aspectRatio(2f / 3f))
             if (selecting) {
-                Box(Modifier.align(Alignment.TopStart).padding(6.dp)) { CheckDot(selected) }
+                Box(Modifier.align(Alignment.TopStart).padding(6.dp)) { Checkbox(checked = selected) }
             }
             ShelfBadges(m, opts)
         }
         Text(m.title, Modifier.padding(start = 6.dp, end = 6.dp, top = 6.dp), maxLines = 1)
         if (opts.genre && m.genre.isNotBlank()) {
-            Text(m.genre, Modifier.padding(start = 6.dp, end = 6.dp), fontSize = 11.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary, maxLines = 1)
+            Text(m.genre, Modifier.padding(start = 6.dp, end = 6.dp), fontSize = 11.sp, color = AppTheme.colorScheme.onSurfaceVariantSummary, maxLines = 1)
         }
         Text(
             m.author.ifBlank { "在线" },
             Modifier.padding(start = 6.dp, end = 6.dp, bottom = 8.dp),
             fontSize = 11.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = AppTheme.colorScheme.onSurfaceVariantSummary,
             maxLines = 1,
         )
     }
@@ -2642,7 +2298,7 @@ private fun ShelfListRow(
     ) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (selecting) {
-                CheckDot(selected)
+                Checkbox(checked = selected)
                 Spacer(Modifier.width(8.dp))
             }
             Box {
@@ -2652,19 +2308,19 @@ private fun ShelfListRow(
             Column(Modifier.padding(start = 12.dp).weight(1f)) {
                 Text(m.title, maxLines = 2, fontWeight = FontWeight.Medium)
                 if (m.author.isNotBlank()) {
-                    Text(m.author, fontSize = 12.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary, maxLines = 1)
+                    Text(m.author, fontSize = 12.sp, color = AppTheme.colorScheme.onSurfaceVariantSummary, maxLines = 1)
                 }
                 if (stamp.isNotBlank()) {
                     Text(
                         stamp,
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = AppTheme.colorScheme.onSurfaceVariantSummary,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (opts.genre && m.genre.isNotBlank()) {
-                    Text(m.genre, fontSize = 12.sp, color = MiuixTheme.colorScheme.primary, maxLines = 1)
+                    Text(m.genre, fontSize = 12.sp, color = AppTheme.colorScheme.primary, maxLines = 1)
                 }
             }
         }
@@ -2695,7 +2351,7 @@ private fun BoxScope.ShelfBadges(m: ShelfMeta, opts: ShelfOpts, compact: Boolean
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(4.dp)
-                .background(MiuixTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+                .background(AppTheme.colorScheme.primary, RoundedCornerShape(6.dp))
                 .padding(horizontal = if (compact) 4.dp else 6.dp, vertical = 1.dp),
             color = Color.White,
             fontSize = if (compact) 10.sp else 11.sp,
@@ -2725,69 +2381,6 @@ private fun BoxScope.ShelfBadges(m: ShelfMeta, opts: ShelfOpts, compact: Boolean
 }
 
 @Composable
-private fun LabPane(
-    lang: String,
-    title: String,
-    onBack: () -> Unit,
-    seen: Boolean,
-    onAck: () -> Unit,
-    appBrowser: Boolean,
-    onAppBrowser: (Boolean) -> Unit,
-) {
-    var warn by remember { mutableStateOf(!seen) }
-    val notice = when (lang) {
-        "en" -> "This feature is still in development and may be removed at any time."
-        "zh-TW" -> "當前功能處於開發階段，可能隨時廢棄"
-        else -> "当前功能处于开发阶段，可能随时废弃"
-    }
-    val ok = when (lang) {
-        "en" -> "OK"
-        else -> "知道了"
-    }
-    Box(Modifier.fillMaxSize()) {
-        Scaffold(topBar = { SubTopBar(title, onBack, BarTitle.End) }) { padding ->
-            LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-                item {
-                    Card(Modifier.padding(12.dp).fillMaxWidth()) {
-                        SwitchPreference(
-                            checked = appBrowser,
-                            onCheckedChange = onAppBrowser,
-                            title = if (lang == "en") "Built-in browser" else if (lang == "zh-TW") "使用內置瀏覽器" else "使用内置浏览器",
-                            summary = if (lang == "en") "Off: sites opened inside the app go to the system browser" else if (lang == "zh-TW") "關閉後打開應用內的網站會跳轉到系統自帶瀏覽器" else "关闭后打开应用内的网站会跳转到系统自带浏览器",
-                        )
-                    }
-                }
-            }
-        }
-        if (warn) {
-            OverlayScrim(onDismiss = {
-                warn = false
-                onAck()
-            }) {
-                Card(Modifier.padding(28.dp).fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp)) {
-                        Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(8.dp))
-                        Text(notice, fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                        Spacer(Modifier.height(18.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            Text(
-                                ok,
-                                color = MiuixTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable {
-                                    warn = false
-                                    onAck()
-                                },
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun BannerPane(
     lang: String,
     path: String,
@@ -2796,7 +2389,7 @@ private fun BannerPane(
     onBack: () -> Unit,
 ) {
     val title = if (lang == "en") "Header background" else if (lang == "zh-TW") "背景欄" else "背景栏"
-    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) onPick(uri.toString())
     }
     val choose = if (lang == "en") "Choose from gallery" else if (lang == "zh-TW") "從相簿選擇" else "从相册选择"
@@ -2815,14 +2408,14 @@ private fun BannerPane(
                     )
                 }
             }
-            Button(onClick = { pick.launch("image/*") }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColorsPrimary()) { Text(choose) }
-            Button(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text(reset) }
+            CouiButton(choose, { pick.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.fillMaxWidth(), kind = CouiButtonKind.Primary)
+            CouiButton(reset, onClear, Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun FolderPickSheet(
+internal fun FolderPickSheet(
     lang: String,
     folders: List<BookFolder>,
     onCreate: (String) -> Unit,
@@ -2832,22 +2425,24 @@ private fun FolderPickSheet(
     var name by remember { mutableStateOf("") }
     val title = when (lang) { "en" -> "Collection"; "zh-TW" -> "收藏夾"; else -> "收藏夹" }
     val create = when (lang) { "en" -> "Create"; "zh-TW" -> "建立並加入"; else -> "创建并加入" }
-    OverlayScrim(onDismiss = onDismiss) {
-        Card(Modifier.padding(24.dp).fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                TextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = when (lang) { "en" -> "Name"; "zh-TW" -> "收藏夾名稱"; else -> "收藏夹名称" },
-                )
-                Button(onClick = { onCreate(name) }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColorsPrimary()) {
-                    Text(create)
-                }
-                folders.forEach { folder ->
-                    ArrowPreference(folder.name, summary = "${folder.books.size}", onClick = { onPick(folder.id) })
-                }
+    Dialog(
+        onDismissRequest = onDismiss,
+        title = title,
+        confirmAction = CouiDialogAction(text = when (lang) { "en" -> "Cancel"; else -> "取消" }, onClick = onDismiss),
+        placement = CouiDialogPlacement.Bottom,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = true),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            CouiInputField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = when (lang) { "en" -> "Name"; "zh-TW" -> "收藏夾名稱"; else -> "收藏夹名称" },
+            )
+            CouiButton(create, { onCreate(name) }, Modifier.fillMaxWidth(), kind = CouiButtonKind.Primary, enabled = name.isNotBlank())
+        }
+        if (folders.isNotEmpty()) Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
+            folders.forEach { folder ->
+                ArrowPreference(folder.name, summary = "${folder.books.size}", onClick = { onPick(folder.id) })
             }
         }
     }
@@ -2910,36 +2505,31 @@ private fun FolderPane(
                             } else {
                                 onBack()
                             }
-                        }) { Icon(Icons.Back, contentDescription = "返回") }
+                        }) { Icon(CouiIcons.Outlined.Back, contentDescription = "返回") }
                     },
                     actions = {
                         if (picking) {
-                            Text(
-                                label("取消", "取消", "Cancel"),
-                                color = MiuixTheme.colorScheme.onSurface,
-                                modifier = Modifier
-                                    .clickable {
-                                        picking = false
-                                        selected.clear()
-                                    }
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                            )
-                            Text(
-                                label("全选", "全選", "All"),
-                                color = MiuixTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .padding(end = 8.dp)
-                                    .clickable {
-                                        selected.clear()
-                                        selected.addAll(ids)
-                                    }
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                            )
+                            ToolbarTextButton(label("取消", "取消", "Cancel")) {
+                                picking = false
+                                selected.clear()
+                            }
+                            ToolbarGap()
+                            ToolbarTextButton(label("全选", "全選", "All"), accent = true) {
+                                selected.clear()
+                                selected.addAll(ids)
+                            }
                         } else {
-                            Text(
-                                label("编辑", "編輯", "Edit"),
-                                color = MiuixTheme.colorScheme.primary,
-                                modifier = Modifier.padding(end = 16.dp).clickable { menu = true },
+                            CornerMenu(
+                                expanded = menu,
+                                onExpandedChange = { menu = it },
+                                actions = listOf(
+                                    MenuAction(label("改名", "改名", "Rename"), ShuIcons.Edit) {
+                                        draft = name
+                                        renaming = true
+                                    },
+                                    if (layout == "v") MenuAction(label("改为列表", "改為列表", "List"), ShuIcons.Rows) { onLayout("list") }
+                                    else MenuAction(label("改为竖版", "改為豎版", "Vertical"), CouiIcons.Outlined.LayoutSpliced) { onLayout("v") },
+                                ),
                             )
                         }
                     },
@@ -2947,9 +2537,9 @@ private fun FolderPane(
             },
         ) { padding ->
             if (ids.isEmpty()) {
-                EmptyFace("(´・ω・`)", label("这里还没有漫画", "這裡還沒有漫畫", "Nothing here"), Modifier.fillMaxSize().padding(padding))
+                EmptyState("(´・ω・`)", label("这里还没有漫画", "這裡還沒有漫畫", "Nothing here"), Modifier.fillMaxSize().padding(padding))
             } else if (layout == "v") {
-                LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+                LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
                     items(ids.chunked(2)) { row ->
                         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             row.forEach { id ->
@@ -2957,14 +2547,14 @@ private fun FolderPane(
                                 val disk = LocalStore.loadWork(id)?.work
                                 val book = realTitle(w?.title, disk?.title, id)
                                 Column(
-                                    Modifier.weight(1f).combinedClickable(
+                                    Modifier.weight(1f).expandSource(16.dp).couiClickable(
                                         onClick = { if (picking) arm(id) else onOpen(id) },
                                         onLongClick = { arm(id) },
                                     ),
                                 ) {
                                     Box {
                                         SmartCover(coverOf(id, crawled), Modifier.fillMaxWidth().aspectRatio(3f / 4f).clip(RoundedCornerShape(8.dp)))
-                                        if (picking) Box(Modifier.padding(6.dp)) { CheckDot(id in selected) }
+                                        if (picking) Box(Modifier.padding(6.dp)) { Checkbox(checked = id in selected) }
                                     }
                                     Text(book, modifier = Modifier.padding(top = 6.dp), maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 13.sp)
                                 }
@@ -2975,21 +2565,21 @@ private fun FolderPane(
                     item { Spacer(Modifier.height(88.dp)) }
                 }
             } else {
-                LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+                LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
                     items(ids, key = { it }) { id ->
                         val w = crawled.find { it.id == id }
                         val disk = LocalStore.loadWork(id)?.work
                         val book = realTitle(w?.title, disk?.title, id)
                         Card(Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth()) {
                             Row(
-                                Modifier.fillMaxWidth().combinedClickable(
+                                Modifier.fillMaxWidth().couiClickable(
                                     onClick = { if (picking) arm(id) else onOpen(id) },
                                     onLongClick = { arm(id) },
                                 ).padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 if (picking) {
-                                    CheckDot(id in selected)
+                                    Checkbox(checked = id in selected)
                                     Spacer(Modifier.width(10.dp))
                                 }
                                 SmartCover(
@@ -3006,57 +2596,18 @@ private fun FolderPane(
             }
         }
         if (picking && selected.isNotEmpty()) {
-            Box(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = 20.dp, bottom = 16.dp)
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF3B30))
-                    .clickable { ask = true },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Trash, contentDescription = "删除", tint = Color.White, modifier = Modifier.size(26.dp))
-            }
-        }
-        if (menu && !picking) {
-            MenuSheet(
-                listOf(
-                    label("改名", "改名", "Rename") to {
-                        draft = name
-                        renaming = true
-                    },
-                    (if (layout == "v") label("改为列表", "改為列表", "List") else label("改为竖版", "改為豎版", "Vertical")) to {
-                        onLayout(if (layout == "v") "list" else "v")
-                    },
-                ),
-                onDismiss = { menu = false },
-                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 52.dp,
-            )
+            CouiDangerFab(ShuIcons.Trash, "删除", { ask = true }, Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 16.dp))
         }
         if (renaming) {
-            OverlayScrim(onDismiss = { renaming = false }) {
-                Card(Modifier.padding(24.dp).fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(label("改名", "改名", "Rename"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                        TextField(
-                            value = draft,
-                            onValueChange = { draft = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = label("收藏夹名称", "收藏夾名稱", "Name"),
-                        )
-                        Button(
-                            onClick = {
-                                onRename(draft)
-                                renaming = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColorsPrimary(),
-                        ) { Text(label("保存", "儲存", "Save")) }
-                    }
-                }
-            }
+            CouiNameDialog(
+                title = label("改名", "改名", "Rename"),
+                initial = draft,
+                placeholder = label("收藏夹名称", "收藏夾名稱", "Name"),
+                confirm = label("保存", "儲存", "Save"),
+                cancel = label("取消", "取消", "Cancel"),
+                onConfirm = { onRename(it); renaming = false },
+                onDismiss = { renaming = false },
+            )
         }
         if (ask) {
             ConfirmSheet(
@@ -3079,8 +2630,6 @@ private fun FolderPane(
 @Composable
 private fun MorePane(
     lang: String,
-    predictive: Boolean,
-    onPredictive: (Boolean) -> Unit,
     incognito: Boolean,
     onIncognito: (Boolean) -> Unit,
     peekGuard: Boolean,
@@ -3089,16 +2638,12 @@ private fun MorePane(
     onFont: () -> Unit,
     forceTablet: Boolean,
     onForceTablet: (Boolean) -> Unit,
-    onOpenGate: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val title = when (lang) { "en" -> "More settings"; "zh-TW" -> "更多設定"; else -> "更多设置" }
-    var askCode by remember { mutableStateOf(false) }
-    var code by remember { mutableStateOf("") }
     Scaffold(topBar = { SubTopBar(title, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-            item { SmallTitle(when (lang) { "en" -> "Display"; "zh-TW" -> "顯示"; else -> "显示" }) }
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
                 val fontSum = when (fontGear) {
                     "s" -> if (lang == "en") "Small" else "小"
@@ -3106,21 +2651,11 @@ private fun MorePane(
                     "l" -> if (lang == "en") "Large" else "大"
                     else -> if (lang == "en") "Follow system" else if (lang == "zh-TW") "跟隨系統" else "跟随系统"
                 }
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                Group(title = when (lang) { "en" -> "Display"; "zh-TW" -> "顯示"; else -> "显示" }) {
                     ArrowPreference(
                         title = when (lang) { "en" -> "Adjust type"; "zh-TW" -> "調整字體"; else -> "调整字体" },
                         summary = fontSum,
                         onClick = onFont,
-                    )
-                    SwitchPreference(
-                        checked = predictive,
-                        onCheckedChange = onPredictive,
-                        title = when (lang) { "en" -> "Predictive back"; "zh-TW" -> "預測性返回"; else -> "预测性返回" },
-                        summary = when (lang) {
-                            "en" -> "Swipe from the edge to preview the previous screen"
-                            "zh-TW" -> "從邊緣滑動預覽上一頁"
-                            else -> "从边缘滑动预览上一页"
-                        },
                     )
                     SwitchPreference(
                         checked = forceTablet,
@@ -3135,16 +2670,8 @@ private fun MorePane(
                 }
             }
             item { Spacer(Modifier.height(8.dp)) }
-            item { SmallTitle(when (lang) { "en" -> "Privacy"; "zh-TW" -> "隱私"; else -> "隐私" }) }
             item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
-                    ArrowPreference(
-                        title = when (lang) { "en" -> "Mystery switch"; "zh-TW" -> "神秘開關"; else -> "神秘开关" },
-                        onClick = {
-                            code = ""
-                            askCode = true
-                        },
-                    )
+                Group(title = when (lang) { "en" -> "Privacy"; "zh-TW" -> "隱私"; else -> "隐私" }) {
                     SwitchPreference(
                         checked = incognito,
                         onCheckedChange = onIncognito,
@@ -3169,115 +2696,60 @@ private fun MorePane(
                 }
             }
             item { Spacer(Modifier.height(8.dp)) }
-            item { SmallTitle(when (lang) { "en" -> "Network"; "zh-TW" -> "網路"; else -> "网络" }) }
-            item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
-                    ArrowPreference(
-                        title = when (lang) { "en" -> "Clear cookies"; "zh-TW" -> "清除 Cookies"; else -> "清除 Cookies" },
-                        summary = when (lang) {
-                            "en" -> "Clear site logins stored in the web view"
-                            "zh-TW" -> "清除網頁登入狀態"
-                            else -> "清除网页登录状态"
-                        },
-                        onClick = {
-                            val cookies = CookieManager.getInstance()
-                            cookies.removeAllCookies { cookies.flush() }
-                            runCatching { WebStorage.getInstance().deleteAllData() }
-                            Toast.makeText(
-                                context,
-                                when (lang) { "en" -> "Cookies cleared"; "zh-TW" -> "已清除 Cookies"; else -> "已清除 Cookies" },
-                                Toast.LENGTH_SHORT,
-                            ).show()
-                        },
-                    )
-
-                }
-            }
             item { Spacer(Modifier.height(28.dp)) }
-        }
-    }
-    if (askCode) {
-        OverlayScrim(onDismiss = { askCode = false }) {
-            Card(Modifier.padding(24.dp).fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TextField(
-                        value = code,
-                        onValueChange = { code = it.filter { ch -> ch.isDigit() }.take(8) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = when (lang) { "en" -> "Enter a number"; "zh-TW" -> "請輸入數字"; else -> "请输入数字" },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        Text(
-                            when (lang) { "en" -> "Cancel"; else -> "取消" },
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable { askCode = false },
-                        )
-                        Text(
-                            when (lang) { "en" -> "OK"; else -> "确定" },
-                            color = MiuixTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable {
-                                if (code == "1314") {
-                                    askCode = false
-                                    code = ""
-                                    onOpenGate()
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        when (lang) { "en" -> "Incorrect"; "zh-TW" -> "不正確"; else -> "不正确" },
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                            },
-                        )
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun TabletRail(tab: Tab, copy: Copy, onTab: (Tab) -> Unit) {
+internal fun TabletRail(tab: Tab, copy: Copy, onTab: (Tab) -> Unit) {
+    val bookOpen = CouiIcons.Filled.BookOpen
+    val userCircle = CouiIcons.Filled.UserCircle
     val items = listOf(
-        Triple(Tab.Shelf, Icons.Book, copy.shelf),
-        Triple(Tab.History, Icons.Clock, copy.history),
-        Triple(Tab.Discover, Icons.Store, copy.discover),
-        Triple(Tab.Mine, Icons.User, copy.mine),
+        Triple(Tab.Shelf, if (tab == Tab.Shelf) bookOpen else ShuIcons.BookOpenOutlined, copy.shelf),
+        Triple(Tab.History, if (tab == Tab.History) ShuIcons.HistoryFilled else ShuIcons.HistoryOutlined, copy.history),
+        Triple(Tab.Discover, if (tab == Tab.Discover) ShuIcons.StoreFilled else ShuIcons.StoreOutlined, copy.discover),
+        Triple(Tab.Mine, if (tab == Tab.Mine) userCircle else ShuIcons.UserCircleOutlined, copy.mine),
     )
     Column(
         Modifier
-            .width(96.dp)
+            .width(88.dp)
             .fillMaxHeight()
-            .background(MiuixTheme.colorScheme.surface)
+            .background(CouiTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
+            .padding(top = 20.dp, bottom = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items.forEach { (dest, icon, label) ->
+            TabletRailItem(icon, label, tab == dest) { onTab(dest) }
+        }
+    }
+}
+
+/** 平板侧栏项：COUI 选中胶囊（主题色 12% 底）+ 线框/实心图标切换 + COUI 字体，按压缩放与反馈。 */
+@Composable
+private fun TabletRailItem(icon: ImageVector, label: String, on: Boolean, onClick: () -> Unit) {
+    val accent = CouiTheme.colorScheme.accent
+    val tint = if (on) accent else CouiTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+    val source = remember { MutableInteractionSource() }
+    val pill by androidx.compose.animation.animateColorAsState(if (on) accent.copy(alpha = 0.12f) else Color.Transparent, label = "rail")
+    Column(
+        Modifier
+            .width(72.dp)
+            .couiPress()
+            .clip(CouiShape(18.dp, 3f))
+            .couiButtonFeedback(CouiTheme.isDark, source, true, list = true)
+            .selectable(on, source, null, role = androidx.compose.ui.semantics.Role.Tab, onClick = onClick)
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        items.forEach { (dest, icon, label) ->
-            val on = tab == dest
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { onTab(dest) }
-                    .padding(vertical = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = label,
-                    tint = if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp),
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    label,
-                    fontSize = 12.sp,
-                    color = if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                )
-            }
+        Box(Modifier.size(width = 56.dp, height = 32.dp).clip(CouiCapsuleShape).background(pill), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         }
+        Spacer(Modifier.height(4.dp))
+        CouiText(text = label, kind = CouiTextKind.GroupTitle, color = tint, maxLines = 1)
     }
 }
 
@@ -3375,110 +2847,62 @@ private fun shelfWord(lang: String, key: String): String {
 }
 
 @Composable
-private fun ShelfSheet(
+internal fun ShelfSheet(
     lang: String,
     opts: ShelfOpts,
     onChange: (ShelfOpts) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var page by remember { mutableStateOf(0) }
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.45f))
-            .clickable(onClick = onDismiss),
+    Dialog(
+        onDismissRequest = onDismiss,
+        confirmAction = CouiDialogAction(text = if (lang == "en") "Done" else "完成", onClick = onDismiss),
+        placement = CouiDialogPlacement.Bottom,
     ) {
+        CouiTabs(
+            items = listOf("filter", "sort", "display").mapIndexed { i, key -> i to shelfWord(lang, key) },
+            selected = page,
+            onSelect = { page = it },
+            background = CouiTheme.colorScheme.menuSurface,
+        )
         Column(
             Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .fillMaxHeight(0.72f)
-                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .background(MiuixTheme.colorScheme.surface)
-                .navigationBarsPadding()
-                .clickable(enabled = false, onClick = {}),
+                .heightIn(max = 420.dp)
+                .couiVerticalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 8.dp),
         ) {
-            Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.2f)))
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                listOf("filter", "sort", "display").forEachIndexed { i, key ->
-                    Column(
-                        Modifier.weight(1f).clickable { page = i },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            shelfWord(lang, key),
-                            color = if (page == i) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
-                            fontSize = 16.sp,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Box(
-                            Modifier
-                                .width(28.dp)
-                                .height(2.dp)
-                                .background(if (page == i) MiuixTheme.colorScheme.primary else Color.Transparent),
+            when (page) {
+                0 -> {
+                    CheckboxPreference(shelfWord(lang, "downloaded"), opts.fDl, { onChange(opts.copy(fDl = it)) })
+                    CheckboxPreference(shelfWord(lang, "unread"), opts.fUnread, { onChange(opts.copy(fUnread = it)) })
+                    CheckboxPreference(shelfWord(lang, "done"), opts.fDone, { onChange(opts.copy(fDone = it)) })
+                }
+                1 -> {
+                    listOf(
+                        "manual", "name", "recentRead", "recentCheck", "unread", "chapters", "latest", "acquired", "added",
+                    ).forEach { key ->
+                        val on = opts.sort == key
+                        RadioButtonPreference(
+                            title = shelfWord(lang, if (key == "unread") "unreadSort" else key),
+                            selected = on,
+                            summary = if (on) (if (opts.asc) (if (lang == "en") "Ascending · tap to flip" else "升序 · 再点切换") else (if (lang == "en") "Descending · tap to flip" else "降序 · 再点切换")) else null,
+                            onClick = { onChange(if (on) opts.copy(asc = !opts.asc) else opts.copy(sort = key)) },
                         )
                     }
                 }
-            }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-                when (page) {
-                    0 -> {
-                        ShelfCheck(shelfWord(lang, "downloaded"), opts.fDl) { onChange(opts.copy(fDl = it)) }
-                        ShelfCheck(shelfWord(lang, "unread"), opts.fUnread) { onChange(opts.copy(fUnread = it)) }
-                        ShelfCheck(shelfWord(lang, "done"), opts.fDone) { onChange(opts.copy(fDone = it)) }
+                else -> {
+                    SmallTitle(shelfWord(lang, "mode"))
+                    listOf("compact", "comfortable", "list").forEach { id ->
+                        RadioButtonPreference(shelfWord(lang, id), opts.layout == id, { onChange(opts.copy(layout = id)) })
                     }
-                    1 -> {
-                        listOf(
-                            "manual", "name", "recentRead", "recentCheck", "unread", "chapters", "latest", "acquired", "added",
-                        ).forEach { key ->
-                            val label = shelfWord(lang, if (key == "unread") "unreadSort" else key)
-                            val on = opts.sort == key
-                            Row(
-                                Modifier.fillMaxWidth().clickable {
-                                    onChange(if (on) opts.copy(asc = !opts.asc) else opts.copy(sort = key))
-                                }.padding(horizontal = 22.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    if (on) if (opts.asc) "↑" else "↓" else "",
-                                    modifier = Modifier.width(28.dp),
-                                    color = MiuixTheme.colorScheme.primary,
-                                    fontSize = 16.sp,
-                                )
-                                Text(label, color = if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface)
-                            }
-                        }
-                    }
-                    else -> {
-                        Text(
-                            shelfWord(lang, "mode"),
-                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            fontSize = 13.sp,
-                        )
-                        listOf("compact", "comfortable", "list").forEach { id ->
-                            ShelfRadio(shelfWord(lang, id), opts.layout == id) { onChange(opts.copy(layout = id)) }
-                        }
-                        Text(
-                            shelfWord(lang, "marks"),
-                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            fontSize = 13.sp,
-                        )
-                        ShelfCheck(shelfWord(lang, "markDl"), opts.markDl) { onChange(opts.copy(markDl = it)) }
-                        ShelfCheck(shelfWord(lang, "markUnread"), opts.markUnread) { onChange(opts.copy(markUnread = it)) }
-                        ShelfCheck(shelfWord(lang, "markLocal"), opts.markLocal) { onChange(opts.copy(markLocal = it)) }
-                        Text(
-                            shelfWord(lang, "labels"),
-                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            fontSize = 13.sp,
-                        )
-                        ShelfCheck(shelfWord(lang, "genre"), opts.genre) { onChange(opts.copy(genre = it)) }
-                        ShelfCheck(shelfWord(lang, "count"), opts.count) { onChange(opts.copy(count = it)) }
-                    }
+                    SmallTitle(shelfWord(lang, "marks"))
+                    CheckboxPreference(shelfWord(lang, "markDl"), opts.markDl, { onChange(opts.copy(markDl = it)) })
+                    CheckboxPreference(shelfWord(lang, "markUnread"), opts.markUnread, { onChange(opts.copy(markUnread = it)) })
+                    CheckboxPreference(shelfWord(lang, "markLocal"), opts.markLocal, { onChange(opts.copy(markLocal = it)) })
+                    SmallTitle(shelfWord(lang, "labels"))
+                    CheckboxPreference(shelfWord(lang, "genre"), opts.genre, { onChange(opts.copy(genre = it)) })
+                    CheckboxPreference(shelfWord(lang, "count"), opts.count, { onChange(opts.copy(count = it)) })
                 }
             }
         }
@@ -3486,49 +2910,10 @@ private fun ShelfSheet(
 }
 
 @Composable
-private fun ShelfCheck(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable { onChange(!on) }.padding(horizontal = 22.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier.size(22.dp).clip(RoundedCornerShape(5.dp)).background(
-                if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-            ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (on) Text("✓", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width(14.dp))
-        Text(title)
-    }
-}
-
-@Composable
-private fun ShelfRadio(title: String, on: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 22.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier.size(22.dp).clip(CircleShape).background(
-                if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-            ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Color.White))
-        }
-        Spacer(Modifier.width(14.dp))
-        Text(title, color = if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface)
-    }
-}
-
-@Composable
-private fun HistoryPane(
+internal fun HistoryPane(
     padding: PaddingValues,
     copy: Copy,
     lang: String,
-    query: String,
     history: List<String>,
     progress: Map<String, Progress>,
     crawled: List<CrawledWork>,
@@ -3544,16 +2929,11 @@ private fun HistoryPane(
     Box(Modifier.fillMaxSize()) {
         if (history.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding)) {
-                EmptyFace("(; ￣Д￣)", copy.emptyHistory)
+                EmptyState("(; ￣Д￣)", copy.emptyHistory)
             }
         } else {
-            LazyColumn(state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-                val visible = if (query.isBlank()) history else history.filter { id ->
-                    val m = catalog.find { it.id == id }
-                    val w = crawled.find { it.id == id }
-                    val diskTitle = LocalStore.loadWork(id)?.work?.title
-                    keywordHit(realTitle(m?.title, w?.title, diskTitle, id), query.trim())
-                }
+            LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), state = listState, contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+                val visible = history
                 val groups = visible.groupBy { dayLabel(progress[it]?.at ?: 0L, lang) }
                 groups.forEach { (day, ids) ->
                     item(key = "day-$day") {
@@ -3561,7 +2941,7 @@ private fun HistoryPane(
                             day,
                             modifier = Modifier.padding(start = 20.dp, top = 14.dp, bottom = 6.dp),
                             fontSize = 13.sp,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }
                     item(key = "card-$day") {
@@ -3576,7 +2956,7 @@ private fun HistoryPane(
                                             val title = realTitle(m?.title, w?.title, disk?.title, id)
                                             val cover = m?.cover ?: w?.cover ?: disk?.cover
                                             Column(
-                                                Modifier.weight(1f).combinedClickable(
+                                                Modifier.weight(1f).expandSource(16.dp).couiClickable(
                                                     onClick = { if (selecting) onToggle(id) else onOpen(id) },
                                                     onLongClick = { onLong(id) },
                                                 ),
@@ -3585,10 +2965,10 @@ private fun HistoryPane(
                                                     if (!cover.isNullOrBlank()) {
                                                         SmartCover(cover, Modifier.fillMaxWidth().aspectRatio(3f / 4f).clip(RoundedCornerShape(8.dp)))
                                                     } else {
-                                                        Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(MiuixTheme.colorScheme.surface))
+                                                        Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(AppTheme.colorScheme.surface))
                                                     }
                                                     if (selecting) {
-                                                        Box(Modifier.padding(6.dp)) { CheckDot(id in selected) }
+                                                        Box(Modifier.padding(6.dp)) { Checkbox(checked = id in selected) }
                                                     }
                                                 }
                                                 Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
@@ -3599,7 +2979,7 @@ private fun HistoryPane(
                                 }
                             }
                         } else {
-                        Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                        Group {
                             ids.forEach { id ->
                                 val m = catalog.find { it.id == id }
                                 val w = crawled.find { it.id == id }
@@ -3610,6 +2990,7 @@ private fun HistoryPane(
                                 Row(
                                     Modifier
                                         .fillMaxWidth()
+                                        .expandSource(16.dp)
                                         .pointerInput(id, selecting) {
                                             detectTapGestures(
                                                 onLongPress = { onLong(id) },
@@ -3620,7 +3001,7 @@ private fun HistoryPane(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     if (selecting) {
-                                        CheckDot(id in selected)
+                                        Checkbox(checked = id in selected)
                                         Spacer(Modifier.width(10.dp))
                                     }
                                     if (!cover.isNullOrBlank()) {
@@ -3632,7 +3013,7 @@ private fun HistoryPane(
                                         Text(
                                             summary,
                                             fontSize = 12.sp,
-                                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -3647,18 +3028,7 @@ private fun HistoryPane(
             }
         }
         if (selecting && selected.isNotEmpty()) {
-            Box(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 20.dp, bottom = padding.calculateBottomPadding() + 16.dp)
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF3B30))
-                    .clickable(onClick = onTrash),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Trash, contentDescription = "删除", tint = Color.White, modifier = Modifier.size(26.dp))
-            }
+            CouiDangerFab(ShuIcons.Trash, "删除", onTrash, Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = padding.calculateBottomPadding() + 16.dp))
         }
     }
 }
@@ -3718,101 +3088,46 @@ private fun dayLabel(at: Long, lang: String): String {
     return if (lang == "en") "$month/$date" else "${month}月${date}日"
 }
 
-private fun relTime(at: Long): String {
-    val d = System.currentTimeMillis() - at
-    return when {
-        d < 60_000 -> "刚刚"
-        d < 3_600_000 -> "${d / 60_000} 分钟前"
-        d < 86_400_000 -> "${d / 3_600_000} 小时前"
-        d < 172_800_000 -> "昨天"
-        else -> {
-            val cal = java.util.Calendar.getInstance().apply { timeInMillis = at }
-            "${cal.get(java.util.Calendar.MONTH) + 1}月${cal.get(java.util.Calendar.DAY_OF_MONTH)}日"
-        }
-    }
-}
-
-private fun isHiddenAdult(id: String, crawled: List<CrawledWork>, sites: List<WebSite>): Boolean {
-    val listed = crawled.find { it.id == id }
-    if (listed != null) return Sites.adultWork(listed, sites)
-    if (id.startsWith("jm") || id.startsWith("ik") || id.startsWith("jj") || id.startsWith("ab")) return true
-    val disk = LocalStore.loadWork(id)?.work ?: return false
-    return Sites.adultWork(disk, sites)
-}
-
 @Composable
-private fun DiscoverPane(
+internal fun DiscoverPane(
     padding: PaddingValues,
     copy: Copy,
+    lang: String,
     crawled: List<CrawledWork>,
     webSites: List<WebSite>,
+    storeSite: String,
     online: Boolean,
-    allowAdult: Boolean,
     cols: Int,
     asList: Boolean = false,
-    initialSiteId: String,
     onOpen: (String) -> Unit,
-    onResolvedCovers: (List<CrawledWork>) -> Unit,
-    onSites: () -> Unit,
     onSearch: () -> Unit,
-    onWeb: (String, String) -> Unit,
+    onPickSource: () -> Unit,
+    onWeb: (String) -> Unit,
     onToggleCols: () -> Unit,
     onCrawl: (WebSite, String, () -> Unit) -> Unit,
-    onCrawlMore: (WebSite, String, () -> Unit) -> Unit,
-    onSelectSite: (String) -> Unit,
-    onAddUrl: (String, String) -> Unit,
-    onCheckSites: () -> Unit,
     listState: LazyListState,
     catState: androidx.compose.runtime.MutableState<String>,
-    siteScroll: ScrollState,
     bleedBottom: Boolean = false,
 ) {
-    val enabledSites = webSites.filter { it.enabled && (allowAdult || !Sites.isAdult(it)) }
-    val fallbackSite = enabledSites.firstOrNull { it.id == Sites.BIQUGE }?.id ?: enabledSites.firstOrNull()?.id
-    val resolvedSite = initialSiteId.takeIf { id -> id.isNotBlank() && enabledSites.any { it.id == id } } ?: fallbackSite
-    var pane by remember { mutableStateOf("site") }
-    var activeSite by remember { mutableStateOf(resolvedSite) }
-    LaunchedEffect(Unit) {
-        if (initialSiteId != resolvedSite && !resolvedSite.isNullOrBlank()) onSelectSite(resolvedSite)
-    }
-    LaunchedEffect(allowAdult) {
-        if (activeSite != null && enabledSites.none { it.id == activeSite }) {
-            val next = fallbackSite
-            if (!next.isNullOrBlank()) {
-                activeSite = next
-                onSelectSite(next)
-            }
-        }
-    }
+    val novel = storeSite == Sites.NOVEL
+    val site = if (novel) null
+    else webSites.firstOrNull { it.id == storeSite }
+        ?: webSites.firstOrNull { Sites.kindOf(it) == Sites.COPY }
     var cat by catState
     var busy by remember { mutableStateOf(false) }
     var activeRequest by remember { mutableStateOf<Any?>(null) }
     var retryListing by remember { mutableIntStateOf(0) }
     val fetchedAt = remember { mutableStateMapOf<String, Long>() }
-    val site = enabledSites.find { it.id == activeSite }
-    val siteLabel = site?.let { Sites.displayName(it) } ?: copy.bookstore
-    val cats = Sites.catsFor(site)
-    val kind = site?.let { Sites.kindOf(it) }
-    val splitStatus = kind == Sites.IKAN || kind == Sites.JJ
-    val poolAll = kind == Sites.IKAN || kind == Sites.JJ || kind == Sites.JM || kind == Sites.BIQUGE
-    val cards = crawled.filter { w ->
-        if (!allowAdult && Sites.adultWork(w, webSites)) return@filter false
-        if (site == null || w.siteId != site.id || w.cat == "搜索") return@filter false
-        val serial = serialMark(w)
-        when {
-            kind == XiuSources.KIND -> XiuSources.inCategory(w,cat)
-            cat == "全部" && poolAll -> true
-            splitStatus && (cat == "连载" || cat == "連載") ->
-                w.tags.any { tagEq(it, "连载") } || serial == "连载"
-            splitStatus && (cat == "完结" || cat == "完結") ->
-                w.tags.any { tagEq(it, "完结") } || serial == "完结"
-            kind == Sites.JM && cat != "推荐" && cat != "推薦" -> belongsToBin(w, cat)
-            kind == Sites.BIQUGE && cat != "推荐" && cat != "推薦" && cat != "全部" ->
-                belongsToBin(w, cat) || w.cat == cat
-            cat == "推荐" || cat == "推薦" -> w.cat == "推荐" || w.cat == "推薦"
-            kind == Sites.COPY -> w.cat == cat || w.listed.any { tagEq(it, cat) }
-            else -> w.cat == cat
-        }
+    val cats = if (site == null) emptyList() else Sites.catsFor(site)
+    val siteLabel = when {
+        novel -> if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说"
+        site != null -> Sites.displayName(site)
+        else -> copy.bookstore
+    }
+    val cards = if (site == null) emptyList() else crawled.filter { w ->
+        if (w.siteId != site.id || w.cat == "搜索") return@filter false
+        if (cat == "推荐" || cat == "推薦") w.cat == "推荐" || w.cat == "推薦"
+        else w.cat == cat || w.listed.any { tagEq(it, cat) }
     }.distinctBy { it.id }
     val screenLive = LocalScreenLive.current
     LaunchedEffect(listState, cards, cols, asList, screenLive) {
@@ -3826,329 +3141,219 @@ private fun DiscoverPane(
             val itemsPerRow = if (asList) 1 else cols
             val from = (first * itemsPerRow).coerceAtMost(cards.size)
             val to = ((last + 3) * itemsPerRow).coerceAtMost(cards.size)
-            if (from < to) {
-                val visible=cards.subList(from,to).toList()
-                Crawler.prefetchCovers(visible.map { it.cover })
-                if(visible.any { it.cover.isBlank() && Biquge365.accepts(it.href) }) {
-                    val resolved=kotlinx.coroutines.runInterruptible(Dispatchers.IO) { Crawler.fillMissingCovers(visible) }
-                    onResolvedCovers(resolved)
-                }
-            }
+            if (from < to) Crawler.prefetchCovers(cards.subList(from, to).map { it.cover })
         }
     }
-    LaunchedEffect(activeSite) {
-        if (cat !in cats) cat = cats.firstOrNull() ?: "推荐"
+    LaunchedEffect(storeSite) {
+        if (cats.isNotEmpty() && cat !in cats) cat = cats.first()
     }
     val keepPlace = remember { mutableStateOf(true) }
-    LaunchedEffect(activeSite, cat) {
+    LaunchedEffect(storeSite, cat) {
         if (keepPlace.value) {
             keepPlace.value = false
             return@LaunchedEffect
         }
-        if (pane == "site") listState.scrollToItem(0)
+        listState.scrollToItem(0)
     }
-    LaunchedEffect(activeSite, cat, pane, online, screenLive, retryListing) {
+    LaunchedEffect(storeSite, cat, online, screenLive, retryListing) {
         if (!screenLive) return@LaunchedEffect
-        val s = enabledSites.find { it.id == activeSite }
-        if (pane == "site" && s != null && online) {
-            if(cat !in Sites.catsFor(s))return@LaunchedEffect
-            val key = "${s.id}:$cat"
-            val requestToken=Any()
-            activeRequest=requestToken
-            val age = System.currentTimeMillis() - (fetchedAt[key] ?: 0L)
-            val has = when {
-                Sites.kindOf(s)==XiuSources.KIND -> crawled.any { it.siteId==s.id && it.cat!="搜索" && XiuSources.inCategory(it,cat) }
-                cat == "全部" && (Sites.kindOf(s) == Sites.IKAN || Sites.kindOf(s) == Sites.JJ || Sites.kindOf(s) == Sites.JM || Sites.kindOf(s) == Sites.BIQUGE) ->
-                    crawled.any { it.siteId == s.id && it.cat != "搜索" }
-                cat == "推荐" || cat == "推薦" ->
-                    crawled.any { it.siteId == s.id && (it.cat == "推荐" || it.cat == "推薦") }
-                Sites.kindOf(s) == Sites.JM ->
-                    crawled.any { it.siteId == s.id && it.cat != "搜索" && belongsToBin(it, cat) }
-                Sites.kindOf(s) == Sites.COPY && cat != "推荐" && cat != "推薦" ->
-                    crawled.any { work -> work.siteId == s.id && (work.cat == cat || work.listed.any { tagEq(it, cat) }) }
-                else -> crawled.any { it.siteId == s.id && it.cat == cat }
-            }
-            if (has && age in 1..180_000) { busy=false;return@LaunchedEffect }
-            busy = !has
-            onCrawl(s, cat) {
-                if(activeRequest===requestToken)busy = false
-                fetchedAt[key] = System.currentTimeMillis()
-            }
+        val s = site ?: return@LaunchedEffect
+        if (!online || cat !in cats) return@LaunchedEffect
+        val key = "${s.id}:$cat"
+        val requestToken = Any()
+        activeRequest = requestToken
+        val age = System.currentTimeMillis() - (fetchedAt[key] ?: 0L)
+        val has = cards.isNotEmpty()
+        if (has && age in 1..180_000) { busy = false; return@LaunchedEffect }
+        busy = !has
+        onCrawl(s, cat) {
+            if (activeRequest === requestToken) busy = false
+            fetchedAt[key] = System.currentTimeMillis()
         }
     }
-    val loadMore: () -> Unit = {
-        val current=site
-        if(current!=null && !busy) {
-            val requestToken=Any();activeRequest=requestToken;busy=true
-            onCrawlMore(current,cat) { if(activeRequest===requestToken)busy=false }
-        }
-    }
-    LaunchedEffect(listState, activeSite, cat, pane, screenLive, online, cards.size, busy, site?.lastError, asList, cols, XiuSources.hasMore(activeSite.orEmpty(),cat)) {
-        val current=site ?: return@LaunchedEffect
-        if(!screenLive || !online || pane!="site" || kind!=XiuSources.KIND || busy || cards.isEmpty() ||
-            current.lastError.isNotBlank() || !XiuSources.hasMore(current.id,cat)) return@LaunchedEffect
-        val lastBookRow=if(asList)cards.lastIndex else (cards.size-1)/cols
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1 }.collect { lastVisible ->
-            if(lastVisible>=lastBookRow && !busy) loadMore()
-        }
-    }
-    val addOk = when (copy.addSite) {
-        "Add site" -> "Add"
-        "新增網站" -> "確定"
-        else -> "确定"
-    }
-    val checkLabel = when (copy.addSite) {
-        "Add site" -> "Check sites"
-        "新增網站" -> "自動檢測"
-        else -> "自动检测"
-    }
-    var picking by remember { mutableStateOf(false) }
     var storeMenu by remember { mutableStateOf(false) }
-    var addOpen by remember { mutableStateOf(false) }
-    var addUrl by remember { mutableStateOf("") }
-    var addName by remember { mutableStateOf("") }
-    Box(Modifier.fillMaxSize()) {
     var discoverHead by remember { mutableIntStateOf(0) }
     val discoverTop = with(LocalDensity.current) {
         if (discoverHead == 0) padding.calculateTopPadding() + 96.dp else discoverHead.toDp()
     }
+    val discoverBackdrop = rememberCouiBackdrop()
     Box(Modifier.fillMaxSize().then(if (bleedBottom) Modifier else Modifier.padding(bottom = padding.calculateBottomPadding()))) {
-        Box(Modifier.fillMaxSize().background(Color.Transparent)) {
-        if (pane == "list") {
-            Box(Modifier.fillMaxSize().padding(top = discoverTop)) {
-                SiteGrid(
-                    copy = copy,
-                    sites = enabledSites,
-                    scroll = siteScroll,
-                    onPick = { picked ->
-                        activeSite = picked.id
-                        cat = Sites.catsFor(picked).firstOrNull() ?: "推荐"
-                        onSelectSite(picked.id)
-                        pane = "site"
-                    },
-                )
-            }
-        } else {
-            Row(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f).fillMaxHeight()) {
-                    when {
-                        !online && cards.isEmpty() -> EmptyFace("(´・ω・`)", copy.offline, Modifier.padding(top = discoverTop))
-                        busy && cards.isEmpty() -> EmptyFace("(｀・ω・´)", copy.loading, Modifier.padding(top = discoverTop))
-                        site != null && kind==XiuSources.KIND && cards.isEmpty() -> {
-                            val searchOnly=cats==listOf("搜索")
-                            Column(Modifier.fillMaxSize().padding(top=discoverTop,start=24.dp,end=24.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
-                                Text("(｀・ω・´)",fontSize=40.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                                Spacer(Modifier.height(14.dp))
-                                Text(if(searchOnly)"此源仅支持搜索，请搜索小说名称" else site.lastError.ifBlank { "该分类暂未获取到小说，请重试" },textAlign=TextAlign.Center,color=MiuixTheme.colorScheme.onSurfaceVariantSummary,fontSize=14.sp)
-                                Spacer(Modifier.height(16.dp))
-                                Button(onClick={if(searchOnly)onSearch() else retryListing++}) { Text(if(searchOnly)"搜索小说" else "重新加载") }
-                            }
-                        }
-                        site != null && cards.isEmpty() ->
-                            Column(Modifier.fillMaxSize().padding(top=discoverTop),verticalArrangement=Arrangement.Center,horizontalAlignment=Alignment.CenterHorizontally) {
-                                Text(site.lastError.ifBlank { copy.emptyCat },Modifier.padding(24.dp),textAlign=TextAlign.Center)
-                                Button(onClick={ onWeb(site.url,siteLabel) }) { Text("打开网站") }
-                                Spacer(Modifier.height(10.dp))
-                                Button(onClick={retryListing++}) { Text("重试") }
-                            }
-                        cards.isEmpty() -> EmptyFace("(´・ω・`)", copy.emptyCat, Modifier.padding(top = discoverTop))
-                        else -> {
-                            if (asList) {
-                                LazyColumn(
-                                    state = listState,
-                                    contentPadding = PaddingValues(top = discoverTop, bottom = if (bleedBottom) padding.calculateBottomPadding() else 0.dp),
-                                    modifier = Modifier.fillMaxSize(),
-                                ) {
-                                    items(cards, key = { "${it.id}#${it.cover.hashCode()}" }) { w ->
-                                        DiscoverListRow(w) { onOpen(w.id) }
-                                    }
-                                    item {
-                                        if(site!=null && kind==XiuSources.KIND)NativeListingFooter(cards.size,busy,XiuSources.hasMore(site.id,cat),site.lastError,loadMore,onSearch,if(bleedBottom)padding.calculateBottomPadding() else 0.dp)
-                                        Spacer(Modifier.height(24.dp))
-                                    }
-                                }
-                            } else {
-                            val rows = remember(cards, cols) { cards.chunked(cols) }
-                            LazyColumn(
-                                state = listState,
-                                contentPadding = PaddingValues(top = discoverTop),
-                                modifier = Modifier.fillMaxSize(),
+        Box(Modifier.fillMaxSize().couiBackdrop(discoverBackdrop).background(AppTheme.colorScheme.surface)) {
+            when {
+                novel -> EmptyState("(・ω・)ノ", if (lang == "en") "No novel source yet. Novels will come back later." else Crawler.NO_NOVEL_SOURCE, Modifier.padding(top = discoverTop))
+                !online && cards.isEmpty() -> EmptyState("(´・ω・`)", copy.offline, Modifier.padding(top = discoverTop), actionText = if (lang == "en") "Retry" else "重试", onAction = { retryListing++ })
+                busy && cards.isEmpty() -> EmptyState(null, copy.loading, Modifier.padding(top = discoverTop), loading = true)
+                site != null && cards.isEmpty() ->
+                    EmptyState("(´・ω・`)", site.lastError.ifBlank { copy.emptyCat }, Modifier.padding(top = discoverTop), actionText = if (lang == "en") "Retry" else "重试", onAction = { retryListing++ })
+                asList -> LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), 
+                    state = listState,
+                    contentPadding = PaddingValues(top = discoverTop, bottom = if (bleedBottom) padding.calculateBottomPadding() else 0.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    items(cards, key = { "${it.id}#${it.cover.hashCode()}" }) { w ->
+                        DiscoverListRow(w) { onOpen(w.id) }
+                    }
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
+                else -> {
+                    val rows = remember(cards, cols) { cards.chunked(cols) }
+                    LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), 
+                        state = listState,
+                        contentPadding = PaddingValues(top = discoverTop, bottom = if (bleedBottom) padding.calculateBottomPadding() else 0.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(rows.size, key = { index -> rows[index].joinToString("|") { "${it.id}#${it.cover.hashCode()}" } + "@$index" }) { index ->
+                            val row = rows[index]
+                            Row(
+                                Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                items(rows.size, key = { index ->
-                                    val row = rows[index]
-                                    row.joinToString("|") { "${it.id}#${it.cover.hashCode()}" } + "@$index"
-                                }) { index ->
-                                    val row = rows[index]
-                                    Row(
-                                        Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        row.forEach { w ->
-                                            Box(
-                                                Modifier.weight(1f).clickable { onOpen(w.id) },
-                                            ) {
-                                                StoreCover(w.title, w.cover)
-                                            }
-                                        }
-                                        repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
-                                    }
+                                row.forEach { w ->
+                                    Box(Modifier.weight(1f).expandSource(16.dp).couiClickable(press = true, list = false, shape = null) { onOpen(w.id) }) { StoreCover(w.title, w.cover) }
                                 }
-                                item {
-                                    if(site!=null && kind==XiuSources.KIND)NativeListingFooter(cards.size,busy,XiuSources.hasMore(site.id,cat),site.lastError,loadMore,onSearch,if(bleedBottom)padding.calculateBottomPadding() else 0.dp)
-                                    Spacer(Modifier.height(24.dp))
-                                }
-                            }
+                                repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
                             }
                         }
+                        item { Spacer(Modifier.height(24.dp)) }
                     }
                 }
             }
-        }
         }
         Box(
             Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(MiuixTheme.colorScheme.surface)
                 .onSizeChanged { discoverHead = it.height },
         ) {
-            Column {
-            Spacer(Modifier.height(padding.calculateTopPadding()))
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 26.dp, end = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    copy.bookstore,
-                    modifier = Modifier.weight(1f),
-                    fontSize = MiuixTheme.textStyles.title1.fontSize,
-                    fontWeight = FontWeight.Normal,
-                    color = MiuixTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                )
-                IconButton(onClick = onSearch) {
-                    Icon(MiuixIcons.Basic.Search, contentDescription = copy.search, modifier = Modifier.size(24.dp))
-                }
-                if (!asList) {
-                    IconButton(onClick = onToggleCols) {
-                        Icon(Icons.Grid, contentDescription = "网格", modifier = Modifier.size(24.dp))
-                    }
-                }
-                CornerMenu(
-                    expanded = storeMenu,
-                    onExpandedChange = { storeMenu = it },
-                    actions = listOf(
-                        "切换小说/漫画源" to { picking = true },
-                        "网站管理" to onSites,
-                        copy.addSite to { addOpen = true },
-                    ),
-                )
+            StoreHeaderBar(
+                backdrop = discoverBackdrop,
+                title = copy.bookstore,
+                lang = lang,
+                siteLabel = siteLabel,
+                cats = cats,
+                selected = cat,
+                showGrid = !asList && !novel,
+                menuOpen = storeMenu,
+                onMenu = { storeMenu = it },
+                onToggleCols = onToggleCols,
+                onPickSource = onPickSource,
+                onWeb = site?.let { s -> { onWeb(s.url) } },
+                onSearch = onSearch,
+                onCat = { cat = it },
+            )
+        }
+    }
+}
+
+/** 书城 header: floating buttons, persistent search pill, current source and its categories. */
+@Composable
+internal fun StoreHeaderBar(
+    backdrop: CouiBackdrop?,
+    title: String,
+    lang: String,
+    siteLabel: String,
+    cats: List<String>,
+    selected: String,
+    showGrid: Boolean,
+    menuOpen: Boolean,
+    onMenu: (Boolean) -> Unit,
+    onToggleCols: () -> Unit,
+    onPickSource: () -> Unit,
+    onWeb: (() -> Unit)?,
+    onSearch: () -> Unit,
+    onCat: (String) -> Unit,
+) {
+    FloatingTabHeader(
+        backdrop = backdrop,
+        title = title,
+        actions = {
+            IconButton(onClick = onSearch) {
+                Icon(CouiIcons.Outlined.Search, contentDescription = if (lang == "en") "Search" else "搜索", tint = AppTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
             }
-            Spacer(Modifier.height(6.dp))
-            Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            ToolbarGap()
+            if (showGrid) {
+                IconButton(onClick = onToggleCols) {
+                    Icon(CouiIcons.Outlined.LayoutSpliced, contentDescription = "网格", tint = AppTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                }
+                ToolbarGap()
+            }
+            CornerMenu(
+                expanded = menuOpen,
+                onExpandedChange = onMenu,
+                actions = listOfNotNull(
+                    MenuAction(if (lang == "en") "Switch source" else if (lang == "zh-TW") "切換書源" else "切换书源", ShuIcons.Swap) { onPickSource() },
+                    onWeb?.let { open -> MenuAction(if (lang == "en") "Open in browser" else if (lang == "zh-TW") "在瀏覽器開啟" else "在浏览器打开", CouiIcons.Outlined.CloudLink) { open() } },
+                ),
+            )
+        },
+        below = {
+            val label: @Composable () -> Unit = {
                 Text(
                     siteLabel,
-                    color = MiuixTheme.colorScheme.primary,
+                    color = AppTheme.colorScheme.primary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.widthIn(max = 148.dp).padding(end = 2.dp),
-                )
-                SourceTagStrip(
-                    tags = cats,
-                    selected = if (pane == "site") cat else "",
-                    onSelect = { g ->
-                        if(kind==XiuSources.KIND && g=="搜索") {
-                            onSearch()
-                            return@SourceTagStrip
-                        }
-                        if (activeSite == null && enabledSites.isNotEmpty()) {
-                            activeSite = enabledSites.first().id
-                            cat = Sites.catsFor(enabledSites.first()).firstOrNull() ?: "推荐"
-                        }
-                        pane = "site"
-                        cat = g
-                    },
+                    modifier = Modifier.widthIn(max = 148.dp).expandSource(8.dp).couiClickable(onClick = onPickSource).padding(horizontal = 8.dp, vertical = 6.dp),
                 )
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.08f)))
-            }
-        }
-    }
-    if (addOpen) {
-        OverlayScrim(onDismiss = { addOpen = false }) {
-            Card(Modifier.padding(24.dp).fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(copy.addSite, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                    TextField(
-                        value = addName,
-                        onValueChange = { addName = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = copy.siteName,
-                    )
-                    TextField(
-                        value = addUrl,
-                        onValueChange = { addUrl = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = copy.siteUrl,
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        Text(
-                            copy.cancel,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable { addOpen = false },
-                        )
-                        Text(
-                            addOk,
-                            color = MiuixTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable {
-                                val v = addUrl.trim()
-                                if (v.isNotBlank()) {
-                                    onAddUrl(addName.trim(), v)
-                                    addUrl = ""
-                                    addName = ""
-                                    addOpen = false
-                                }
-                            },
+            // 书源名放进分类标签行的前置位（ChipTabRow 的 leadingAction），两者同处一行、互不覆盖。
+            if (cats.isNotEmpty()) CouiTabs(
+                items = cats.map { it to it },
+                selected = if (selected in cats) selected else cats.first(),
+                onSelect = onCat,
+                modifier = Modifier.padding(bottom = 2.dp),
+                leading = label,
+            ) else Box(Modifier.fillMaxWidth().heightIn(min = 36.dp).padding(start = 8.dp, bottom = 6.dp), contentAlignment = Alignment.CenterStart) { label() }
+        },
+    )
+}
+
+/**
+ * 切换书源. A full page with its own Scaffold so the COUI top bar always has a backdrop.
+ * (The old picker drew SubTopBar inside the tab content, outside any Scaffold topBar slot:
+ * COUI TopAppBar then hit checkNotNull(LocalCouiBackdrop) and crashed the app.)
+ */
+@Composable
+internal fun SourcePickPane(lang: String, selected: String, onPick: (String) -> Unit, onBack: () -> Unit) {
+    val title = if (lang == "en") "Switch source" else if (lang == "zh-TW") "切換書源" else "切换书源"
+    Scaffold(topBar = { SubTopBar(title, onBack, BarTitle.End) }) { pad ->
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = pad, modifier = Modifier.fillMaxSize()) {
+            item {
+                Group(title = if (lang == "en") "Manga" else if (lang == "zh-TW") "漫畫" else "漫画") {
+                    Sites.defaults.filterNot { Sites.isNovelSite(it.id) }.forEach { s ->
+                        RadioButtonPreference(
+                            title = Sites.displayName(s),
+                            selected = selected == s.id,
+                            onClick = { onPick(s.id) },
                         )
                     }
                 }
             }
-        }
-    }
-    if (picking) {
-        BackHandler { picking = false }
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(MiuixTheme.colorScheme.surface)
-                .zIndex(4f),
-        ) {
-            SubTopBar(
-                "切换小说/漫画源",
-                onBack = { picking = false },
-            )
-            ArrowPreference(title = "网站管理", summary = "添加、改名或删除网站", onClick = onSites)
-            Box(Modifier.weight(1f).padding(bottom = padding.calculateBottomPadding())) {
-                SiteGrid(
-                    copy = copy,
-                    sites = enabledSites,
-                    scroll = siteScroll,
-                    onPick = { picked ->
-                        activeSite = picked.id
-                        cat = Sites.catsFor(picked).firstOrNull() ?: "推荐"
-                        onSelectSite(picked.id)
-                        pane = "site"
-                        picking = false
-                    },
-                )
+            item {
+                Group(title = if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说") {
+                    val novels = Sites.defaults.filter { Sites.isNovelSite(it.id) }
+                    if (novels.isEmpty()) {
+                        RadioButtonPreference(
+                            title = if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说",
+                            summary = if (lang == "en") "No novel source yet, coming later" else if (lang == "zh-TW") "暫無小說源，等待後續加入" else "暂无小说源，等待后续加入",
+                            selected = selected == Sites.NOVEL,
+                            onClick = { onPick(Sites.NOVEL) },
+                        )
+                    } else {
+                        novels.forEach { s ->
+                            RadioButtonPreference(
+                                title = Sites.displayName(s),
+                                selected = selected == s.id,
+                                onClick = { onPick(s.id) },
+                            )
+                        }
+                    }
+                }
             }
+            item { Spacer(Modifier.height(28.dp)) }
         }
-    }
     }
 }
 
@@ -4160,46 +3365,6 @@ private fun normTag(s: String): String = s.trim().lowercase()
     .replace("載", "载")
 
 private fun tagEq(a: String, b: String) = normTag(a) == normTag(b)
-
-private fun tagAliases(raw: String): Set<String> {
-    val n = normTag(raw)
-    return when (n) {
-        "a漫", "美漫", "英文站", "英文", "english", "englishsite", "english manga", "englishmanga" ->
-            setOf("a漫", "美漫", "英文站", "英文", "english", "english manga")
-        "本本", "单本", "单行本" -> setOf("本本", "单本", "单行本")
-        "中文", "汉化", "chinese" -> setOf("中文", "汉化", "chinese")
-        "其他", "其他类" -> setOf("其他", "其他类")
-        else -> setOf(n)
-    }
-}
-
-private fun sameTag(a: String, b: String): Boolean {
-    val left = tagAliases(a)
-    return tagAliases(b).any { it in left }
-}
-
-private fun isSortBin(category: String) =
-    category == "最近" || category == "排行榜" || category == "月排行" || category == "周排行" || category == "天排行"
-
-private fun listingBin(category: String): String? = when (category) {
-    "", "全部", "搜索", "推荐", "推薦" -> null
-    else -> category
-}
-
-private fun binFits(w: CrawledWork, stamp: String): Boolean {
-    if (isSortBin(stamp)) return true
-    if (w.tags.any { sameTag(it, stamp) }) return true
-    if (w.genres.isBlank() || w.genres == "其他") return false
-    return w.genres.split(Regex("\\s+")).any { it.isNotBlank() && it != "其他" && sameTag(it, stamp) }
-}
-
-private fun belongsToBin(w: CrawledWork, cat: String): Boolean {
-    if (w.cat.isNotBlank() && w.cat != "全部" && w.cat != "推荐" && w.cat != "推薦" && sameTag(w.cat, cat)) return true
-    if (w.listed.any { sameTag(it, cat) }) return true
-    if (w.tags.any { sameTag(it, cat) }) return true
-    if (w.genres.isBlank() || w.genres == "其他") return false
-    return w.genres.split(Regex("\\s+")).any { it.isNotBlank() && it != "其他" && sameTag(it, cat) }
-}
 
 internal fun mergeListed(prev: CrawledWork, item: CrawledWork, category: String): CrawledWork {
     val tags = LinkedHashSet<String>()
@@ -4250,7 +3415,7 @@ private fun DiscoverListRow(w: CrawledWork, onOpen: () -> Unit) {
         onClick = onOpen,
     ) {
         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(64.dp).height(86.dp).clip(RoundedCornerShape(8.dp)).background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.06f))) {
+            Box(Modifier.width(64.dp).height(86.dp).clip(RoundedCornerShape(8.dp)).background(AppTheme.colorScheme.onSurface.copy(alpha = 0.06f))) {
                 SmartCover(w.cover, Modifier.fillMaxSize(), plate = true, fallbackTitle = w.title)
             }
             Column(Modifier.padding(start = 12.dp).weight(1f)) {
@@ -4264,7 +3429,7 @@ private fun DiscoverListRow(w: CrawledWork, onOpen: () -> Unit) {
                     Text(
                         w.author,
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = AppTheme.colorScheme.onSurfaceVariantSummary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -4273,7 +3438,7 @@ private fun DiscoverListRow(w: CrawledWork, onOpen: () -> Unit) {
                     Text(
                         meta,
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = AppTheme.colorScheme.onSurfaceVariantSummary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -4284,180 +3449,8 @@ private fun DiscoverListRow(w: CrawledWork, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun SiteGrid(
-    copy: Copy,
-    sites: List<WebSite>,
-    onPick: (WebSite) -> Unit,
-    scroll: ScrollState,
-) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(scroll)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Spacer(Modifier.height(4.dp))
-        val novelLabel = when (copy.siteList) {
-            "Sites" -> "Novels"
-            "網站列表" -> "小說"
-            else -> "小说"
-        }
-        val comicLabel = when (copy.siteList) {
-            "Sites" -> "Manga"
-            "網站列表" -> "漫畫"
-            else -> "漫画"
-        }
-        val emptyLabel = when (copy.siteList) {
-            "Sites" -> "None"
-            "網站列表" -> "暫無"
-            else -> "暂无"
-        }
-        SiteBucket(novelLabel, sites.filter { Sites.isNovel(it) }, emptyLabel, onPick)
-        SiteBucket(comicLabel, sites.filter { !Sites.isNovel(it) }, emptyLabel, onPick)
-    }
-}
-
-@Composable
-private fun SiteBucket(
-    title: String,
-    sites: List<WebSite>,
-    emptyLabel: String,
-    onPick: (WebSite) -> Unit,
-) {
-    Text(
-        title,
-        fontSize = 13.sp,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 8.dp),
-    )
-    if (sites.isEmpty()) {
-        Text(
-            emptyLabel,
-            fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            modifier = Modifier.padding(start = 4.dp, bottom = 16.dp),
-        )
-    } else {
-        sites.chunked(3).forEach { row ->
-            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { s ->
-                    key(s.id) {
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .height(48.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                                .clickable { onPick(s) }
-                                .padding(horizontal = 6.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                Sites.displayName(s),
-                                fontSize = 13.sp,
-                                maxLines = 2,
-                                textAlign = TextAlign.Center,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
-}
-
-private fun siteNameFrom(url: String): String {
-    val host = runCatching { java.net.URL(url).host.lowercase() }.getOrDefault("")
-    val probe = WebSite("tmp", host, url)
-    return when (Sites.kindOf(probe)) {
-        Sites.JM -> "禁漫天堂"
-        Sites.IKAN -> "爱看韩漫"
-        Sites.BIQUGE -> "笔趣阁"
-        Sites.COPY -> "拷贝漫画"
-        Sites.JJ -> "简简漫画"
-        Sites.ALBUM -> "相簿"
-        else -> host.removePrefix("www.").substringBefore('.').ifBlank { "网站" }
-    }
-}
-
-@Composable
-private fun RowScope.SourceTagStrip(
-    tags: List<String>,
-    selected: String,
-    onSelect: (String) -> Unit,
-) {
-    val scroll = rememberScrollState()
-    val fade = MiuixTheme.colorScheme.surface
-    Box(
-        Modifier
-            .weight(1f)
-            .height(36.dp)
-            .clipToBounds()
-            .drawWithContent {
-                drawContent()
-                val edge = 18.dp.toPx()
-                if (size.width > edge) {
-                    drawRect(
-                        brush = Brush.horizontalGradient(
-                            0f to fade,
-                            edge / size.width to Color.Transparent,
-                            1f to Color.Transparent,
-                        ),
-                    )
-                }
-            },
-    ) {
-        Row(
-            Modifier
-                .fillMaxSize()
-                .horizontalScroll(scroll),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Spacer(Modifier.width(14.dp))
-            tags.forEach { g ->
-                val on = g == selected
-                Text(
-                    g,
-                    color = if (on) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    fontSize = 14.sp,
-                    fontWeight = if (on) FontWeight.Medium else FontWeight.Normal,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .clickable { onSelect(g) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-        }
-    }
-}
-
-@Composable
-private fun SourceTab(label: String, selected: Boolean, onClick: () -> Unit) {
-    Column(
-        Modifier.padding(horizontal = 10.dp).clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            label,
-            fontSize = 15.sp,
-            color = if (selected) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        )
-        Spacer(Modifier.height(6.dp))
-        Box(
-            Modifier
-                .width(28.dp)
-                .height(2.dp)
-                .background(if (selected) MiuixTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(1.dp)),
-        )
-    }
-}
-
-@Composable
 private fun NovelCoverPlate(title: String, modifier: Modifier = Modifier) {
-    Box(modifier.background(MiuixTheme.colorScheme.surface),contentAlignment=Alignment.BottomStart) {
+    Box(modifier.background(AppTheme.colorScheme.surface),contentAlignment=Alignment.BottomStart) {
         Text(
             title,
             modifier=Modifier.fillMaxWidth().background(Color(0xCC000000)).padding(8.dp),
@@ -4470,15 +3463,52 @@ private fun NovelCoverPlate(title: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun StoreCover(title: String, cover: String) {
-    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))) {
-        Box(Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(MiuixTheme.colorScheme.surface))
-        SmartCover(cover,Modifier.matchParentSize(),plate=true)
+internal fun StoreCover(title: String, cover: String) {
+    val shape = CouiShape(16.dp, 3f)
+    Column(Modifier.fillMaxWidth()) {
         Box(
-            Modifier.fillMaxWidth().align(Alignment.BottomStart).background(Color(0xCC000000)).padding(8.dp),
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(3f / 4f)
+                .clip(shape)
+                .background(CouiTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                .border(0.5.dp, CouiTheme.colorScheme.outlineVariant, shape),
         ) {
-            Text(title,color=Color.White,fontSize=13.sp,maxLines=1,overflow=TextOverflow.Ellipsis)
+            SmartCover(cover, Modifier.matchParentSize(), plate = true)
         }
+        CouiText(
+            text = title,
+            kind = CouiTextKind.PreferenceValue,
+            color = CouiTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.fillMaxWidth().padding(start = 2.dp, end = 2.dp, top = 6.dp),
+        )
+    }
+}
+
+/** Remembers the last search per source so returning from a detail page does not re-query. */
+private object SearchMemory {
+    private var siteId = ""
+    private var query = ""
+    private var at = 0L
+    var scroll = 0
+    var results: List<CrawledWork> = emptyList()
+        private set
+
+    fun matches(site: String, q: String): Boolean = site == siteId && q == query
+
+    fun validFor(site: String, q: String): Boolean =
+        q.isNotBlank() && matches(site, q) && results.isNotEmpty() &&
+            System.currentTimeMillis() - at < 30 * 60_000L
+
+    fun remember(site: String, q: String, items: List<CrawledWork>) {
+        siteId = site
+        query = q
+        results = items
+        at = System.currentTimeMillis()
+        scroll = 0
     }
 }
 
@@ -4489,43 +3519,46 @@ private fun SearchPane(
     onQuery: (String) -> Unit,
     crawled: List<CrawledWork>,
     webSites: List<WebSite>,
-    allowAdult: Boolean,
     siteId: String,
     onBack: () -> Unit,
     onOpen: (String) -> Unit,
     onHits: (List<CrawledWork>) -> Unit = {},
 ) {
-    val visibleSites = webSites.filter { it.enabled && (allowAdult || !Sites.isAdult(it)) }
-    val site = visibleSites.find { it.id == siteId } ?: visibleSites.firstOrNull()
+    // Search follows the store's current source: 拷贝漫画 only searches 拷贝漫画, and so on.
+    val site = webSites.firstOrNull { it.id == siteId }
+        ?: webSites.firstOrNull { Sites.kindOf(it) == Sites.COPY }
     val q = query.trim()
-    var live by remember { mutableStateOf<List<CrawledWork>>(emptyList()) }
+    val cached = site != null && SearchMemory.validFor(site.id, q)
+    var live by remember { mutableStateOf(if (cached) SearchMemory.results else emptyList()) }
     var searching by remember { mutableStateOf(false) }
-    var verifyOpen by remember { mutableStateOf(false) }
     var retrySearch by remember { mutableIntStateOf(0) }
-    if(verifyOpen && site!=null) {
-        BackHandler { verifyOpen=false;retrySearch++ }
-        WebPane(XiuSources.verificationUrl(site.id),"网站验证",onBack={verifyOpen=false;retrySearch++})
-        return
-    }
-    val listState = rememberLazyListState()
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = if (cached) SearchMemory.scroll else 0)
     val screenLive = LocalScreenLive.current
     val queryNow = rememberUpdatedState(query)
-    LaunchedEffect(q, site?.id,screenLive,retrySearch) {
+    DisposableEffect(Unit) {
+        onDispose {
+            if (SearchMemory.matches(site?.id.orEmpty(), queryNow.value.trim())) {
+                SearchMemory.scroll = listState.firstVisibleItemIndex
+            }
+        }
+    }
+    LaunchedEffect(q, site?.id, screenLive, retrySearch) {
         if (!screenLive) return@LaunchedEffect
         if (q.length < 1 || site == null) {
             live = emptyList()
             searching = false
             return@LaunchedEffect
         }
+        // Coming back from a detail page must keep the previous hits instead of re-querying.
+        if (retrySearch == 0 && SearchMemory.validFor(site.id, q)) {
+            live = SearchMemory.results
+            searching = false
+            return@LaunchedEffect
+        }
         searching = true
-        val searchJob = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]
-        delay(350)
+        delay(300)
         val result = kotlinx.coroutines.runInterruptible(Dispatchers.IO) {
-            runCatching { Crawler.search(q, listOf(site)) { partial ->
-                Handler(Looper.getMainLooper()).post {
-                    if (queryNow.value.trim() == q && searchJob?.isActive == true) live = partial
-                }
-            } }.getOrElse {
+            runCatching { Crawler.search(q, listOf(site)) }.getOrElse {
                 AppLog.add("search", it.message ?: "search fail")
                 emptyList()
             }
@@ -4533,6 +3566,7 @@ private fun SearchPane(
         if (queryNow.value.trim() == q) {
             live = result
             searching = false
+            if (result.isNotEmpty()) SearchMemory.remember(site.id, q, result)
         }
     }
     LaunchedEffect(live) {
@@ -4552,75 +3586,32 @@ private fun SearchPane(
                     else -> prev
                 }
             }
-            merged.values.filter { allowAdult || !Sites.adultWork(it, webSites) }.toList()
+            merged.values.toList()
         }
     }
-    // Resolve text-only search results entering the viewport after the initial
-    // bounded search batch, without loading an entire result set before showing it.
-    LaunchedEffect(q, site?.id, remote, screenLive, searching) {
-        if (!screenLive || searching || remote.none { it.cover.isBlank() && Biquge365.accepts(it.href) }) return@LaunchedEffect
-        snapshotFlow {
-            val visible=listState.layoutInfo.visibleItemsInfo
-            (visible.firstOrNull()?.index ?: 0) to (visible.lastOrNull()?.index ?: 0)
-        }.collect { (first,last) ->
-            val from=(first*2).coerceAtMost(remote.size)
-            val to=((last+3)*2).coerceAtMost(remote.size)
-            if(from<to) {
-                val missing=remote.subList(from,to).filter { it.cover.isBlank() && Biquge365.accepts(it.href) }
-                if(missing.isNotEmpty()) {
-                    val resolved=kotlinx.coroutines.runInterruptible(Dispatchers.IO) { Crawler.fillMissingCovers(missing) }.filter { it.cover.isNotBlank() }
-                    if(resolved.isNotEmpty()) {
-                        val covers=resolved.associateBy { it.id }
-                        live=live.map { item -> covers[item.id]?.let { item.copy(cover=it.cover) } ?: item }
-                        onHits(resolved)
-                    }
-                }
-            }
-        }
-    }
-    Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(end = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) { Icon(Icons.Back, contentDescription = copy.search) }
-            TextField(
-                value = query,
-                onValueChange = onQuery,
-                modifier = Modifier.weight(1f),
-                label = "搜索漫画、小说名或者输入关键词....",
-                useLabelAsPlaceholder = true,
-                singleLine = true,
-            )
-        }
-        if(!searching && q.isNotBlank() && site!=null && Sites.kindOf(site)==XiuSources.KIND && XiuSources.searchError(site.id).isNotBlank()) {
-            Column(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                Text(XiuSources.searchError(site.id),fontSize=13.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                    Button(onClick={retrySearch++}) { Text("重试") }
-                    if(XiuSources.searchError(site.id).contains("人机验证"))Button(onClick={verifyOpen=true}) { Text("打开网站验证") }
-                }
-            }
-        }
+    SearchPage(
+        query = query,
+        onQuery = onQuery,
+        hint = if (copy.search == "Search") "Search titles or keywords" else "搜索书名或关键词",
+        cancel = copy.cancel,
+        onCancel = onBack,
+    ) { pad ->
+    Column(Modifier.fillMaxSize().padding(pad)) {
         when {
-                q.isEmpty() -> EmptyFace("(｀・ω・´)", copy.searchEmpty, Modifier.fillMaxWidth().weight(1f))
-                searching && remote.isEmpty() -> Text(copy.loading, Modifier.padding(16.dp), color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                remote.isEmpty() -> EmptyFace("(´・ω・`)", copy.emptyCat, Modifier.fillMaxWidth().weight(1f))
+                q.isEmpty() -> Unit
+                searching && remote.isEmpty() -> EmptyState(null, copy.loading, Modifier.fillMaxWidth().weight(1f), loading = true)
+                remote.isEmpty() -> EmptyState("(´・ω・`)", copy.emptyCat, Modifier.fillMaxWidth().weight(1f))
                 else -> {
-                    Text(
-                        "${copy.search} · ${remote.size}",
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
-                        fontSize = 13.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    )
-                    LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    if (searching) CouiLinearProgress(null, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
+                    SmallTitle("${copy.search} · ${remote.size}")
+                    LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), state = listState, modifier = Modifier.fillMaxWidth().weight(1f)) {
                         items(remote.chunked(2)) { row ->
                             Row(
                                 Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
                                 row.forEach { m ->
-                                    Column(Modifier.weight(1f).clickable { onOpen(m.id) }) {
+                                    Column(Modifier.weight(1f).expandSource(8.dp).couiClickable { onOpen(m.id) }) {
                                         SmartCover(
                                             m.cover,
                                             Modifier.fillMaxWidth().aspectRatio(3f / 4f).clip(RoundedCornerShape(8.dp)),
@@ -4644,14 +3635,15 @@ private fun SearchPane(
             }
         }
     }
+    }
 
 @Composable
 private fun MineStat(value: String, label: String, ink: Color = Color.Unspecified, onClick: (() -> Unit)? = null) {
-    val num = if (ink == Color.Unspecified) MiuixTheme.colorScheme.onSurface else ink
-    val sub = if (ink == Color.Unspecified) MiuixTheme.colorScheme.onSurfaceVariantSummary else ink.copy(alpha = 0.72f)
+    val num = if (ink == Color.Unspecified) AppTheme.colorScheme.onSurface else ink
+    val sub = if (ink == Color.Unspecified) AppTheme.colorScheme.onSurfaceVariantSummary else ink.copy(alpha = 0.72f)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = if (onClick == null) Modifier else Modifier.clickable(onClick = onClick),
+        modifier = if (onClick == null) Modifier else Modifier.expandSource(12.dp).couiClickable(onClick = onClick),
     ) {
         Text(value, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = num)
         Text(label, fontSize = 12.sp, color = sub)
@@ -4659,7 +3651,7 @@ private fun MineStat(value: String, label: String, ink: Color = Color.Unspecifie
 }
 
 @Composable
-private fun MinePane(
+internal fun MinePane(
     padding: PaddingValues,
     copy: Copy,
     lang: String,
@@ -4667,8 +3659,6 @@ private fun MinePane(
     fav: Int,
     hist: Int,
     langLabel: String,
-    labTitle: String,
-    labSum: String,
     onTheme: () -> Unit,
     onReading: () -> Unit,
     readingLabel: String,
@@ -4679,7 +3669,6 @@ private fun MinePane(
     onHistory: () -> Unit,
     onIntro: () -> Unit,
     onFeedback: () -> Unit,
-    onLab: () -> Unit,
     onStorage: () -> Unit,
     onBackup: () -> Unit,
     onMore: () -> Unit,
@@ -4687,6 +3676,9 @@ private fun MinePane(
     banner: String,
 ) {
     var q by remember { mutableStateOf("") }
+    var searching by remember { mutableStateOf(false) }
+    BackHandler(enabled = searching) { searching = false; q = "" }
+    val mineBackdrop = rememberCouiBackdrop()
     val hint = if (lang == "en") "Search settings" else if (lang == "zh-TW") "搜尋功能項" else "搜索功能项"
     data class MineRow(val title: String, val summary: String, val onClick: () -> Unit)
     val groups = listOf(
@@ -4713,7 +3705,6 @@ private fun MinePane(
         ),
         listOf(
             MineRow(copy.intro, "", onIntro),
-            MineRow(labTitle, labSum, onLab),
             MineRow(copy.feedback, copy.feedbackSum, onFeedback),
         ),
     )
@@ -4730,7 +3721,8 @@ private fun MinePane(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(top = headDp, bottom = bottom + 24.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().then(if (useFloatingChrome) Modifier.couiBackdrop(mineBackdrop) else Modifier).background(AppTheme.colorScheme.surface),
+            overscrollEffect = rememberCouiOverscrollEffect(),
         ) {
                 if (query.isBlank()) {
                     item {
@@ -4769,9 +3761,8 @@ private fun MinePane(
                     }
                 }
                 shown.forEach { rows ->
-                    item { Spacer(Modifier.height(12.dp)) }
                     item {
-                        Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                        Group {
                             rows.forEach { row ->
                                 if (row.summary.isBlank()) ArrowPreference(row.title, onClick = row.onClick)
                                 else ArrowPreference(row.title, summary = row.summary, onClick = row.onClick)
@@ -4780,205 +3771,22 @@ private fun MinePane(
                     }
                 }
             }
-        Box(
-            Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .background(MiuixTheme.colorScheme.surface)
-                .onSizeChanged { headPx = it.height },
-        ) {
-            Column {
-            Spacer(Modifier.height(statusTop))
-            BasicTextField(
-                value = q,
-                onValueChange = { q = it },
-                singleLine = true,
-                textStyle = TextStyle(color = MiuixTheme.colorScheme.onSurface, fontSize = 16.sp),
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                    .padding(horizontal = 16.dp),
-                decorationBox = { inner ->
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
-                        if (q.isEmpty()) {
-                            Text(hint, color = MiuixTheme.colorScheme.onSurfaceVariantSummary, fontSize = 16.sp)
-                        }
-                        inner()
-                    }
-                },
-            )
+        val head: @Composable () -> Unit = {
+            Column(Modifier.fillMaxWidth().onSizeChanged { headPx = it.height }) {
+                Spacer(Modifier.height(statusTop))
+                CouiSearchField(
+                    query = q,
+                    onQuery = { q = it },
+                    hint = hint,
+                    expanded = searching,
+                    onExpandedChange = { searching = it; if (!it) q = "" },
+                    cancel = copy.cancel,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
             }
         }
-    }
-}
-
-@Composable
-private fun SourcesPane(copy: Copy, sources: MutableList<Source>, onBack: () -> Unit, onChange: () -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("") }
-    Scaffold(topBar = { SubTopBar(copy.sources, onBack) }) { padding ->
-        LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-            item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
-                    sources.forEachIndexed { i, s ->
-                        SwitchPreference(
-                            checked = s.enabled,
-                            onCheckedChange = {
-                                sources[i] = s.copy(enabled = it)
-                                onChange()
-                            },
-                            title = s.name,
-                            summary = s.url.ifBlank { s.summary },
-                        )
-                    }
-                }
-            }
-            item { SmallTitle(copy.addSource) }
-            item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        TextField(value = name, onValueChange = { name = it }, modifier = Modifier.fillMaxWidth(), label = copy.sourceName)
-                        TextField(value = url, onValueChange = { url = it }, modifier = Modifier.fillMaxWidth(), label = copy.siteUrl)
-                        TextField(value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), label = copy.sourceNote)
-                        Button(
-                            onClick = {
-                                if (name.isBlank()) return@Button
-                                sources.add(Source("custom-${System.currentTimeMillis()}", name.trim(), note.trim().ifBlank { copy.sources }, true, url.trim()))
-                                name = ""
-                                note = ""
-                                url = ""
-                                onChange()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColorsPrimary(),
-                        ) { Text(copy.importBtn) }
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(28.dp)) }
-        }
-    }
-}
-
-@Composable
-private fun SitesPane(
-    copy: Copy,
-    webSites: MutableList<WebSite>,
-    crawled: MutableList<CrawledWork>,
-    allowAdult: Boolean,
-    onBack: () -> Unit,
-    onChange: () -> Unit,
-) {
-    val context = LocalContext.current
-    var busyId by remember { mutableStateOf<String?>(null) }
-    var rename by remember { mutableStateOf<WebSite?>(null) }
-    var renameText by remember { mutableStateOf("") }
-    fun crawl(id: String, target: String) {
-        if (busyId != null) return
-        if (!Net.online(context)) {
-            Toast.makeText(context, copy.offline, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (target.isBlank()) {
-            Toast.makeText(context, copy.reserved, Toast.LENGTH_SHORT).show()
-            return
-        }
-        busyId = id
-        Thread {
-            val (items, err) = Crawler.fetch(target, id)
-            Handler(Looper.getMainLooper()).post {
-                busyId = null
-                val i = webSites.indexOfFirst { it.id == id }
-                if (i >= 0) {
-                    webSites[i] = webSites[i].copy(lastError = err.orEmpty(), itemCount = items.size, url = webSites[i].url)
-                }
-                crawled.removeAll { it.siteId == id && (it.cat == "推荐" || it.cat.isBlank()) }
-                crawled.addAll(items.map { if (it.cat.isBlank()) it.copy(cat = "推荐") else it })
-                if (items.isNotEmpty()) LocalStore.saveListing(id, crawled.filter { it.siteId == id })
-                onChange()
-                Toast.makeText(context, err ?: "抓到 ${items.size} 部", Toast.LENGTH_SHORT).show()
-            }
-        }.start()
-    }
-    Scaffold(topBar = { SubTopBar("网站管理", onBack) }) { padding ->
-        LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
-            if (webSites.isEmpty()) {
-                item { Text(copy.noSites, Modifier.padding(16.dp), color = MiuixTheme.colorScheme.onSurfaceVariantSummary) }
-            } else {
-                item {
-                    val shown = webSites.filter { allowAdult || !Sites.isAdult(it) }
-                    Card(Modifier.padding(12.dp).fillMaxWidth()) {
-                        if (shown.isEmpty()) {
-                            Text(copy.noSites, Modifier.padding(16.dp), color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                        }
-                        shown.forEach { s ->
-                            key(s.id) {
-                            val rowBusy = busyId == s.id
-                            ArrowPreference(
-                                title = Sites.displayName(s),
-                                summary = s.url.ifBlank { copy.reserved } + if (s.lastError.isNotBlank()) "\n${s.lastError}" else "",
-                                onClick = { crawl(s.id, s.url) },
-                            )
-                            FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { crawl(s.id, s.url) }, enabled = busyId == null) { Text(if (rowBusy) "…" else copy.crawlNow) }
-                                Button(onClick = {
-                                    rename = s
-                                    renameText = s.name
-                                }) { Text("改名") }
-                                Button(onClick = {
-                                    val i = webSites.indexOfFirst { it.id == s.id }
-                                    if (i >= 0) webSites.removeAt(i)
-                                    crawled.removeAll { it.siteId == s.id }
-                                    onChange()
-                                }) { Text("删除") }
-                            }
-                            }
-                        }
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(28.dp)) }
-        }
-    }
-    val editing = rename
-    if (editing != null) {
-        OverlayScrim(onDismiss = { rename = null }) {
-            Card(Modifier.padding(24.dp).fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(copy.siteName, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                    TextField(
-                        value = renameText,
-                        onValueChange = { renameText = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = copy.siteName,
-                    )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        Text(
-                            copy.cancel,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable { rename = null },
-                        )
-                        Text(
-                            "保存",
-                            color = MiuixTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clickable {
-                                val next = renameText.trim()
-                                val i = webSites.indexOfFirst { it.id == editing.id }
-                                if (i >= 0 && next.isNotBlank()) {
-                                    webSites[i] = webSites[i].copy(name = next)
-                                    onChange()
-                                }
-                                rename = null
-                            },
-                        )
-                    }
-                }
-            }
-        }
+        if (useFloatingChrome) TopAppBarSurface(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(), backdrop = mineBackdrop) { head() }
+        else Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().background(AppTheme.colorScheme.surface)) { head() }
     }
 }
 
@@ -5104,17 +3912,17 @@ private fun RemotePane(
             SmallTopAppBar(
                 title = "",
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Back, contentDescription = "返回") }
+                    IconButton(onClick = onBack) { Icon(CouiIcons.Outlined.Back, contentDescription = "返回") }
                 },
                 actions = {
                     IconButton(onClick = {
                         val w = work
                         if (w == null || chapters.isEmpty()) {
-                            Toast.makeText(context, if (chapters.isEmpty()) "还没有目录" else "还在加载", Toast.LENGTH_SHORT).show()
+                            CouiToast.show(if (chapters.isEmpty()) "还没有目录" else "还在加载")
                         } else if (Downloader.running) {
-                            Toast.makeText(context, "正在下载", Toast.LENGTH_SHORT).show()
+                            CouiToast.show("正在下载")
                         } else {
-                            Toast.makeText(context, "开始下载", Toast.LENGTH_SHORT).show()
+                            CouiToast.show("开始下载")
                             Downloader.start(
                                 context = context,
                                 id = w.id,
@@ -5123,17 +3931,17 @@ private fun RemotePane(
                                 onStep = { done, total -> dlText = "下载 $done/$total" },
                                 onDone = { err ->
                                     dlText = if (err == null) "已下载" else err
-                                    Toast.makeText(context, if (err == null) "下载完成" else err, Toast.LENGTH_SHORT).show()
+                                    CouiToast.show(if (err == null) "下载完成" else err)
                                 },
                             )
                         }
                     }) {
-                        Icon(Icons.Download, contentDescription = "下载")
+                        Icon(ShuIcons.Download, contentDescription = "下载")
                     }
                     val url = site?.url.orEmpty()
                     if (url.isNotBlank()) {
                         IconButton(onClick = { onWeb(url, site?.let { Sites.displayName(it) } ?: url) }) {
-                            Icon(Icons.Globe, contentDescription = "网站")
+                            Icon(ShuIcons.Globe, contentDescription = "网站")
                         }
                     }
                 },
@@ -5145,11 +3953,11 @@ private fun RemotePane(
             onRefresh = {
                 val href = work?.href
                 if (!online) {
-                    Toast.makeText(context, copy.offline, Toast.LENGTH_SHORT).show()
+                    CouiToast.show(copy.offline)
                 } else if (!href.isNullOrBlank()) {
+                    run {
                     pulling = true
-                    val icon = AppIcons.mipmap(Prefs(context).iconStyle)
-                    ShelfNotes.hold("更新中...", icon)
+                    CouiToast.hold("更新中...")
                     Notify.live(context, 0, 1, work?.title.orEmpty())
                     Thread {
                         val bump = Updates.refresh(id, href, listed ?: work)
@@ -5158,19 +3966,21 @@ private fun RemotePane(
                             applyStore(fromPull = true, bump = bump)
                             Notify.liveClear(context)
                             if (bump != null && bump.added > 0) {
-                                ShelfNotes.flash("有章节更新快去通知栏看看是哪一本！", icon)
+                                CouiToast.show("有章节更新快去通知栏看看是哪一本！")
                                 Notify.chapter(context, bump.title, bump.index, bump.chapterTitle)
                             } else {
-                                ShelfNotes.flash("没有章节更新诶😩", icon)
+                                CouiToast.show("没有章节更新诶😩")
                             }
                         }
                     }.start()
+                    }
                 }
             },
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
         val chapterList = rememberLazyListState()
-        LazyColumn(state = chapterList, modifier = Modifier.fillMaxSize()) {
+        var chapterDesc by rememberSaveable(id) { mutableStateOf(false) }
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), state = chapterList, modifier = Modifier.fillMaxSize()) {
             item {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -5180,28 +3990,28 @@ private fun RemotePane(
                                 .width(118.dp)
                                 .height(168.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .clickable(enabled = !work?.cover.isNullOrBlank()) { coverOpen = true },
+                                .couiClickable(enabled = !work?.cover.isNullOrBlank()) { coverOpen = true },
                             fallbackTitle = work?.title?.takeIf { !isIdTitle(it) } ?: title0,
                         )
                         Column(Modifier.weight(1f).padding(top = 4.dp)) {
-                            Text(work?.title?.takeIf { !isIdTitle(it) } ?: title0.ifBlank { work?.title ?: id }, style = MiuixTheme.textStyles.title2, maxLines = 3)
+                            Text(work?.title?.takeIf { !isIdTitle(it) } ?: title0.ifBlank { work?.title ?: id }, style = AppTheme.textStyles.title2, maxLines = 3)
                             Spacer(Modifier.height(6.dp))
                             if (!work?.author.isNullOrBlank()) {
-                                Text(work?.author.orEmpty(), fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                                Text(work?.author.orEmpty(), fontSize = 14.sp, color = AppTheme.colorScheme.onSurfaceVariantSummary)
                             }
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 metaLine,
                                 fontSize = 13.sp,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                color = AppTheme.colorScheme.onSurfaceVariantSummary,
                             )
                             if (status.isNotBlank()) {
                                 Spacer(Modifier.height(8.dp))
-                                Text(status, color = MiuixTheme.colorScheme.primary, fontSize = 13.sp)
+                                Text(status, color = AppTheme.colorScheme.primary, fontSize = 13.sp)
                             }
                             if (dlText.isNotBlank()) {
                                 Spacer(Modifier.height(8.dp))
-                                Text(dlText, color = MiuixTheme.colorScheme.primary, fontSize = 13.sp)
+                                Text(dlText, color = AppTheme.colorScheme.primary, fontSize = 13.sp)
                             }
                         }
                     }
@@ -5215,32 +4025,34 @@ private fun RemotePane(
                             synopsis,
                             fontSize = 14.sp,
                             lineHeight = 22.sp,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
                             maxLines = if (descOpen) Int.MAX_VALUE else 4,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth().clickable { descOpen = !descOpen },
+                            modifier = Modifier.fillMaxWidth().couiClickable { descOpen = !descOpen },
                         )
                         Text(
                             if (descOpen) "∧" else "∨",
-                            modifier = Modifier.fillMaxWidth().clickable { descOpen = !descOpen },
+                            modifier = Modifier.fillMaxWidth().couiClickable { descOpen = !descOpen },
                             textAlign = TextAlign.Center,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
                             fontSize = 16.sp,
                         )
                     }
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = onLib, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColorsPrimary()) {
-                        Text(if (inLib) copy.inShelf else copy.addShelf)
-                    }
-                    if (foldersOn) {
-                        Spacer(Modifier.height(8.dp))
-                        Button(onClick = onFolder, modifier = Modifier.fillMaxWidth()) {
-                            val novel = work?.let { webSites.find { site -> site.id == it.siteId }?.let { site -> Sites.isNovel(site) } == true } == true || Biquge365.accepts(work?.href.orEmpty())
-                            Text(if(copy.addShelf=="Add to shelf") { if(isFavorite) "Saved" else if(novel) "Save novel" else "Save comic" } else if(isFavorite) { if(novel) "已收藏小说" else "已收藏漫画" } else { if(novel) "收藏小说" else "收藏漫画" })
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CouiButton(if (inLib) copy.inShelf else copy.addShelf, onLib, Modifier.weight(1f))
+                        if (foldersOn) {
+                            val novel = work?.let { Sites.isNovelSite(it.siteId) } == true
+                            CouiButton(
+                                if(copy.addShelf=="Add to shelf") { if(isFavorite) "Saved" else if(novel) "Save novel" else "Save comic" } else if(isFavorite) { if(novel) "已收藏小说" else "已收藏漫画" } else { if(novel) "收藏小说" else "收藏漫画" },
+                                onFolder,
+                                Modifier.weight(1f),
+                            )
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Button(
+                    Spacer(Modifier.height(12.dp))
+                    CouiButton(
+                        copy.startRead,
                         onClick = {
                             val savedId = resume?.chapterId
                             val target = chapters.find { it.id == savedId } ?: chapters.firstOrNull()
@@ -5250,13 +4062,29 @@ private fun RemotePane(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        kind = CouiButtonKind.Primary,
                         enabled = chapters.isNotEmpty(),
-                    ) { Text(copy.startRead) }
+                    )
                 }
             }
             if (chapters.isNotEmpty()) {
-                val ordered = chapters.sortedBy { it.index }
-                item { SmallTitle("${copy.catalogTitle} · ${ordered.size}") }
+                val ordered = chapters.sortedBy { it.index }.let { if (chapterDesc) it.asReversed() else it }
+                item {
+                    Box(Modifier.fillMaxWidth()) {
+                        SmallTitle("${copy.catalogTitle} · ${ordered.size}")
+                        CouiText(
+                            text = if (chapterDesc) "倒序" else "正序",
+                            kind = CouiTextKind.Description,
+                            color = CouiTheme.colorScheme.accent,
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 20.dp)
+                                .clip(RoundedCornerShape(50))
+                                .couiClickable { chapterDesc = !chapterDesc }
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                        )
+                    }
+                }
                 items(ordered, key = { it.href.ifBlank { it.id } }) { c ->
                     val savedPage = resume?.takeIf { it.chapterId == c.id && it.page >= 0 }?.page
                     val seen = "$id:${c.id}" in readKeys || resume?.chapterId == c.id
@@ -5275,7 +4103,7 @@ private fun RemotePane(
                             Row(
                                 Modifier
                                     .weight(1f)
-                                    .clickable(enabled = !chapterList.isScrollInProgress) {
+                                    .couiClickable(enabled = !chapterList.isScrollInProgress) {
                                         onReadChapter(chapterId, openPage)
                                     }
                                     .padding(vertical = 12.dp),
@@ -5285,7 +4113,7 @@ private fun RemotePane(
                                     c.title,
                                     modifier = Modifier.weight(1f),
                                     fontSize = 16.sp,
-                                    color = if (seen) Color(0xFF9A9A9E) else MiuixTheme.colorScheme.onSurface,
+                                    color = if (seen) Color(0xFF9A9A9E) else AppTheme.colorScheme.onSurface,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -5294,7 +4122,7 @@ private fun RemotePane(
                                         "第${savedPage + 1}页",
                                         modifier = Modifier.padding(start = 8.dp),
                                         fontSize = 13.sp,
-                                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                        color = AppTheme.colorScheme.onSurfaceVariantSummary,
                                         maxLines = 1,
                                     )
                                 }
@@ -5303,13 +4131,13 @@ private fun RemotePane(
                                 Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .clickable(enabled = !chapterList.isScrollInProgress) {
-                                        val w = work ?: return@clickable
+                                    .couiClickable(enabled = !chapterList.isScrollInProgress) {
+                                        val w = work ?: return@couiClickable
                                         if (Downloader.running) {
-                                            Toast.makeText(context, "正在下载", Toast.LENGTH_SHORT).show()
-                                            return@clickable
+                                            CouiToast.show("正在下载")
+                                            return@couiClickable
                                         }
-                                        Toast.makeText(context, "开始下载", Toast.LENGTH_SHORT).show()
+                                        CouiToast.show("开始下载")
                                         Downloader.start(
                                             context = context,
                                             id = w.id,
@@ -5317,19 +4145,19 @@ private fun RemotePane(
                                             chapters = listOf(c),
                                             onStep = { _, _ -> },
                                             onDone = { err ->
-                                                Toast.makeText(context, if (err == null) "下载完成" else err, Toast.LENGTH_SHORT).show()
+                                                CouiToast.show(if (err == null) "下载完成" else err)
                                             },
                                         )
                                     },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(Icons.Download, contentDescription = "下载", modifier = Modifier.size(20.dp))
+                                Icon(ShuIcons.Download, contentDescription = "下载", modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                 }
             } else if (loading) {
-                item { Text(copy.loading, Modifier.padding(16.dp), color = MiuixTheme.colorScheme.onSurfaceVariantSummary) }
+                item { Text(copy.loading, Modifier.padding(16.dp), color = AppTheme.colorScheme.onSurfaceVariantSummary) }
             }
             item { Spacer(Modifier.height(24.dp)) }
         }
@@ -5340,7 +4168,8 @@ private fun RemotePane(
             Modifier
                 .fillMaxSize()
                 .background(Color.Black)
-                .clickable { coverOpen = false },
+                // 全屏背景点按关闭：不需要按压反馈。
+                .clickable(interactionSource = null, indication = null) { coverOpen = false },
             contentAlignment = Alignment.Center,
         ) {
             SmartCover(
@@ -5370,7 +4199,7 @@ private fun TagRow(tags: List<String>) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(50))
-                    .background(MiuixTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                    .background(AppTheme.colorScheme.onSurface.copy(alpha = 0.08f))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             ) {
                 Text(tag, fontSize = 13.sp)
@@ -5379,17 +4208,9 @@ private fun TagRow(tags: List<String>) {
     }
 }
 
-private fun isBiqugeWork(workId: String, crawled: List<CrawledWork>): Boolean {
-    val live = crawled.find { it.id == workId }
-    if (live != null) {
-        return live.siteId.startsWith("native22-") || live.siteId.startsWith("xiu2-") || live.siteId == Sites.BIQUGE || live.siteId == Sites.BIQUGE2 || live.siteId == Sites.BIQUGE3 ||
-            live.href.contains("biquge365.net") || live.href.contains("bqg5.com") || live.href.contains("biquges.cc") ||
-            live.href.contains("biquge5200.cc") || live.href.contains("8tsw.com")
-    }
-    val disk = LocalStore.loadWork(workId)?.work ?: return false
-    return disk.siteId.startsWith("native22-") || disk.siteId.startsWith("xiu2-") || disk.siteId == Sites.BIQUGE || disk.siteId == Sites.BIQUGE2 || disk.siteId == Sites.BIQUGE3 ||
-        disk.href.contains("biquge365.net") || disk.href.contains("bqg5.com") || disk.href.contains("biquges.cc") ||
-        disk.href.contains("biquge5200.cc") || disk.href.contains("8tsw.com")
+private fun isNovelWork(workId: String, crawled: List<CrawledWork>): Boolean {
+    val siteId = crawled.find { it.id == workId }?.siteId ?: LocalStore.loadWork(workId)?.work?.siteId ?: return false
+    return Sites.isNovelSite(siteId)
 }
 
 @Composable
@@ -5408,7 +4229,7 @@ private fun ReadDispatch(
     onCoverSaved: (String) -> Unit,
     onFolder: () -> Unit,
 ) {
-    val novel = remember(workId) { isBiqugeWork(workId, crawled) }
+    val novel = remember(workId) { isNovelWork(workId, crawled) }
     if (novel) {
         NovelReaderPane(
             workId = workId,
@@ -5450,30 +4271,28 @@ private fun NovelReaderPane(
     onProgress: (String, Int) -> Unit,
     onFolder: () -> Unit,
 ) {
-    val context = LocalContext.current
+    val uiLang = resolveLang(prefs.lang, LocalConfiguration.current)
     val cached = remember(workId) { LocalStore.loadWork(workId) }
     val chapters = remember(workId) { cached?.chapters.orEmpty().sortedBy { it.index } }
     val chapter = chapters.find { it.id == chapterId } ?: chapters.firstOrNull()
+    val chapterAt = chapters.indexOfFirst { it.id == chapter?.id }
+    val scope = rememberCoroutineScope()
+
     var text by remember(chapterId) { mutableStateOf("") }
     var loading by remember(chapterId) { mutableStateOf(true) }
     var err by remember(chapterId) { mutableStateOf("") }
+    var retry by remember(chapterId) { mutableIntStateOf(0) }
+
     var fontSp by remember { mutableIntStateOf(prefs.novelFont) }
-    var night by remember { mutableStateOf(prefs.novelNight) }
-    var turn by remember { mutableStateOf(prefs.novelTurn) }
     var gap by remember { mutableFloatStateOf(prefs.novelGap) }
-    var eye by remember { mutableStateOf(prefs.novelEye) }
+    var night by remember { mutableStateOf(prefs.novelNight) }
     var tone by remember { mutableStateOf(prefs.novelTone) }
+    var vertical by remember { mutableStateOf(prefs.novelTurn == "vertical") }
     var chrome by remember { mutableStateOf(false) }
     var catalog by remember { mutableStateOf(false) }
     var settings by remember { mutableStateOf(false) }
-    var bright by remember { mutableFloatStateOf(1f) }
-    val scroll = remember(workId, chapterId) { ScrollState(0) }
-    var retry by remember(workId,chapterId) { mutableIntStateOf(0) }
-    var restored by remember(chapterId) { mutableStateOf(false) }
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    var box by remember { mutableStateOf(IntSize.Zero) }
-    val dark = night || tone == "ink" || tone == "black" || tone == "night"
+
+    val dark = night || tone == "night" || tone == "ink" || tone == "black"
     val bg = when {
         night || tone == "night" -> Color(0xFF1C1C1C)
         tone == "black" || tone == "ink" -> Color(0xFF111111)
@@ -5482,11 +4301,10 @@ private fun NovelReaderPane(
         tone == "blue" -> Color(0xFFD5E3F0)
         else -> Color(0xFFEFE6C8)
     }
-    val fg = if (dark) Color(0xFFD8D8D8) else Color(0xFF1A1A1A)
+    val fg = if (dark) Color(0xFFD9D9D9) else Color(0xFF1B1B1B)
     val muted = fg.copy(alpha = 0.55f)
-    val bar = if (dark) Color(0xFF242424) else Color(0xFFF6F1E4)
-    val accent = Color(0xFFE67A2E)
-    LaunchedEffect(workId,chapterId,retry) {
+
+    LaunchedEffect(workId, chapterId, retry) {
         val href = chapter?.href
         if (href.isNullOrBlank()) {
             loading = false
@@ -5495,496 +4313,295 @@ private fun NovelReaderPane(
         }
         loading = true
         err = ""
-        restored = false
+        text = ""
         val (body, e) = kotlinx.coroutines.runInterruptible(Dispatchers.IO) { Crawler.fetchNovel(href) }
         text = body
         loading = false
         if (body.isBlank()) err = e ?: "未解析到正文"
     }
-    val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val readingTitle = normalizedNovelChapterTitle(chapter?.title.orEmpty(),chapter?.index ?: 0,text)
-    val bodyTop = topInset + 56.dp
-    val paginationBottom = bottomInset + 28.dp
-    val bodyBottom = bottomInset + if(chrome)124.dp else 28.dp
-    val headingStyle=TextStyle(color=fg,fontSize=(fontSp+4).sp,fontWeight=FontWeight.Bold,lineHeight=((fontSp+4)*gap).sp)
-    val reading = remember(text, readingTitle) {
-        val peeled = novelReadingBody(text, readingTitle)
-        peeled.ifBlank { text }
+
+    val readingTitle = normalizedNovelChapterTitle(chapter?.title.orEmpty(), chapter?.index ?: 0, text)
+    val displayText = remember(text, readingTitle) {
+        val peeled = novelReadingBody(text, readingTitle).ifBlank { text }
+        val head = readingTitle.ifBlank { chapter?.title.orEmpty() }
+        if (head.isBlank() || peeled.startsWith(head)) peeled else "$head\n\n$peeled"
     }
-    val style = TextStyle(
-        color = fg,
-        fontSize = fontSp.sp,
-        lineHeight = (fontSp * gap).sp,
-    )
-    val leaves = remember(reading, readingTitle, fontSp, gap, box, turn, night, tone, bodyTop, paginationBottom) {
-        if (reading.isBlank() || turn == "vertical" || box.width < 8 || box.height < 8) {
+    val bodyStyle = remember(fg, fontSp, gap) {
+        TextStyle(color = fg, fontSize = fontSp.sp, lineHeight = (fontSp * gap).sp)
+    }
+
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val contentTop = statusTop + 52.dp
+    val contentBottom = navBottom + 72.dp
+    val density = LocalDensity.current
+    var box by remember { mutableStateOf(IntSize.Zero) }
+    val measurer = rememberTextMeasurer()
+    val leaves = remember(displayText, bodyStyle, box, vertical) {
+        if (vertical || displayText.isBlank() || box.width < 8 || box.height < 8) {
             emptyList()
         } else {
-            val side = with(density) { 22.dp.roundToPx() }
-            val top = with(density) { bodyTop.roundToPx() }
-            val bot = with(density) { paginationBottom.roundToPx() }
-            val titleHeight=measurer.measure(AnnotatedString(readingTitle),style=headingStyle,constraints=Constraints(maxWidth=(box.width-side*2).coerceAtLeast(1)),maxLines=3).size.height + with(density) { 16.dp.roundToPx() }
-            paginateNovel(
-                measurer,
-                reading,
-                style,
-                (box.width - side * 2).coerceAtLeast(1),
-                (box.height - top - bot).coerceAtLeast(1),
-                firstHeight=(box.height-top-bot-titleHeight).coerceAtLeast(1),
-            )
-        }
-    }
-    val pageCount = leaves.size.coerceAtLeast(1)
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { pageCount })
-    LaunchedEffect(leaves.size, chapterId, text, turn, scroll.maxValue) {
-        if (text.isBlank() || restored) return@LaunchedEffect
-        if (turn == "vertical") {
-            if(startPage>0 && scroll.maxValue==0) kotlinx.coroutines.withTimeoutOrNull(1200) { snapshotFlow { scroll.maxValue }.first { it>0 } }
-            if (scroll.maxValue > 0 && startPage > 0) {
-                scroll.scrollTo((scroll.maxValue.toLong() * startPage.coerceAtMost(1000) / 1000).toInt().coerceIn(0, scroll.maxValue))
-            }
-            restored = true
-            return@LaunchedEffect
-        }
-        if (leaves.isEmpty()) return@LaunchedEffect
-        val at = novelRestorePage(startPage, leaves.size)
-        if (at != pagerState.currentPage) runCatching { pagerState.scrollToPage(at) }
-        restored = true
-    }
-    LaunchedEffect(chapterId, text, pagerState.currentPage, scroll.value, scroll.maxValue, turn, restored, loading) {
-        if (text.isBlank() || loading || !restored) return@LaunchedEffect
-        val chapterKey = chapter?.id ?: chapterId
-        if (turn == "vertical") {
-            if (scroll.maxValue <= 0) return@LaunchedEffect
-            onProgress(chapterKey, (scroll.value * 1000L / scroll.maxValue).toInt().coerceIn(0, 1000))
-        } else if (leaves.isNotEmpty()) {
-            onProgress(chapterKey, pagerState.currentPage.coerceIn(0, leaves.lastIndex))
-        }
-    }
-    val index = chapters.indexOfFirst { it.id == chapter?.id }
-    val clock = remember { mutableStateOf("") }
-    LaunchedEffect(chrome) {
-        while (true) {
-            val cal = java.util.Calendar.getInstance()
-            clock.value = "%02d:%02d".format(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE))
-            delay(20_000)
-        }
-    }
-    val scope = rememberCoroutineScope()
-    fun setReaderChrome(show:Boolean) {
-        chrome=show
-    }
-    BackHandler {
-        when {
-            catalog -> catalog = false
-            settings -> settings = false
-            chrome -> setReaderChrome(false)
-            else -> onClose()
+            val side = with(density) { 22.dp.toPx() * 2 }.toInt()
+            val top = with(density) { contentTop.toPx() }.toInt()
+            val bottom = with(density) { contentBottom.toPx() }.toInt()
+            val w = (box.width - side).coerceAtLeast(1)
+            val h = (box.height - top - bottom - 8).coerceAtLeast(1)
+            paginateNovel(measurer, displayText, bodyStyle, w, h)
         }
     }
 
-    fun turnPage(delta: Int) {
-        if (turn == "vertical") {
-            setReaderChrome(!chrome)
-            return
-        }
-        val next = pagerState.currentPage + delta
-        if (next < 0) {
-            chapters.getOrNull(index - 1)?.let { onChapter(it.id) }
-            return
-        }
-        if (leaves.isNotEmpty() && next > leaves.lastIndex) {
-            chapters.getOrNull(index + 1)?.let { onChapter(it.id) }
-            return
-        }
-        scope.launch {
-            runCatching {
-                if (turn == "none") pagerState.scrollToPage(next) else pagerState.animateScrollToPage(next)
-            }
+    val pageCount = remember(chapterId) { mutableIntStateOf(1) }
+    val pagerState = key(chapterId) {
+        rememberPagerState(initialPage = 0, pageCount = { pageCount.intValue.coerceAtLeast(1) })
+    }
+    val scroll = remember(chapterId) { ScrollState(0) }
+    var restored by remember(chapterId) { mutableStateOf(false) }
+    var lastSaved by remember(chapterId) { mutableIntStateOf(-1) }
+
+    LaunchedEffect(chapterId, leaves.size, vertical, text, scroll.maxValue) {
+        if (text.isBlank()) return@LaunchedEffect
+        if (!vertical && leaves.isNotEmpty()) {
+            pageCount.intValue = leaves.size
+            val at = novelRestorePage(startPage, leaves.size)
+            if (pagerState.currentPage != at) runCatching { pagerState.scrollToPage(at) }
+            restored = true
+        } else if (vertical && scroll.maxValue > 0) {
+            val target = ((startPage / 1000f) * scroll.maxValue).toInt()
+            if (target > 0) runCatching { scroll.scrollTo(target) }
+            restored = true
         }
     }
-    fun saveChapter() {
-        val body = text
-        val ch = chapter ?: return
-        if (body.isBlank()) return
-        val dir = java.io.File(context.getExternalFilesDir(null) ?: context.filesDir, "novels/$workId")
-        dir.mkdirs()
-        val safe = ch.title.replace(Regex("""[\\/:*?"<>|]"""), " ").trim().take(40).ifBlank { ch.id }
-        java.io.File(dir, "${ch.index}-$safe.txt").writeText(ch.title + "\n\n" + body)
-        Toast.makeText(context, "本章已下载", Toast.LENGTH_SHORT).show()
+    LaunchedEffect(vertical, pagerState.currentPage, scroll.value, scroll.maxValue, restored) {
+        if (!restored || text.isBlank() || chapter == null) return@LaunchedEffect
+        val value = if (vertical) {
+            if (scroll.maxValue <= 0) 0 else (scroll.value * 1000L / scroll.maxValue).toInt()
+        } else {
+            pagerState.currentPage
+        }
+        if (value != lastSaved) {
+            lastSaved = value
+            onProgress(chapter.id, value)
+        }
     }
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(bg)
-            .onSizeChanged { box = it },
-    ) {
-        val dim = (1f - bright).coerceIn(0f, 0.65f)
+
+    fun openChapter(delta: Int) {
+        val next = chapters.getOrNull(chapterAt + delta) ?: return
+        onChapter(next.id)
+    }
+
+    fun turn(delta: Int) {
+        if (vertical) {
+            chrome = true
+            return
+        }
+        if (leaves.isEmpty()) return
+        val target = pagerState.currentPage + delta
+        if (target in leaves.indices) {
+            scope.launch { runCatching { pagerState.scrollToPage(target) } }
+        } else if (delta > 0) {
+            openChapter(1)
+        } else {
+            openChapter(-1)
+        }
+    }
+
+    BackHandler(enabled = chrome || settings || catalog) {
         when {
-            loading -> Text(copy.loading, Modifier.align(Alignment.Center), color = muted, fontSize = 15.sp)
-            text.isBlank() -> Column(Modifier.align(Alignment.Center).padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                Text(err.ifBlank { "未解析到正文" },color=muted,fontSize=15.sp,textAlign=TextAlign.Center)
-                Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-                    Button(onClick={retry++}) { Text("重试") }
-                    Button(onClick=onClose) { Text("返回目录") }
-                }
+            settings -> settings = false
+            catalog -> catalog = false
+            else -> chrome = false
+        }
+    }
+
+    val tap = Modifier.pointerInput(vertical, chrome, settings, catalog, leaves.size, chapters.size) {
+        detectTapGestures { offset ->
+            if (settings || catalog) return@detectTapGestures
+            if (chrome) {
+                chrome = false
+                return@detectTapGestures
             }
-            turn == "vertical" -> Column(
+            if (vertical) {
+                chrome = true
+                return@detectTapGestures
+            }
+            val w = size.width.toFloat().coerceAtLeast(1f)
+            when {
+                offset.x < w * 0.30f -> turn(-1)
+                offset.x > w * 0.70f -> turn(1)
+                else -> chrome = true
+            }
+        }
+    }
+
+    val backdrop = rememberCouiBackdrop()
+    Box(Modifier.fillMaxSize().background(bg).onSizeChanged { box = it }.then(tap)) {
+        when {
+            loading && text.isBlank() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CouiCircularProgress(Modifier.size(28.dp))
+            }
+            text.isBlank() -> Column(
+                Modifier.fillMaxSize().padding(horizontal = 32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(err.ifBlank { copy.emptyCat }, color = muted, fontSize = 14.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(12.dp))
+                CouiButton("重试", { retry++ }, kind = CouiButtonKind.Secondary, compact = true)
+                Spacer(Modifier.height(10.dp))
+                CouiButton("返回", onClose, kind = CouiButtonKind.Secondary, compact = true)
+            }
+            vertical -> Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top=bodyTop,bottom=bodyBottom)
                     .verticalScroll(scroll)
-                    .padding(horizontal = 22.dp)
-                    .clickable { setReaderChrome(!chrome) },
+                    .padding(start = 22.dp, end = 22.dp, top = contentTop, bottom = contentBottom),
             ) {
-                Text(readingTitle,style=headingStyle,maxLines=3,overflow=TextOverflow.Ellipsis)
-                Spacer(Modifier.height(16.dp))
-                Text(reading, color = fg, fontSize = fontSp.sp, lineHeight = (fontSp * gap).sp)
+                Text(displayText, style = bodyStyle)
+                Spacer(Modifier.height(28.dp))
+                if (chapterAt in 0 until chapters.lastIndex) {
+                    CouiButton("下一章", { openChapter(1) }, Modifier.fillMaxWidth(), kind = CouiButtonKind.Secondary)
+                }
             }
             else -> HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                beyondViewportPageCount = 1,
-                userScrollEnabled = turn != "none" && !chrome,
+                modifier = Modifier.fillMaxSize().padding(top = contentTop, bottom = contentBottom),
             ) { page ->
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .pointerInput(page, turn, chrome) {
-                            detectTapGestures { pos ->
-                                if (chrome || catalog || settings) {
-                                    setReaderChrome(false)
-                                    catalog = false
-                                    settings = false
-                                    return@detectTapGestures
-                                }
-                                val x = pos.x / size.width
-                                when {
-                                    x < 0.28f -> turnPage(-1)
-                                    x > 0.72f -> turnPage(1)
-                                    else -> setReaderChrome(true)
-                                }
-                            }
-                        }
-                        .padding(horizontal = 22.dp)
-                        .padding(top=bodyTop,bottom=bodyBottom),
-                ) {
-                    Column(Modifier.layout { measurable,constraints ->
-                        // Toolbars must not redivide the chapter or remove the end
-                        // of the current page. Fit the same full page into the gap.
-                        val normalHeight=(box.height-with(density) { (bodyTop+paginationBottom).roundToPx() }).coerceAtLeast(1)
-                        val scale=if(chrome)(constraints.maxHeight.toFloat()/normalHeight).coerceIn(0.1f,1f) else 1f
-                        val placeable=measurable.measure(constraints.copy(minWidth=constraints.maxWidth,minHeight=normalHeight,maxHeight=normalHeight))
-                        layout(constraints.maxWidth,constraints.maxHeight) {
-                            placeable.placeWithLayer(0,0) {
-                                scaleX=scale
-                                scaleY=scale
-                                transformOrigin=androidx.compose.ui.graphics.TransformOrigin(0.5f,0f)
-                            }
-                        }
-                    }) {
-                    if(page==0) {
-                        Text(readingTitle,style=headingStyle,maxLines=3,overflow=TextOverflow.Ellipsis)
-                        Spacer(Modifier.height(16.dp))
-                    }
-                    Text(
-                        leaves.getOrNull(page).orEmpty(),
-                        color = fg,
-                        fontSize = fontSp.sp,
-                        lineHeight = (fontSp * gap).sp,
-                    )
-                    }
-                }
+                Text(
+                    leaves.getOrElse(page) { "" },
+                    style = bodyStyle,
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 22.dp),
+                )
             }
         }
-        if (eye && !dark) {
-            Box(Modifier.fillMaxSize().background(Color(0x18C47A1A)))
-        }
-        if (dim > 0.01f) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
-        }
-        if(!chrome) {
-            Row(Modifier.align(Alignment.TopStart).fillMaxWidth().statusBarsPadding().height(48.dp).padding(horizontal=4.dp),verticalAlignment=Alignment.CenterVertically) {
-                IconButton(onClick=onClose) { Icon(Icons.Back,contentDescription="返回",tint=muted) }
-                Text(cached?.work?.title.orEmpty(),color=muted,fontSize=13.sp,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.weight(1f).padding(end=16.dp))
-            }
-        }
-        if (!chrome && text.isNotBlank()) {
-            Row(
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+
+        if (chrome || text.isBlank()) {
+            ReaderTopBar(
+                backdrop = if (useFloatingChrome) backdrop else null,
+                title = readingTitle.ifBlank { chapter?.title.orEmpty() },
+                onBack = onClose,
+                modifier = Modifier.align(Alignment.TopCenter),
             ) {
-                val here = if (turn == "vertical") {
-                    val pct = if (scroll.maxValue <= 0) 0 else (scroll.value * 100 / scroll.maxValue)
-                    "$pct%"
-                } else {
-                    "${pagerState.currentPage + 1}/${leaves.size.coerceAtLeast(1)}"
-                }
-                Text(here, color = muted, fontSize = 12.sp)
-                Text(clock.value, color = muted, fontSize = 12.sp)
+                ToolbarTextButton(if (copy.addShelf == "Add to shelf") "Save" else "收藏") { onFolder() }
             }
         }
         if (chrome) {
-            Row(
-                Modifier
-                    .align(Alignment.TopStart)
-                    .fillMaxWidth()
-                    .background(bar)
-                    .statusBarsPadding()
-                    .height(48.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            ReaderBottomPanel(
+                backdrop = if (useFloatingChrome) backdrop else null,
+                modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                IconButton(onClick = onClose) { Icon(Icons.Back, contentDescription = "返回", tint = fg) }
-                Spacer(Modifier.weight(1f))
-                Text(
-                    if(cached?.work?.let { Sites.isNovel(WebSite(it.siteId,"",it.href,true)) }==true)"收藏小说" else "收藏漫画",
-                    modifier = Modifier.clickable { onFolder() }.padding(horizontal = 10.dp, vertical = 8.dp),
-                    color = fg,
-                    fontSize = 15.sp,
-                )
-                Text(
-                    "下载",
-                    modifier = Modifier.clickable { saveChapter() }.padding(horizontal = 12.dp, vertical = 8.dp),
-                    color = fg,
-                    fontSize = 15.sp,
-                )
-            }
-            Column(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(bar)
-                    .navigationBarsPadding()
-                    .padding(top = 8.dp, bottom = 6.dp),
-            ) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val prevOn = index > 0
-                    val nextOn = index >= 0 && index < chapters.lastIndex
-                    Text(
-                        "上一章",
-                        modifier = Modifier.clickable(enabled = prevOn) { chapters.getOrNull(index - 1)?.let { onChapter(it.id) } }.padding(8.dp),
-                        color = if (prevOn) fg else muted,
-                        fontSize = 14.sp,
-                    )
-                    val cur = if (turn == "vertical") {
-                        if (scroll.maxValue <= 0) 0 else ((scroll.value.toFloat() / scroll.maxValue) * 100).toInt()
-                    } else pagerState.currentPage
-                    val total = if (turn == "vertical") 100 else leaves.size.coerceAtLeast(1)
-                    PageSlider(
-                        index = cur.coerceAtLeast(0),
-                        count = total.coerceAtLeast(1),
-                        onSeek = { target ->
-                            if (turn == "vertical") {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    CouiRoundIcon(ShuIcons.SkipPrev, "上一章", { openChapter(-1) }, enabled = chapterAt > 0)
+                    if (vertical) {
+                        val pct = if (scroll.maxValue <= 0) 0 else (scroll.value * 100 / scroll.maxValue)
+                        PageSlider(
+                            index = pct,
+                            count = 101,
+                            onSeek = { target ->
                                 scope.launch {
-                                    val y = (scroll.maxValue * (target / 100f)).toInt()
-                                    scroll.scrollTo(y.coerceIn(0, scroll.maxValue))
+                                    runCatching { scroll.scrollTo((scroll.maxValue * target / 100f).toInt()) }
                                 }
-                            } else {
-                                scope.launch { runCatching { pagerState.scrollToPage(target.coerceIn(0, leaves.lastIndex.coerceAtLeast(0))) } }
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        deep = accent,
-                    )
-                    Text(
+                            },
+                            modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                        )
+                    } else {
+                        PageSlider(
+                            index = pagerState.currentPage,
+                            count = leaves.size.coerceAtLeast(1),
+                            onSeek = { target ->
+                                scope.launch { runCatching { pagerState.scrollToPage(target) } }
+                            },
+                            modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                        )
+                    }
+                    CouiRoundIcon(
+                        ShuIcons.SkipNext,
                         "下一章",
-                        modifier = Modifier.clickable(enabled = nextOn) { chapters.getOrNull(index + 1)?.let { onChapter(it.id) } }.padding(8.dp),
-                        color = if (nextOn) fg else muted,
-                        fontSize = 14.sp,
+                        { openChapter(1) },
+                        enabled = chapterAt in 0 until chapters.lastIndex,
                     )
                 }
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    NovelTool("目录", fg) { catalog = true }
-                    NovelTool(if (night) "日间" else "夜间", fg) {
-                        night = !night
-                        prefs.novelNight = night
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ReaderToolCell { ReaderTool(ShuIcons.Rows, "目录", { catalog = true }) }
+                    ReaderToolCell {
+                        ReaderTool(CouiIcons.Outlined.DarkLight, if (night) "日间" else "夜间", {
+                            night = !night
+                            prefs.novelNight = night
+                        })
                     }
-                    NovelTool("设置", fg) { settings = true }
+                    ReaderToolCell { ReaderTool(CouiIcons.Outlined.Setting, "设置", { settings = true }) }
                 }
             }
         }
+
         if (catalog) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
-                    .clickable { catalog = false },
-            ) {
-                Column(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.72f)
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                        .background(bar)
-                        .clickable(enabled = false) {},
-                ) {
-                    Text(
-                        cached?.work?.title ?: chapter?.title.orEmpty(),
-                        modifier = Modifier.padding(start = 16.dp, top = 14.dp, end = 16.dp),
-                        color = fg,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        "目录 · ${chapters.size}",
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 8.dp),
-                        color = muted,
-                        fontSize = 13.sp,
-                    )
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        items(chapters, key = { it.id }) { ch ->
-                            val on = ch.id == chapter?.id
-                            Text(
-                                ch.title,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        catalog = false
-                                        if (ch.id != chapter?.id) onChapter(ch.id)
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                color = if (on) accent else fg,
-                                fontSize = 15.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-            }
+            ChapterCatalogSheet(
+                title = if (uiLang == "en") "Chapters" else if (uiLang == "zh-TW") "章節" else "章节",
+                chapters = chapters,
+                currentId = chapter?.id.orEmpty(),
+                lang = uiLang,
+                onPick = { picked ->
+                    catalog = false
+                    if (picked.id != chapter?.id) onChapter(picked.id)
+                },
+                onDismiss = { catalog = false },
+            )
         }
+
         if (settings) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.28f))
-                    .clickable { settings = false },
+            Dialog(
+                onDismissRequest = { settings = false },
+                confirmAction = CouiDialogAction("完成", { settings = false }),
+                placement = CouiDialogPlacement.Bottom,
             ) {
                 Column(
                     Modifier
-                        .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                        .background(bar)
-                        .clickable(enabled = false) {}
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                        .heightIn(max = 460.dp)
+                        .couiVerticalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("亮度", color = muted, fontSize = 13.sp, modifier = Modifier.width(42.dp))
-                        TrackSlider(bright, 0.35f..1f, true, { bright = it }, Modifier.weight(1f))
-                        Text(
-                            "护眼",
-                            color = if (eye) accent else fg,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(start = 8.dp).clickable {
-                                eye = !eye
-                                prefs.novelEye = eye
+                    Group {
+                        SliderPreference(
+                            value = fontSp.toFloat(),
+                            onValueChange = { v ->
+                                fontSp = v.roundToInt().coerceIn(15, 32)
+                                prefs.novelFont = fontSp
                             },
+                            range = 15f..32f,
+                            label = "字号",
+                            valueText = "$fontSp",
                         )
+                        SliderPreference(
+                            value = gap,
+                            onValueChange = { v ->
+                                gap = v
+                                prefs.novelGap = v
+                            },
+                            range = 1.45f..2.3f,
+                            label = "行距",
+                            valueText = String.format(java.util.Locale.ROOT, "%.2f", gap),
+                        )
+                        SwitchPreference(night, { night = it; prefs.novelNight = it }, "夜间模式")
+                        SwitchPreference(vertical, {
+                            vertical = it
+                            restored = false
+                            prefs.novelTurn = if (it) "vertical" else "page"
+                        }, "上下滚动", summary = "关闭后左右翻页")
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("字号", color = muted, fontSize = 13.sp, modifier = Modifier.width(42.dp))
-                        Text(
-                            "A-",
-                            color = fg,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(fg.copy(alpha = 0.08f))
-                                .clickable {
-                                    fontSp = (fontSp - 1).coerceAtLeast(16)
-                                    prefs.novelFont = fontSp
-                                    restored = true
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
-                        Text("$fontSp", color = fg, fontSize = 15.sp, modifier = Modifier.padding(horizontal = 12.dp))
-                        Text(
-                            "A+",
-                            color = fg,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(fg.copy(alpha = 0.08f))
-                                .clickable {
-                                    fontSp = (fontSp + 1).coerceAtMost(32)
-                                    prefs.novelFont = fontSp
-                                    restored = true
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text("系统字体", color = muted, fontSize = 13.sp)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("颜色", color = muted, fontSize = 13.sp, modifier = Modifier.width(42.dp))
+                    SmallTitle("背景")
+                    Group {
                         listOf(
-                            "white" to Color(0xFFF7F7F7),
-                            "paper" to Color(0xFFEFE6C8),
-                            "green" to Color(0xFFDCE8D4),
-                            "blue" to Color(0xFFD5E3F0),
-                            "ink" to Color(0xFF2A2A2A),
-                            "black" to Color(0xFF111111),
-                            "night" to Color(0xFF1C1C1C),
-                        ).forEach { (id, color) ->
-                            val picked = if (night) id == "night" else tone == id
-                            Box(
-                                Modifier
-                                    .padding(end = 8.dp)
-                                    .size(26.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .then(if (picked) Modifier.borderTone() else Modifier)
-                                    .clickable {
-                                        tone = id
-                                        night = id == "night" || id == "ink" || id == "black"
-                                        prefs.novelTone = id
-                                        prefs.novelNight = night
-                                    },
-                            )
+                            "paper" to "纸张",
+                            "white" to "白色",
+                            "green" to "护眼绿",
+                            "blue" to "淡蓝",
+                            "night" to "深色",
+                        ).forEach { (id, label) ->
+                            RadioButtonPreference(label, tone == id, {
+                                tone = id
+                                prefs.novelTone = id
+                            })
                         }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("翻页", color = muted, fontSize = 13.sp, modifier = Modifier.width(42.dp))
-                        listOf("cover" to "覆盖", "slide" to "平移", "vertical" to "上下", "none" to "无动画").forEach { (id, label) ->
-                            Text(
-                                label,
-                                color = if (turn == id) Color.White else fg,
-                                fontSize = 13.sp,
-                                modifier = Modifier
-                                    .padding(end = 6.dp)
-                                    .clip(RoundedCornerShape(50))
-                                    .background(if (turn == id) accent else fg.copy(alpha = 0.08f))
-                                    .clickable {
-                                        turn = id
-                                        prefs.novelTurn = id
-                                        restored = true
-                                    }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                            )
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("间距", color = muted, fontSize = 13.sp, modifier = Modifier.width(42.dp))
-                        TrackSlider(
-                            gap,
-                            1.45f..2.3f,
-                            true,
-                            {
-                                gap = it
-                                prefs.novelGap = it
-                            },
-                            Modifier.weight(1f),
-                        )
                     }
                 }
             }
@@ -5992,9 +4609,9 @@ private fun NovelReaderPane(
     }
 }
 
-private fun Modifier.borderTone(): Modifier = this.then(
+private fun Modifier.borderTone(color: Color, width: Float = 2f): Modifier = this.then(
     Modifier.drawBehind {
-        drawCircle(color = Color(0xFFE67A2E), style = Stroke(width = 2.dp.toPx()))
+        drawCircle(color = color, radius = size.minDimension / 2f - width.dp.toPx() / 2f, style = Stroke(width = width.dp.toPx()))
     },
 )
 
@@ -6064,16 +4681,6 @@ private fun paginateNovel(
     return pages.ifEmpty { listOf(text) }
 }
 
-@Composable
-private fun NovelTool(label: String, color: Color, onClick: () -> Unit) {
-    Text(
-        label,
-        color = color,
-        fontSize = 13.sp,
-        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 22.dp, vertical = 8.dp),
-    )
-}
-
 private data class StripCell(
     val key: String,
     val chapterId: String,
@@ -6131,11 +4738,9 @@ private fun RemoteReaderPane(
     var followReader by remember(chapterId) { mutableStateOf(false) }
     var jumpPin by remember(workId) { mutableStateOf<String?>(null) }
     var chrome by remember { mutableStateOf(!prefs.reading().fullscreen) }
-    var modeUse by remember { mutableStateOf("") }
-    var rotUse by remember { mutableStateOf("") }
-    val mode = if (modeUse.isEmpty()) r.readMode else modeUse
-    val rot = if (rotUse.isEmpty()) r.rotation else rotUse
-    var hint by remember(chapterId) { mutableStateOf(if (r.modeHint) modeName(mode, more) else "") }
+    var rotUse by remember { mutableStateOf<String?>(null) }
+    val mode = r.readMode
+    val rot = rotUse ?: r.rotation
     var zones by remember(chapterId) { mutableStateOf(r.navOverlay) }
     val focus = remember { FocusRequester() }
     val webtoon = mode == "webtoon" || mode.startsWith("ttb")
@@ -6147,7 +4752,6 @@ private fun RemoteReaderPane(
         else -> Color.Black
     }
     val fg = if (r.bgColor == "white") Color.Black else Color.White
-    val crop = if (webtoon) r.webtoonCrop else r.cropEdges
     val pageFilter = remember(r.grayscale, r.invert, r.brightnessOn, r.brightness) { readingColorFilter(r) }
     val pageTint = if (r.filterOn && r.filterA > 0.5f) {
         Color(
@@ -6184,17 +4788,16 @@ private fun RemoteReaderPane(
         else -> 0f
     }
     var settings by remember { mutableStateOf(false) }
-    var modePick by remember { mutableStateOf(false) }
     var rotPick by remember { mutableStateOf(false) }
-    val presetLabel = if (uiLang == "en") "Default" else if (uiLang == "zh-TW") "預設" else "预设"
+    var catalog by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = coverAsk || pageMenu || settings || modePick || rotPick) {
+    BackHandler(enabled = coverAsk || pageMenu || settings || rotPick || catalog) {
         when {
             coverAsk -> coverAsk = false
             pageMenu -> pageMenu = false
             settings -> settings = false
-            modePick -> modePick = false
-            else -> rotPick = false
+            rotPick -> rotPick = false
+            else -> catalog = false
         }
     }
 
@@ -6221,8 +4824,8 @@ private fun RemoteReaderPane(
     }
     DisposableEffect(rot) {
         activity?.requestedOrientation = when (rot) {
-            "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            "lock-landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            "auto" -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            "landscape", "lock-landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             else -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
         onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
@@ -6247,12 +4850,12 @@ private fun RemoteReaderPane(
             if (ch != null && strip.isEmpty()) {
                 seedStrip(ch, pages)
                 if (strip.isNotEmpty()) {
-                    val p = startPage.coerceIn(0, pages.lastIndex)
+                    val p = startPage.takeIf { it in pages.indices } ?: 0
                     index = p
                     viewChapterId = ch.id
                     viewCount = pages.size
                     val at = strip.indexOfFirst { it.chapterId == ch.id && it.page == p }.let { if (it < 0) 0 else it }
-                    runCatching { listState.scrollToItem(at.coerceAtMost(strip.lastIndex)) }
+                    if (at > 0) runCatching { listState.scrollToItem(at.coerceAtMost(strip.lastIndex)) }
                     seeded = true
                     readerReady = true
                 }
@@ -6263,7 +4866,6 @@ private fun RemoteReaderPane(
         loading = pages.isEmpty() && strip.isEmpty()
         err = ""
         val (fresh, e) = withContext(Dispatchers.IO) { Crawler.fetchPages(href) }
-        loading = false
         if (fresh.isNotEmpty()) {
             pages = fresh
             pageCache[chapter?.id ?: chapterId] = fresh
@@ -6278,10 +4880,10 @@ private fun RemoteReaderPane(
             if (ch != null && strip.isEmpty()) {
                 seedStrip(ch, fresh)
                 if (strip.isNotEmpty()) {
-                    val p = startPage.coerceIn(0, fresh.lastIndex)
+                    val p = startPage.takeIf { it in fresh.indices } ?: 0
                     index = p
                     val at = strip.indexOfFirst { it.chapterId == ch.id && it.page == p }.let { if (it < 0) 0 else it }
-                    runCatching { listState.scrollToItem(at.coerceAtMost(strip.lastIndex)) }
+                    if (at > 0) runCatching { listState.scrollToItem(at.coerceAtMost(strip.lastIndex)) }
                     seeded = true
                     readerReady = true
                 }
@@ -6294,12 +4896,9 @@ private fun RemoteReaderPane(
         } else if (pages.isEmpty() && strip.isEmpty()) {
             err = e ?: copy.emptyCat
         }
-    }
-    LaunchedEffect(hint) {
-        if (hint.isNotEmpty()) {
-            delay(1400)
-            hint = ""
-        }
+        // 先把 strip 铺好再收起 loading，避免「pages 已有、strip 还是空」的窗口里
+        // 一次轻微滑动被当成到底，触发连续追加。
+        loading = false
     }
     LaunchedEffect(zones) {
         if (zones && r.navOverlay) {
@@ -6317,12 +4916,12 @@ private fun RemoteReaderPane(
         val read = prefs.readChapterKeys()
         val start = chapters.indexOfFirst { it.id == chapter.id }.coerceAtLeast(0)
         val candidates = chapters.drop(start + 1).filter { ch ->
-            val filtered = r.skipFiltered && (ch.title.contains("广告") || ch.title.contains("公告") || ch.title.isBlank())
+            val filtered = false
             val seen = r.skipRead && "$workId:${ch.id}" in read
             !filtered && !seen
         }
         val next = candidates.firstOrNull()
-        if (next != null) onChapter(next.id) else Toast.makeText(context, copy.emptyCat, Toast.LENGTH_SHORT).show()
+        if (next != null) onChapter(next.id) else CouiToast.show(copy.emptyCat)
     }
 
     fun prevChapter() {
@@ -6438,6 +5037,9 @@ private fun RemoteReaderPane(
     }
 
     fun loadEdge(forward: Boolean) {
+        // 内容还没铺好时列表是空的，此时任何边缘加载都会误判成「已到末尾」，
+        // 一路把后面的章节追加进来，看着就像直接跳到漫画结尾。
+        if (!readerReady) return
         if (!(webtoon && !verticalPage)) return
         val busy = if (forward) nextBusy else prevBusy
         if (busy.value) return
@@ -6461,7 +5063,7 @@ private fun RemoteReaderPane(
         val i = chapters.indexOfFirst { it.id == cur }
         val target = if (forward) chapters.getOrNull(i + 1) else chapters.getOrNull(i - 1)
         if (target == null) {
-            if (forward) Toast.makeText(context, copy.emptyCat, Toast.LENGTH_SHORT).show()
+            if (forward) CouiToast.show(copy.emptyCat)
             return
         }
         if (forward) prefs.markChapterRead(workId, cur)
@@ -6478,7 +5080,7 @@ private fun RemoteReaderPane(
                 val ok = if (forward) appendNext() else prependPrev()
                 at = strip.indexOfFirst { it.chapterId == target.id && it.page == 0 }
                 if (at < 0 && forward && !ok) {
-                    Toast.makeText(context, copy.emptyCat, Toast.LENGTH_SHORT).show()
+                    CouiToast.show(copy.emptyCat)
                 }
             }
             if (at >= 0) {
@@ -6498,7 +5100,7 @@ private fun RemoteReaderPane(
     LaunchedEffect(pages.size, chapterId) {
         if (pages.isEmpty() || readerReady) return@LaunchedEffect
         if (webtoon && !verticalPage) return@LaunchedEffect
-        val p = startPage.coerceIn(0, pages.lastIndex)
+        val p = startPage.takeIf { it in pages.indices } ?: 0
         index = p
         if (pagerState.currentPage != p && p < pagerState.pageCount) {
             runCatching { pagerState.scrollToPage(p) }
@@ -6511,10 +5113,10 @@ private fun RemoteReaderPane(
         val ch = chapter ?: return@LaunchedEffect
         seedStrip(ch, pages)
         if (strip.isEmpty()) return@LaunchedEffect
-        val p = startPage.coerceIn(0, pages.lastIndex)
+        val p = startPage.takeIf { it in pages.indices } ?: 0
         index = p
         val at = strip.indexOfFirst { it.chapterId == ch.id && it.page == p }.let { if (it < 0) 0 else it }
-        listState.scrollToItem(at)
+        if (at > 0) listState.scrollToItem(at)
         seeded = true
         readerReady = true
     }
@@ -6634,10 +5236,15 @@ private fun RemoteReaderPane(
             val ch = viewChapterId.ifBlank { chapter?.id.orEmpty() }
             val size = (strip.firstOrNull { it.chapterId == ch && it.chapterSize > 0 }?.chapterSize ?: pages.size).coerceAtLeast(1)
             val targetPage = i.coerceIn(0, size - 1)
-            val at = strip.indexOfFirst { it.chapterId == ch && it.page == targetPage }
-            if (at >= 0) {
+            val exact = strip.indexOfFirst { it.chapterId == ch && it.page == targetPage }
+            // Trimmed strips may no longer hold the exact cell; fall back to the nearest page of
+            // the same chapter instead of silently ignoring the drag.
+            val near = if (exact >= 0) exact else strip.indexOfFirst { it.chapterId == ch && it.page >= targetPage }
+                .let { if (it >= 0) it else strip.indexOfLast { it.chapterId == ch } }
+            if (exact >= 0 || near >= 0) {
                 index = targetPage
-                scope.launch { listState.scrollToItem(at) }
+                val at = if (exact >= 0) exact else near
+                scope.launch { runCatching { listState.scrollToItem(at) } }
             }
             return
         }
@@ -6647,19 +5254,22 @@ private fun RemoteReaderPane(
         scope.launch {
             runCatching {
                 if (target < pagerState.pageCount) {
-                    if (r.pageAnim) pagerState.animateScrollToPage(target) else pagerState.scrollToPage(target)
+                    // Jump immediately while dragging; animating here made the slider look stuck.
+                    pagerState.scrollToPage(target)
                 }
             }
         }
     }
 
     fun onReaderTap(x: Float, y: Float) {
-        if (chrome || settings || modePick || rotPick) {
+        if (chrome || settings || rotPick) {
             chrome = false
+            rotPick = false
             return
         }
         val continuous = webtoon && !verticalPage
-        if (!r.tapTurn) {
+        // 连续条漫里单击只负责唤起/隐藏阅读栏，翻页交给滚动，避免想点出菜单时页面跟着滑一下。
+        if (!r.tapTurn || continuous) {
             chrome = true
             return
         }
@@ -6707,7 +5317,7 @@ private fun RemoteReaderPane(
         val src = imageOf(page)
         val fail = if (uiLang == "en") "Couldn't update the cover" else "封面更新失败"
         if (src.isNullOrBlank()) {
-            Toast.makeText(context, fail, Toast.LENGTH_SHORT).show()
+            CouiToast.show(fail)
             return
         }
         val original = cached?.work?.cover.orEmpty()
@@ -6715,7 +5325,7 @@ private fun RemoteReaderPane(
             val bmp = Crawler.downloadBitmap(src, force = true)
             Handler(Looper.getMainLooper()).post {
                 if (bmp == null) {
-                    Toast.makeText(context, fail, Toast.LENGTH_SHORT).show()
+                    CouiToast.show(fail)
                     return@post
                 }
                 val dir = java.io.File(context.filesDir, "covers").apply { mkdirs() }
@@ -6724,7 +5334,7 @@ private fun RemoteReaderPane(
                     file.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, it) }
                 }.isSuccess && file.exists() && file.length() > 0L
                 if (!wrote) {
-                    Toast.makeText(context, fail, Toast.LENGTH_SHORT).show()
+                    CouiToast.show(fail)
                     return@post
                 }
                 prefs.noteCover(workId, file.absolutePath, original)
@@ -6733,11 +5343,7 @@ private fun RemoteReaderPane(
                     LocalStore.saveWork(disk.copy(work = disk.work.copy(cover = file.absolutePath)))
                 }
                 onCoverSaved(file.absolutePath)
-                Toast.makeText(
-                    context,
-                    if (uiLang == "en") "Cover updated" else "封面已更新",
-                    Toast.LENGTH_SHORT,
-                ).show()
+                CouiToast.show(if (uiLang == "en") "Cover updated" else "封面已更新")
             }
         }.start()
     }
@@ -6752,9 +5358,9 @@ private fun RemoteReaderPane(
             val own = r.savePageFolder
             Handler(Looper.getMainLooper()).post {
                 if (bmp == null || !saveReaderPage(context, bmp, title, own)) {
-                    Toast.makeText(context, fail, Toast.LENGTH_SHORT).show()
+                    CouiToast.show(fail)
                 } else {
-                    Toast.makeText(context, okWord, Toast.LENGTH_SHORT).show()
+                    CouiToast.show(okWord)
                 }
             }
         }.start()
@@ -6780,7 +5386,7 @@ private fun RemoteReaderPane(
                 lastTapAt = 0L
                 val zNow = zoomNow.value
                 if (kotlin.math.abs(zNow - 1f) > 0.02f) {
-                    val ms = when (r.tapAnim) { "fast" -> 90; "slow" -> 300; else -> 170 }
+                    val ms = 170
                     val from = zNow
                     scope.launch {
                         val anim = Animatable(from)
@@ -6801,7 +5407,7 @@ private fun RemoteReaderPane(
             }
         },
         onLong = { _, y ->
-            if (!settings && !modePick && !rotPick && !coverAsk) {
+            if (!settings && !rotPick && !coverAsk) {
                 chrome = false
                 menuPage = pageAt(y)
                 pageMenu = true
@@ -6867,7 +5473,11 @@ private fun RemoteReaderPane(
             }
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                if (source != NestedScrollSource.UserInput || !hasPages.value || loadingNow.value) return Offset.Zero
+                // readerReady 之前列表可能是空的：canScrollForward 会误报「已到底」，
+                // 一点点滑动就会触发连续追加/上一章，直接冲到结尾。
+                if (source != NestedScrollSource.UserInput || !readerReadyNow.value || !hasPages.value || loadingNow.value) {
+                    return Offset.Zero
+                }
                 val atEnd = if (webStrip.value) !listState.canScrollForward else !pagerState.canScrollForward
                 val leftover = kotlin.math.abs(available.x) + kotlin.math.abs(available.y)
                 if (atEnd && leftover > 36f) {
@@ -6887,6 +5497,7 @@ private fun RemoteReaderPane(
         else -> if (webtoon) Alignment.TopCenter else Alignment.Center
     }
 
+    val readerBackdrop = rememberCouiBackdrop()
     Box(
         Modifier
             .fillMaxSize()
@@ -6921,9 +5532,10 @@ private fun RemoteReaderPane(
                 }
             },
     ) {
+        Box(Modifier.fillMaxSize().then(if (chrome && useFloatingChrome) Modifier.couiBackdrop(readerBackdrop) else Modifier)) {
         when {
             loading && pages.isEmpty() && strip.isEmpty() -> Box(Modifier.fillMaxSize().then(tapMod), contentAlignment = Alignment.Center) {
-                Text(copy.loading, color = fg.copy(alpha = 0.7f))
+                CouiCircularProgress(Modifier.size(32.dp))
             }
             pages.isEmpty() && strip.isEmpty() -> Box(Modifier.fillMaxSize().then(tapMod), contentAlignment = Alignment.Center) {
                 Text(err.ifBlank { copy.emptyCat }, color = fg.copy(alpha = 0.7f), textAlign = TextAlign.Center)
@@ -6951,7 +5563,7 @@ private fun RemoteReaderPane(
                             }
                         }
                     }
-                    LazyColumn(
+                    LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), 
                         state = listState,
                         verticalArrangement = Arrangement.Top,
                         userScrollEnabled = !pinching,
@@ -6995,7 +5607,6 @@ private fun RemoteReaderPane(
                             } else {
                                 PageImage(
                                     cell.url,
-                                    crop = crop,
                                     webtoon = true,
                                     colorFilter = pageFilter,
                                     tint = pageTint,
@@ -7029,7 +5640,7 @@ private fun RemoteReaderPane(
                         userScrollEnabled = !pinching && zoom <= 1.05f,
                     ) { page ->
                         val src = pages.getOrNull(page)
-                        if (src != null) PageImage(src, crop = crop, webtoon = false, colorFilter = pageFilter, tint = pageTint, tintBlend = tintBlend, nonce = reloads[page.toString()] ?: 0, fit = pageFit, align = pageAlign)
+                        if (src != null) PageImage(src, webtoon = false, colorFilter = pageFilter, tint = pageTint, tintBlend = tintBlend, nonce = reloads[page.toString()] ?: 0, fit = pageFit, align = pageAlign)
                     }
                 } else {
                     HorizontalPager(
@@ -7040,10 +5651,11 @@ private fun RemoteReaderPane(
                         userScrollEnabled = !pinching && zoom <= 1.05f,
                     ) { page ->
                         val src = pages.getOrNull(page)
-                        if (src != null) PageImage(src, crop = crop, webtoon = false, colorFilter = pageFilter, tint = pageTint, tintBlend = tintBlend, nonce = reloads[page.toString()] ?: 0, fit = pageFit, align = pageAlign)
+                        if (src != null) PageImage(src, webtoon = false, colorFilter = pageFilter, tint = pageTint, tintBlend = tintBlend, nonce = reloads[page.toString()] ?: 0, fit = pageFit, align = pageAlign)
                     }
                 }
             }
+        }
         }
         if (chrome) {
             val barChapter = if (webtoon && !verticalPage) {
@@ -7069,13 +5681,25 @@ private fun RemoteReaderPane(
                 onSeek = { seek(it) },
                 onPrev = { jumpChapter(false) },
                 onNext = { jumpChapter(true) },
-                onMode = { modePick = !modePick; rotPick = false },
-                onRotate = { rotPick = !rotPick; modePick = false },
-                onCrop = {
-                    patch(if (webtoon) r.copy(webtoonCrop = !r.webtoonCrop) else r.copy(cropEdges = !r.cropEdges))
+                onRotate = { rotPick = !rotPick },
+                onSettings = { settings = true; rotPick = false },
+                onCatalog = { catalog = true; rotPick = false },
+                backdrop = if (useFloatingChrome) readerBackdrop else null,
+                rotMenu = {
+                    if (rotPick) {
+                        ReaderPopupMenu(
+                        spot = it,
+                        options = listOf(
+                            "auto" to more.rotAuto,
+                            "portrait" to if (uiLang == "en") "Portrait" else "竖屏",
+                            "landscape" to if (uiLang == "en") "Landscape" else "横屏",
+                        ),
+                        selected = rot,
+                        onPick = { rotUse = it },
+                        onDismiss = { rotPick = false },
+                    )
+                    }
                 },
-                onSettings = { settings = true; modePick = false; rotPick = false },
-                barInk = MiuixTheme.colorScheme.primary,
             )
         } else if (r.showPageNum && (pages.isNotEmpty() || strip.isNotEmpty())) {
             val shownCount = if (webtoon && !verticalPage) {
@@ -7096,82 +5720,37 @@ private fun RemoteReaderPane(
                     .padding(horizontal = 10.dp, vertical = 4.dp),
             )
         }
-        if (hint.isNotEmpty()) {
-            Text(
-                hint,
-                color = Color.White,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-        if (modePick) {
-            FloatMenu(
-                alignEnd = false,
-                options = listOf(
-                    "" to presetLabel,
-                    "ltr" to more.ltr,
-                    "rtl" to more.rtl,
-                    "ttb" to more.ttb,
-                    "webtoon" to more.webtoonMode,
-                    "ttb-slide" to more.ttbSlide,
-                    "ltr-slide" to more.ltrSlide,
-                    "rtl-slide" to more.rtlSlide,
-                ),
-                selected = modeUse,
-                onPick = { modeUse = it },
-                onDismiss = { modePick = false },
-            )
-        }
-        if (rotPick) {
-            FloatMenu(
-                alignEnd = true,
-                options = listOf(
-                    "" to presetLabel,
-                    "auto" to more.rotAuto,
-                    "portrait" to if (uiLang == "en") "Portrait" else "竖屏",
-                    "landscape" to if (uiLang == "en") "Landscape" else "横屏",
-                    "lock-portrait" to if (uiLang == "en") "Lock portrait" else if (uiLang == "zh-TW") "鎖定豎屏" else "锁定竖屏",
-                    "lock-landscape" to if (uiLang == "en") "Lock landscape" else if (uiLang == "zh-TW") "鎖定橫屏" else "锁定横屏",
-                ),
-                selected = rotUse,
-                onPick = { rotUse = it },
-                onDismiss = { rotPick = false },
-            )
-        }
         if (settings) {
             ReaderSettingsSheet(
                 lang = uiLang,
                 more = more,
                 reading = r,
-                modeUse = modeUse,
-                rotUse = rotUse,
-                onModeUse = { modeUse = it },
-                onRotUse = { rotUse = it },
                 onChange = { patch(it) },
-                onApply = {
-                    patch(r.copy(readMode = mode, rotation = rot))
-                    modeUse = ""
-                    rotUse = ""
-                    Toast.makeText(
-                        context,
-                        if (uiLang == "en") "Saved as the default" else if (uiLang == "zh-TW") "已儲存為預設" else "已保存为预设",
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                },
                 onDismiss = { settings = false },
+            )
+        }
+        if (catalog) {
+            ChapterCatalogSheet(
+                title = if (uiLang == "en") "Chapters" else if (uiLang == "zh-TW") "章節" else "章节",
+                chapters = chapters,
+                currentId = chapter?.id.orEmpty(),
+                lang = uiLang,
+                onPick = { picked ->
+                    catalog = false
+                    if (picked.id != chapter?.id) onChapter(picked.id)
+                },
+                onDismiss = { catalog = false },
             )
         }
         if (pageMenu) {
             val rows = buildList {
                 if (prefs.customCover) {
-                    add(Triple(Icons.Grid, if (uiLang == "en") "Set as cover" else if (uiLang == "zh-TW") "設定為封面" else "设定为封面", "cover"))
+                    add(Triple(CouiIcons.Outlined.Photo, if (uiLang == "en") "Set as cover" else if (uiLang == "zh-TW") "設定為封面" else "设定为封面", "cover"))
                 }
                 if (prefs.savePhotos) {
-                    add(Triple(Icons.Download, if (uiLang == "en") "Save" else if (uiLang == "zh-TW") "儲存" else "储存", "save"))
+                    add(Triple(ShuIcons.Download, if (uiLang == "en") "Save" else if (uiLang == "zh-TW") "儲存" else "储存", "save"))
                 }
-                add(Triple(Icons.Rotate, if (uiLang == "en") "Reload image" else if (uiLang == "zh-TW") "重新加載圖片" else "重新加载图片", "reload"))
+                add(Triple(ShuIcons.Refresh, if (uiLang == "en") "Reload image" else if (uiLang == "zh-TW") "重新加載圖片" else "重新加载图片", "reload"))
             }
             PageActionSheet(
                 rows,
@@ -7197,6 +5776,7 @@ private fun RemoteReaderPane(
                     setAsCover(menuPage)
                 },
                 onDismiss = { coverAsk = false },
+                lift = ReaderSheetLift,
             )
         }
     }
@@ -7242,40 +5822,48 @@ private fun readingColorFilter(r: ReadingPrefs): ColorFilter? {
 }
 
 @Composable
-private fun FloatMenu(
-    alignEnd: Boolean,
-    options: List<Pair<String, String>>,
-    selected: String,
-    onPick: (String) -> Unit,
+private fun ChapterCatalogSheet(
+    title: String,
+    chapters: List<CachedChapter>,
+    currentId: String,
+    lang: String,
+    onPick: (CachedChapter) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Box(Modifier.fillMaxSize().clickable(onClick = onDismiss)) {
-        Column(
-            Modifier
-                .align(if (alignEnd) Alignment.BottomEnd else Alignment.BottomStart)
-                .padding(horizontal = 8.dp, vertical = 8.dp)
-                .padding(bottom = 118.dp)
-                .width(232.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                .padding(vertical = 6.dp),
+    val currentIndex = chapters.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = currentIndex)
+    Dialog(
+        onDismissRequest = onDismiss,
+        title = title,
+        confirmAction = CouiDialogAction(text = if (lang == "en") "Cancel" else "取消", onClick = onDismiss),
+        placement = CouiDialogPlacement.Bottom,
+    ) {
+        LazyColumn(
+            Modifier.fillMaxWidth().heightIn(max = 520.dp),
+            state = listState,
+            contentPadding = PaddingValues(horizontal = 8.dp),
         ) {
-            options.forEach { (id, label) ->
+            items(chapters.size, key = { chapters[it].id }) { i ->
+                val ch = chapters[i]
+                val on = ch.id == currentId
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { onPick(id); onDismiss() }
-                        .padding(horizontal = 16.dp, vertical = 11.dp),
+                        .couiClickable { onPick(ch) }
+                        .heightIn(min = 52.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        if (selected == id) "✓" else "",
-                        modifier = Modifier.width(28.dp),
-                        fontSize = 16.sp,
-                        color = Color(0xFF1C1C1E),
+                    RadioButton(selected = on)
+                    Spacer(Modifier.width(16.dp))
+                    CouiText(
+                        text = ch.title,
+                        kind = CouiTextKind.PreferenceTitle,
+                        color = if (on) CouiTheme.colorScheme.accent else CouiTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
                     )
-                    Text(label, fontSize = 16.sp, color = Color(0xFF1C1C1E))
                 }
             }
         }
@@ -7283,16 +5871,11 @@ private fun FloatMenu(
 }
 
 @Composable
-private fun ReaderSettingsSheet(
+internal fun ReaderSettingsSheet(
     lang: String,
     more: More,
     reading: ReadingPrefs,
-    modeUse: String,
-    rotUse: String,
-    onModeUse: (String) -> Unit,
-    onRotUse: (String) -> Unit,
     onChange: (ReadingPrefs) -> Unit,
-    onApply: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     fun t(cn: String, tw: String, en: String) = when (lang) {
@@ -7300,299 +5883,89 @@ private fun ReaderSettingsSheet(
         "zh-TW" -> tw
         else -> cn
     }
-    val preset = t("预设", "預設", "Default")
     var tab by remember { mutableIntStateOf(0) }
     var pick by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = pick != null) { pick = null }
-    val modes = listOf(
-        "" to preset,
-        "ltr" to more.ltr,
-        "rtl" to more.rtl,
-        "ttb" to more.ttb,
-        "webtoon" to more.webtoonMode,
-        "ttb-slide" to more.ttbSlide,
-        "ltr-slide" to more.ltrSlide,
-        "rtl-slide" to more.rtlSlide,
+    fun labelOf(id: String, opts: List<Pair<String, String>>): String =
+        opts.find { it.first == id }?.second ?: t("默认", "預設", "Default")
+    val navs = listOf("default" to t("默认", "預設", "Default"), "edge" to t("边缘", "邊緣", "Edges"), "l" to "L")
+    val pads = listOf("none" to more.none, "15" to "15%", "s" to t("小", "小", "Small"), "m" to t("中", "中", "Medium"))
+    val bgs = listOf("black" to more.bgBlack, "gray" to more.bgGray, "white" to more.bgWhite)
+    val blends = listOf(
+        "default" to t("默认", "預設", "Default"),
+        "multiply" to t("正片叠底", "色彩增值", "Multiply"),
+        "screen" to t("滤色", "濾色", "Screen"),
+        "overlay" to t("叠加", "疊加", "Overlay"),
+        "lighten" to t("变亮", "變亮", "Lighten"),
+        "darken" to t("变暗", "變暗", "Darken"),
     )
-    val rots = listOf(
-        "" to preset,
-        "auto" to more.rotAuto,
-        "portrait" to t("竖屏", "豎屏", "Portrait"),
-        "landscape" to t("横屏", "橫屏", "Landscape"),
-        "lock-portrait" to t("锁定竖屏", "鎖定豎屏", "Lock portrait"),
-        "lock-landscape" to t("锁定横屏", "鎖定橫屏", "Lock landscape"),
-    )
-    fun labelOf(id: String, opts: List<Pair<String, String>>) = opts.find { it.first == id }?.second ?: preset
-    Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().clickable(onClick = onDismiss))
+    Dialog(
+        onDismissRequest = { if (pick != null) pick = null else onDismiss() },
+        confirmAction = CouiDialogAction(text = if (pick != null) t("返回", "返回", "Back") else t("完成", "完成", "Done"), onClick = { if (pick != null) pick = null else onDismiss() }),
+        placement = CouiDialogPlacement.Bottom,
+    ) {
+        val currentPick = pick
+        if (currentPick == null) {
+            CouiTabs(
+                items = listOf(0 to t("通用", "通用", "General"), 1 to t("滤镜", "濾鏡", "Filter")),
+                selected = tab,
+                onSelect = { tab = it },
+                modifier = Modifier.padding(top = 7.dp),
+                background = CouiTheme.colorScheme.menuSurface,
+                centered = true,
+            )
+        }
         Column(
             Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .fillMaxHeight(0.74f)
-                .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
-                .background(Color.White)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                .navigationBarsPadding(),
+                .heightIn(max = 440.dp)
+                .couiVerticalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 8.dp),
         ) {
-            if (pick == null) {
-                Row(Modifier.fillMaxWidth()) {
-                    listOf(
-                        0 to t("阅读模式", "閱讀模式", "Reading"),
-                        1 to t("通用", "通用", "General"),
-                        2 to t("滤镜", "濾鏡", "Filter"),
-                    ).forEach { (i, label) ->
-                        Column(
-                            Modifier.weight(1f).clickable { tab = i }.padding(top = 16.dp, bottom = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(label, color = if (tab == i) Color(0xFF0088FF) else Color(0xFF8E8E93), fontSize = 15.sp)
-                            Spacer(Modifier.height(8.dp))
-                            Box(
-                                Modifier
-                                    .height(2.dp)
-                                    .width(64.dp)
-                                    .background(if (tab == i) Color(0xFF0088FF) else Color.Transparent),
-                            )
-                        }
-                    }
+            if (currentPick != null) {
+                val spec = when (currentPick) {
+                    "nav" -> Triple(more.navLayout, navs, reading.webtoonNav)
+                    "pad" -> Triple(more.sidePad, pads, reading.sidePad)
+                    "bg" -> Triple(more.bgColor, bgs, reading.bgColor)
+                    else -> Triple(t("滤镜调和模式", "濾鏡調和模式", "Blend mode"), blends, reading.filterBlend)
                 }
-            }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 18.dp)) {
-                val currentPick = pick
-                if (currentPick != null) {
-                    val spec = when (currentPick) {
-                        "mode" -> Triple(t("阅读模式", "閱讀模式", "Reading mode"), modes, modeUse)
-                        "rot" -> Triple(t("旋转型别", "旋轉型別", "Rotation"), rots, rotUse)
-                        "nav" -> Triple(
-                            more.navLayout,
-                            listOf("default" to preset, "edge" to t("边缘", "邊緣", "Edges"), "l" to "L"),
-                            reading.webtoonNav,
-                        )
-                        "rev" -> Triple(
-                            more.reverseTap,
-                            listOf("none" to more.none, "h" to t("水平", "水平", "Horizontal"), "v" to t("垂直", "垂直", "Vertical")),
-                            reading.webtoonReverseTap,
-                        )
-                        "pad" -> Triple(
-                            more.sidePad,
-                            listOf("none" to more.none, "15" to "15%", "s" to t("小", "小", "Small"), "m" to t("中", "中", "Medium")),
-                            reading.sidePad,
-                        )
-                        "bg" -> Triple(
-                            more.bgColor,
-                            listOf("black" to more.bgBlack, "gray" to more.bgGray, "white" to more.bgWhite),
-                            reading.bgColor,
-                        )
-                        else -> Triple(
-                            t("滤镜调和模式", "濾鏡調和模式", "Blend mode"),
-                            listOf(
-                                "default" to preset,
-                                "multiply" to t("正片叠底", "色彩增值", "Multiply"),
-                                "screen" to t("滤色", "濾色", "Screen"),
-                                "overlay" to t("叠加", "疊加", "Overlay"),
-                                "lighten" to t("变亮", "變亮", "Lighten"),
-                                "darken" to t("变暗", "變暗", "Darken"),
-                            ),
-                            reading.filterBlend,
-                        )
-                    }
-                    Text(spec.first, Modifier.padding(horizontal = 20.dp, vertical = 14.dp), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C1C1E))
-                    spec.second.forEach { (id, label) ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable {
-                                when (currentPick) {
-                                    "mode" -> onModeUse(id)
-                                    "rot" -> onRotUse(id)
-                                    "nav" -> onChange(reading.copy(webtoonNav = id))
-                                    "rev" -> onChange(reading.copy(webtoonReverseTap = id))
-                                    "pad" -> onChange(reading.copy(sidePad = id))
-                                    "bg" -> onChange(reading.copy(bgColor = id))
-                                    else -> onChange(reading.copy(filterBlend = id))
-                                }
-                                pick = null
-                            }.padding(horizontal = 20.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(if (spec.third == id) "✓" else "", Modifier.width(28.dp), fontSize = 16.sp, color = Color(0xFF1C1C1E))
-                            Text(label, fontSize = 16.sp, color = Color(0xFF1C1C1E))
+                SmallTitle(spec.first)
+                spec.second.forEach { (id, label) ->
+                    RadioButtonPreference(label, spec.third == id, {
+                        when (currentPick) {
+                            "nav" -> onChange(reading.copy(webtoonNav = id))
+                            "pad" -> onChange(reading.copy(sidePad = id))
+                            "bg" -> onChange(reading.copy(bgColor = id))
+                            else -> onChange(reading.copy(filterBlend = id))
                         }
-                    }
-                } else when (tab) {
-                    0 -> {
-                        SheetLine(t("适用此系列", "適用於此系列", "Use for this series"), onClick = onApply)
-                        SheetLine(t("阅读模式", "閱讀模式", "Reading mode"), labelOf(modeUse, modes)) { pick = "mode" }
-                        SheetLine(t("旋转型别", "旋轉型別", "Rotation"), labelOf(rotUse, rots)) { pick = "rot" }
-                        Text("WEBTOON", Modifier.padding(horizontal = 20.dp, vertical = 12.dp), color = Color(0xFF8E8E93), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        SheetLine(t("导航布局", "導航佈局", "Navigation"), labelOf(reading.webtoonNav, listOf("default" to preset, "edge" to t("边缘", "邊緣", "Edges"), "l" to "L"))) { pick = "nav" }
-                        SheetLine(t("反转轻触方向", "反轉輕觸方向", "Invert taps"), labelOf(reading.webtoonReverseTap, listOf("none" to more.none, "h" to t("水平", "水平", "Horizontal"), "v" to t("垂直", "垂直", "Vertical")))) { pick = "rev" }
-                        SheetLine(t("侧边填充", "側邊填充", "Side padding"), labelOf(reading.sidePad, listOf("none" to more.none, "15" to "15%", "s" to t("小", "小", "Small"), "m" to t("中", "中", "Medium")))) { pick = "pad" }
-                        SheetSwitch(more.cropEdges, reading.webtoonCrop) { onChange(reading.copy(webtoonCrop = it)) }
-                        SheetSwitch(more.splitDouble, reading.webtoonSplit) { onChange(reading.copy(webtoonSplit = it)) }
-                    }
-                    1 -> {
-                        SheetLine(
-                            more.bgColor,
-                            when (reading.bgColor) {
-                                "white" -> more.bgWhite
-                                "gray" -> more.bgGray
-                                else -> more.bgBlack
-                            },
-                        ) { pick = "bg" }
-                        SheetSwitch(more.showPageNum, reading.showPageNum) { onChange(reading.copy(showPageNum = it)) }
-                        SheetSwitch(more.fullscreen, reading.fullscreen) { onChange(reading.copy(fullscreen = it)) }
-                        SheetSwitch(more.keepScreenOn, reading.keepScreenOn) { onChange(reading.copy(keepScreenOn = it)) }
-                        SheetSwitch(more.longPressMenu, reading.longPressMenu) { onChange(reading.copy(longPressMenu = it)) }
-                        SheetSwitch(more.chapterTransition, reading.chapterTransition) { onChange(reading.copy(chapterTransition = it)) }
-                        SheetSwitch(more.pageAnim, reading.pageAnim) { onChange(reading.copy(pageAnim = it)) }
-                    }
-                    else -> {
-                        SheetSwitch(t("自定义滤镜", "自訂濾鏡", "Custom filter"), reading.filterOn) { onChange(reading.copy(filterOn = it)) }
-                        FilterSlider("R", reading.filterR, 0f..255f, reading.filterOn) { onChange(reading.copy(filterR = it)) }
-                        FilterSlider("G", reading.filterG, 0f..255f, reading.filterOn) { onChange(reading.copy(filterG = it)) }
-                        FilterSlider("B", reading.filterB, 0f..255f, reading.filterOn) { onChange(reading.copy(filterB = it)) }
-                        FilterSlider("A", reading.filterA, 0f..255f, reading.filterOn) { onChange(reading.copy(filterA = it)) }
-                        SheetLine(
-                            t("滤镜调和模式", "濾鏡調和模式", "Blend mode"),
-                            labelOf(
-                                reading.filterBlend,
-                                listOf(
-                                    "default" to preset,
-                                    "multiply" to t("正片叠底", "色彩增值", "Multiply"),
-                                    "screen" to t("滤色", "濾色", "Screen"),
-                                    "overlay" to t("叠加", "疊加", "Overlay"),
-                                    "lighten" to t("变亮", "變亮", "Lighten"),
-                                    "darken" to t("变暗", "變暗", "Darken"),
-                                ),
-                            ),
-                        ) { pick = "blend" }
-                        SheetSwitch(t("灰度", "灰階", "Grayscale"), reading.grayscale) { onChange(reading.copy(grayscale = it)) }
-                        SheetSwitch(t("反转", "反轉", "Invert"), reading.invert) { onChange(reading.copy(invert = it)) }
-                        Spacer(Modifier.height(8.dp))
-                        SheetSwitch(t("自定义亮度", "自訂亮度", "Custom brightness"), reading.brightnessOn) { onChange(reading.copy(brightnessOn = it)) }
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(Icons.Gear, contentDescription = null, tint = if (reading.brightnessOn) Color(0xFF1C1C1E) else Color(0xFFC7C7CC), modifier = Modifier.size(22.dp))
-                            TrackSlider(
-                                value = reading.brightness,
-                                range = -100f..100f,
-                                enabled = reading.brightnessOn,
-                                onChange = { onChange(reading.copy(brightness = it)) },
-                                modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                            )
-                            Text(
-                                reading.brightness.roundToInt().toString(),
-                                modifier = Modifier.width(36.dp),
-                                textAlign = TextAlign.End,
-                                color = Color(0xFF8E8E93),
-                                fontSize = 14.sp,
-                            )
-                        }
-                    }
+                        pick = null
+                    })
                 }
+            } else if (tab == 0) {
+                ArrowPreference(more.bgColor, summary = labelOf(reading.bgColor, bgs), onClick = { pick = "bg" })
+                SwitchPreference(reading.showPageNum, { onChange(reading.copy(showPageNum = it)) }, more.showPageNum)
+                SwitchPreference(reading.fullscreen, { onChange(reading.copy(fullscreen = it)) }, more.fullscreen)
+                SwitchPreference(reading.keepScreenOn, { onChange(reading.copy(keepScreenOn = it)) }, more.keepScreenOn)
+                SwitchPreference(reading.chapterTransition, { onChange(reading.copy(chapterTransition = it)) }, more.chapterTransition)
+                SwitchPreference(reading.pageAnim, { onChange(reading.copy(pageAnim = it)) }, more.pageAnim)
+                SmallTitle(t("条漫", "條漫", "Webtoon"))
+                ArrowPreference(more.navLayout, summary = labelOf(reading.webtoonNav, navs), onClick = { pick = "nav" })
+                SwitchPreference(reading.webtoonReverseTap != "none", { onChange(reading.copy(webtoonReverseTap = if (it) "v" else "none")) }, more.reverseTap)
+                ArrowPreference(t("侧边填充", "側邊填充", "Side padding"), summary = labelOf(reading.sidePad, pads), onClick = { pick = "pad" })
+            } else {
+                SwitchPreference(reading.filterOn, { onChange(reading.copy(filterOn = it)) }, t("自定义滤镜", "自訂濾鏡", "Custom filter"))
+                SliderPreference(reading.filterR, { onChange(reading.copy(filterR = it)) }, 0f..255f, label = "R", enabled = reading.filterOn)
+                SliderPreference(reading.filterG, { onChange(reading.copy(filterG = it)) }, 0f..255f, label = "G", enabled = reading.filterOn)
+                SliderPreference(reading.filterB, { onChange(reading.copy(filterB = it)) }, 0f..255f, label = "B", enabled = reading.filterOn)
+                SliderPreference(reading.filterA, { onChange(reading.copy(filterA = it)) }, 0f..255f, label = "A", enabled = reading.filterOn)
+                ArrowPreference(t("滤镜调和模式", "濾鏡調和模式", "Blend mode"), summary = labelOf(reading.filterBlend, blends), onClick = { pick = "blend" })
+                SwitchPreference(reading.grayscale, { onChange(reading.copy(grayscale = it)) }, t("灰度", "灰階", "Grayscale"))
+                SwitchPreference(reading.invert, { onChange(reading.copy(invert = it)) }, t("反转", "反轉", "Invert"))
+                SwitchPreference(reading.brightnessOn, { onChange(reading.copy(brightnessOn = it)) }, t("自定义亮度", "自訂亮度", "Custom brightness"))
+                SliderPreference(reading.brightness, { onChange(reading.copy(brightness = it)) }, -100f..100f, icon = ShuIcons.Brightness, enabled = reading.brightnessOn)
             }
         }
     }
-}
-
-@Composable
-private fun SheetLine(title: String, value: String? = null, onClick: (() -> Unit)? = null) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(title, modifier = Modifier.weight(1f), fontSize = 15.sp, color = Color(0xFF3A3A3C))
-        if (value != null) {
-            Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF1C1C1E))
-            Text("  ⌄", color = Color(0xFF8E8E93), fontSize = 14.sp)
-        }
-    }
-}
-
-@Composable
-private fun SheetSwitch(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(title, modifier = Modifier.weight(1f), fontSize = 15.sp, color = Color(0xFF1C1C1E))
-        Box(
-            Modifier
-                .width(48.dp)
-                .height(28.dp)
-                .clip(RoundedCornerShape(50))
-                .background(if (on) Color(0xFF0088FF) else Color(0xFFE5E5EA))
-                .clickable { onChange(!on) }
-                .padding(3.dp),
-            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
-        ) {
-            Box(Modifier.size(22.dp).background(Color.White, CircleShape))
-        }
-    }
-}
-
-@Composable
-private fun FilterSlider(label: String, value: Float, range: ClosedFloatingPointRange<Float>, enabled: Boolean, onChange: (Float) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, Modifier.width(24.dp), fontSize = 15.sp, color = if (enabled) Color(0xFF1C1C1E) else Color(0xFFC7C7CC))
-        TrackSlider(value, range, enabled, onChange, Modifier.weight(1f).padding(horizontal = 8.dp))
-        Text(value.roundToInt().toString(), Modifier.width(40.dp), textAlign = TextAlign.End, fontSize = 14.sp, color = Color(0xFF8E8E93))
-    }
-}
-
-@Composable
-private fun TrackSlider(
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    enabled: Boolean,
-    onChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val span = (range.endInclusive - range.start).takeIf { it != 0f } ?: 1f
-    val frac = ((value - range.start) / span).coerceIn(0f, 1f)
-    BoxWithConstraints(
-        modifier
-            .height(28.dp)
-            .pointerInput(enabled, range) {
-                if (!enabled) return@pointerInput
-                detectTapGestures { pos ->
-                    onChange(range.start + span * (pos.x / size.width).coerceIn(0f, 1f))
-                }
-            }
-            .pointerInput(enabled, range) {
-                if (!enabled) return@pointerInput
-                detectHorizontalDragGestures { change, _ ->
-                    onChange(range.start + span * (change.position.x / size.width).coerceIn(0f, 1f))
-                }
-            },
-    ) {
-        Box(Modifier.align(Alignment.CenterStart).fillMaxWidth().height(3.dp).clip(RoundedCornerShape(50)).background(Color(0xFFE3E3E8)))
-        Box(
-            Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = (maxWidth - 18.dp) * frac)
-                .size(18.dp)
-                .background(if (enabled) Color(0xFF9A9AA0) else Color(0xFFD0D0D4), CircleShape),
-        )
-    }
-}
-
-private fun modeName(id: String, more: More) = when (id) {
-    "ltr" -> more.ltr
-    "rtl" -> more.rtl
-    "ttb" -> more.ttb
-    "ttb-slide" -> more.ttbSlide
-    "ltr-slide" -> more.ltrSlide
-    "rtl-slide" -> more.rtlSlide
-    else -> more.webtoonMode
 }
 
 @Composable
@@ -7624,7 +5997,7 @@ private fun ChapterDivider(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.clickable(onClick = onNext),
+                modifier = Modifier.couiClickable(onClick = onNext),
             )
         }
     }
@@ -7784,41 +6157,139 @@ private fun Modifier.readerZoom(
     }
 }
 
+/** 阅读页菜单在系统导航栏边距之外再抬高的距离，避免挡住底部页码/章节。 */
+internal val ReaderSheetLift = 16.dp
+
 @Composable
-private fun PageActionSheet(
+internal fun PageActionSheet(
     items: List<Triple<ImageVector, String, String>>,
     onPick: (String) -> Unit,
     onDismiss: () -> Unit,
+    lift: androidx.compose.ui.unit.Dp = ReaderSheetLift,
 ) {
-    Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().clickable(onClick = onDismiss))
+    Dialog(
+        modifier = Modifier.offset(y = -lift),
+        onDismissRequest = onDismiss,
+        confirmAction = CouiDialogAction(text = "取消", onClick = onDismiss),
+        placement = CouiDialogPlacement.Bottom,
+    ) {
+        // 行的按压底色四周留白、自带圆角，和面板圆角一致；不画默认焦点/选中底色，也没有描边。
+        Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 8.dp)) {
+            items.forEach { (icon, label, id) -> SheetActionRow(icon, label) { onPick(id) } }
+        }
+    }
+}
+
+@Composable
+private fun SheetActionRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+    // COUI 内缩圆角列表项：按压底色（couiButtonFeedback）只铺在这一行自己的圆角范围里。
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .couiClickable(shape = com.itos.coui.shape.CouiShape(16.dp, 3f), role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = CouiTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(16.dp))
+        CouiText(text = label, kind = CouiTextKind.PreferenceTitle, textAlign = TextAlign.Start)
+    }
+}
+
+/**
+ * 阅读器工具栏某个按钮的菜单落点，全部是窗口坐标（像素）：[button] 是被点按钮的真实边界，
+ * [panelTop] 是底部工具面板的顶边。
+ */
+internal data class ReaderMenuSpot(val button: IntRect, val panelTop: Int)
+
+/**
+ * 工具栏弹出菜单的定位：水平中心对准按钮中心，底边在工具面板顶边之上 [gap]，
+ * 左右夹在屏幕边缘 [margin] 以内，上方不越过 [margin]。
+ * 不用 COUI Menu 的定位：它把锚点压成一个点（锚点左上角/最近一次触点）再左对齐展开，所以菜单总是偏到按钮右侧。
+ */
+internal class ReaderMenuPosition(
+    private val spot: ReaderMenuSpot,
+    private val margin: Int,
+    private val gap: Int,
+) : androidx.compose.ui.window.PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: androidx.compose.ui.unit.IntSize,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        popupContentSize: androidx.compose.ui.unit.IntSize,
+    ): IntOffset {
+        val w = popupContentSize.width
+        val h = popupContentSize.height
+        val centre = (spot.button.left + spot.button.right) / 2
+        val maxX = (windowSize.width - margin - w).coerceAtLeast(margin)
+        val x = (centre - w / 2).coerceIn(margin, maxX)
+        val y = (spot.panelTop - gap - h).coerceAtLeast(margin)
+        return IntOffset(x, y)
+    }
+}
+
+/** 阅读器工具栏弹出菜单：COUI 菜单面板配色/圆角/投影，行用 couiClickable 内缩圆角按压，选中项带 COUI 勾选框。 */
+@Composable
+internal fun ReaderPopupMenu(
+    spot: ReaderMenuSpot,
+    options: List<Pair<String, String>>,
+    selected: String,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val density = LocalDensity.current
+    val position = remember(spot, density) {
+        with(density) { ReaderMenuPosition(spot, margin = 16.dp.roundToPx(), gap = 8.dp.roundToPx()) }
+    }
+    val shape = com.itos.coui.shape.CouiShape(20.dp, 3f)
+    androidx.compose.ui.window.Popup(
+        popupPositionProvider = position,
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.PopupProperties(focusable = true),
+    ) {
         Column(
             Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
-                .background(Color.White)
-                .navigationBarsPadding()
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+                .width(androidx.compose.foundation.layout.IntrinsicSize.Max)
+                .widthIn(min = 160.dp, max = 280.dp)
+                .shadow(16.dp, shape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
+                .clip(shape)
+                .background(CouiTheme.colorScheme.menuSurface)
+                .padding(8.dp),
         ) {
-            items.forEach { (icon, label, id) ->
+            options.forEach { (id, label) ->
+                val on = id == selected
                 Row(
-                    Modifier.fillMaxWidth().clickable { onPick(id) }.padding(horizontal = 22.dp, vertical = 16.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp)
+                        .clip(com.itos.coui.shape.CouiShape(14.dp, 3f))
+                        .background(if (on) CouiTheme.colorScheme.accent.copy(alpha = 0.1f) else Color.Transparent)
+                        .couiClickable(shape = com.itos.coui.shape.CouiShape(14.dp, 3f), role = Role.Button) {
+                            onPick(id)
+                            onDismiss()
+                        }
+                        .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(icon, contentDescription = label, tint = Color(0xFF1C1C1E), modifier = Modifier.size(22.dp))
-                    Spacer(Modifier.width(18.dp))
-                    Text(label, fontSize = 16.sp, color = Color(0xFF1C1C1E))
+                    com.itos.coui.checkbox.Checkbox(checked = on)
+                    Spacer(Modifier.width(12.dp))
+                    CouiText(
+                        text = label,
+                        kind = CouiTextKind.PreferenceTitle,
+                        color = if (on) CouiTheme.colorScheme.accent else CouiTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start,
+                        maxLines = 1,
+                    )
                 }
             }
-            Spacer(Modifier.height(6.dp))
         }
     }
 }
 
 @Suppress("UNUSED_PARAMETER")
 @Composable
-private fun BoxScope.ReaderChrome(
+internal fun BoxScope.ReaderChrome(
     title: String,
     chapter: String,
     bookmarked: Boolean,
@@ -7829,101 +6300,76 @@ private fun BoxScope.ReaderChrome(
     onSeek: (Int) -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
-    onMode: () -> Unit,
     onRotate: () -> Unit,
-    onCrop: () -> Unit,
     onSettings: () -> Unit,
-    barInk: Color,
+    onCatalog: () -> Unit,
+    backdrop: CouiBackdrop?,
+    rotMenu: @Composable (ReaderMenuSpot) -> Unit = {},
 ) {
-    val ink = Color(0xFF1C1C1E)
-    val bar = Color.White
-    Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().background(bar).statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
-                Icon(Icons.Back, contentDescription = "返回", tint = ink)
-            }
-            Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = ink, maxLines = 1)
-                if (chapter.isNotBlank()) {
-                    Text(chapter, fontSize = 12.sp, color = Color(0xFF8E8E93), maxLines = 2)
-                }
-            }
-        }
+    // 记下按钮与底部面板的真实窗口边界，弹出菜单据此定位（见 [ReaderMenuPosition]）。
+    var panelTop by remember { mutableIntStateOf(-1) }
+    val toolBounds = remember { mutableStateMapOf<String, IntRect>() }
+    fun Modifier.toolSpot(key: String) = onGloballyPositioned { c ->
+        val r = c.boundsInWindow()
+        toolBounds[key] = IntRect(r.left.roundToInt(), r.top.roundToInt(), r.right.roundToInt(), r.bottom.roundToInt())
     }
-    Column(
-        Modifier
-            .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .background(bar)
-            .navigationBarsPadding()
-            .padding(bottom = 6.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier.size(44.dp).clip(RoundedCornerShape(50)).background(Color(0xFFF2F2F7)).clickable(onClick = onPrev),
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.SkipPrev, contentDescription = "上一话", tint = ink) }
-            PageSlider(index, count, onSeek, Modifier.weight(1f).padding(horizontal = 10.dp), barInk)
-            Box(
-                Modifier.size(44.dp).clip(RoundedCornerShape(50)).background(Color(0xFFF2F2F7)).clickable(onClick = onNext),
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.SkipNext, contentDescription = "下一话", tint = ink) }
+    @Composable
+    fun MenuAt(key: String, menu: @Composable (ReaderMenuSpot) -> Unit) {
+        val b = toolBounds[key] ?: return
+        if (panelTop < 0) return
+        menu(ReaderMenuSpot(b, panelTop))
+    }
+    MenuAt("rot", rotMenu)
+
+    ReaderTopBar(
+        backdrop = backdrop,
+        title = chapter.ifBlank { title },
+        onBack = onBack,
+        modifier = Modifier.align(Alignment.TopCenter),
+    )
+    ReaderBottomPanel(backdrop, Modifier.align(Alignment.BottomCenter), onPanelTop = { panelTop = it }) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CouiRoundIcon(ShuIcons.SkipPrev, "上一话", onPrev)
+            PageSlider(index, count, onSeek, Modifier.weight(1f).padding(horizontal = 4.dp))
+            CouiRoundIcon(ShuIcons.SkipNext, "下一话", onNext)
         }
-        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            ChromeIcon(Icons.Reader, "阅读模式", onMode)
-            ChromeIcon(Icons.Rotate, "旋转", onRotate)
-            ChromeIcon(Icons.Crop, "裁边", onCrop)
-            ChromeIcon(Icons.Gear, "设置", onSettings)
+        // 三个工具等分面板内宽：目录 / 旋转 / 设置。
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            ReaderToolCell { ReaderTool(ShuIcons.Rows, "目录", onCatalog) }
+            ReaderToolCell { ReaderTool(ShuIcons.Rotate, "旋转", onRotate, Modifier.toolSpot("rot")) }
+            ReaderToolCell { ReaderTool(CouiIcons.Outlined.Setting, "设置", onSettings) }
         }
     }
 }
 
+/** 工具栏里等宽的一格：按钮（图标与文字）在格内水平居中。 */
 @Composable
-private fun ChromeIcon(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Box(Modifier.size(48.dp).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        Icon(icon, contentDescription = label, tint = Color(0xFF1C1C1E))
-    }
+internal fun RowScope.ReaderToolCell(content: @Composable () -> Unit) {
+    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { content() }
 }
 
+/** 页码进度：COUI 官方 Slider（离散步进），两端为当前页/总页数。 */
 @Composable
-private fun PageSlider(index: Int, count: Int, onSeek: (Int) -> Unit, modifier: Modifier = Modifier, deep: Color = Color(0xFF0066CC)) {
-        val fraction = if (count <= 1) 0f else index / (count - 1f)
-        val t = ((fraction - 0.32f) / 0.68f).coerceIn(0f, 1f)
-        val depth = t * t * (3f - 2f * t)
-        val pale = lerp(Color.White, deep, 0.34f)
-        val ink = lerp(pale, deep, depth)
-    BoxWithConstraints(
-        modifier
-            .height(36.dp)
-            .pointerInput(count) {
-                detectTapGestures { pos ->
-                    val f = (pos.x / size.width).coerceIn(0f, 1f)
-                    onSeek(((count - 1) * f).roundToInt())
-                }
-            }
-            .pointerInput(count) {
-                detectHorizontalDragGestures { change, _ ->
-                    val f = (change.position.x / size.width).coerceIn(0f, 1f)
-                    onSeek(((count - 1) * f).roundToInt())
-                }
+private fun PageSlider(index: Int, count: Int, onSeek: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val last = (count - 1).coerceAtLeast(1)
+    // Track the finger locally so the thumb follows the drag even before the pager/list settles.
+    var drag by remember { mutableStateOf<Float?>(null) }
+    LaunchedEffect(count) { drag = null }
+    val shown = (drag ?: index.toFloat()).coerceIn(0f, last.toFloat())
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        CouiText(text = "${(index + 1).coerceIn(1, count.coerceAtLeast(1))}", kind = CouiTextKind.Description, color = CouiTheme.colorScheme.onSurfaceVariant, modifier = Modifier.widthIn(min = 28.dp), textAlign = TextAlign.Center)
+        com.itos.coui.slider.Slider(
+            modifier = Modifier.weight(1f),
+            value = shown,
+            onValueChange = { v ->
+                drag = v
+                onSeek(v.roundToInt().coerceIn(0, last))
             },
-    ) {
-        Text("${index + 1}", fontSize = 12.sp, color = Color(0xFF666666), modifier = Modifier.align(Alignment.CenterStart))
-        Text("$count", fontSize = 12.sp, color = Color(0xFF666666), modifier = Modifier.align(Alignment.CenterEnd))
-        val track = Modifier.padding(horizontal = 32.dp).align(Alignment.CenterStart).fillMaxWidth()
-        Box(track.height(4.dp).background(Color(0xFFE5E5EA), RoundedCornerShape(50)))
-        Box(track.fillMaxWidth(fraction.coerceIn(0.001f, 1f)).height(4.dp).background(ink, RoundedCornerShape(50)))
-        Box(
-            Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 32.dp)
-                .offset(x = (maxWidth - 82.dp) * fraction)
-                .size(16.dp)
-                .background(ink, RoundedCornerShape(50)),
+            valueRange = 0f..last.toFloat(),
+            enabled = count > 1,
+            onValueChangeFinished = { drag = null },
         )
+        CouiText(text = "${count.coerceAtLeast(1)}", kind = CouiTextKind.Description, color = CouiTheme.colorScheme.onSurfaceVariant, modifier = Modifier.widthIn(min = 28.dp), textAlign = TextAlign.Center)
     }
 }
 
@@ -7953,84 +6399,31 @@ private fun saveReaderPage(context: Context, bmp: android.graphics.Bitmap, title
 }
 
 @Composable
-private fun WebPane(url: String, title: String, onBack: () -> Unit) {
-    if(runCatching { WebView.getCurrentWebViewPackage() }.getOrNull()==null) {
-        Scaffold(topBar={SubTopBar(title,onBack,BarTitle.End)}) { padding->
-            EmptyFace("(´・ω・`)","系统网页组件不可用，请启用或更新系统WebView后重试",Modifier.padding(padding))
-        }
-        return
-    }
-    Column(Modifier.fillMaxSize().background(MiuixTheme.colorScheme.surface)) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .height(48.dp)
-                .padding(end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) { Icon(Icons.Back, contentDescription = "返回") }
-            Spacer(Modifier.weight(1f))
-            Text(
-                title.ifBlank { url },
-                fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MiuixTheme.colorScheme.onSurface,
-            )
-        }
-        AndroidView(
-            factory = { ctx ->
-                WebView(ctx).apply {
-                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    settings.loadsImagesAutomatically = true
-                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                    settings.userAgentString = Crawler.UA
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view:WebView,finishedUrl:String) {
-                            super.onPageFinished(view,finishedUrl)
-                            CookieManager.getInstance().flush()
-                            fun capture() {
-                                if(view.url!=finishedUrl)return
-                                view.evaluateJavascript("document.documentElement.outerHTML") { result ->
-                                    runCatching { org.json.JSONArray("["+result+"]").optString(0) }.getOrNull()?.let { WebsitePages.save(finishedUrl,it) }
-                                }
-                            }
-                            capture()
-                            view.postDelayed({ capture() },2000)
-                        }
-                    }
-                    webChromeClient = WebChromeClient()
-                    loadUrl(url)
-                }
-            },
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            onRelease = { web ->
-                web.stopLoading()
-                web.destroy()
-            },
-        )
-    }
-}
-
-@Composable
 private fun FeedbackPane(copy: Copy, sites: List<WebSite>, onBack: () -> Unit) {
     val context = LocalContext.current
     val saved = "日志已保存"
     val fail = "无法写入日志"
+    val scope = rememberCoroutineScope()
     val createLauncher = rememberLauncherForActivityResult(CreateZipDoc()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         AppLog.add("feedback", "export")
-        val text = AppLog.dump(context, sites.toList())
-        val ok = writeZip(context, uri, "log.txt", text.toByteArray(Charsets.UTF_8))
-        Toast.makeText(context, if (ok) saved else fail, Toast.LENGTH_SHORT).show()
+        val app = context.applicationContext
+        val list = sites.toList()
+        // 收集日志要跑 logcat 并等它结束，压缩写入 SAF 也是磁盘 IO：都放到 IO 线程，失败只提示不崩。
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val text = AppLog.dump(app, list)
+                    writeZip(app, uri, "log.txt", text.toByteArray(Charsets.UTF_8))
+                }.getOrDefault(false)
+            }
+            CouiToast.show(if (ok) saved else fail)
+        }
     }
     Scaffold(topBar = { SubTopBar(copy.feedback, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
+                Group {
                     ArrowPreference(
                         title = copy.feedbackSum,
                         summary = "提取后保存为 zip",
@@ -8098,30 +6491,12 @@ private fun readBackupJson(context: Context, uri: Uri): String? {
     return text?.trim()?.removePrefix("\uFEFF")?.takeIf { it.startsWith("{") }
 }
 
-private fun writeBackupTo(
-    context: Context,
-    prefs: Prefs,
-    uri: Uri,
-    library: List<String>,
-    favorites: List<String>,
-    sources: List<Source>,
-): Boolean {
-    val json = prefs.exportJson(library, favorites, sources)
-    val ok = writeZip(context, uri, "backup.json", json.toByteArray(Charsets.UTF_8))
-    if (ok) {
-        prefs.lastBackupAt = System.currentTimeMillis()
-        prefs.backupUri = uri.toString()
-    }
-    return ok
-}
-
 @Composable
 private fun BackupPane(
     copy: Copy,
     prefs: Prefs,
     library: List<String>,
     favorites: List<String>,
-    sources: List<Source>,
     onBack: () -> Unit,
     onImported: (BackupData) -> Unit,
 ) {
@@ -8132,10 +6507,22 @@ private fun BackupPane(
     val restored = when (lang) { "en" -> "Backup restored"; "zh-TW" -> "備份已還原"; else -> "备份已恢复" }
     val bad = when (lang) { "en" -> "Could not read backup"; "zh-TW" -> "無法讀取備份"; else -> "无法读取备份" }
     val failWrite = when (lang) { "en" -> "Could not write backup"; "zh-TW" -> "無法寫入備份"; else -> "无法写入备份" }
+    val scope = rememberCoroutineScope()
     val createLauncher = rememberLauncherForActivityResult(CreateZipDoc()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        val ok = writeBackupTo(context, prefs, uri, library, favorites, sources)
-        Toast.makeText(context, if (ok) saved else failWrite, Toast.LENGTH_SHORT).show()
+        // 读偏好在主线程，压缩与写入 SAF 文件放到 IO 线程，失败只提示不崩。
+        val json = runCatching { prefs.exportJson(library, favorites) }.getOrNull()
+        val app = context.applicationContext
+        scope.launch {
+            val ok = json != null && withContext(Dispatchers.IO) {
+                runCatching { writeZip(app, uri, "backup.json", json.toByteArray(Charsets.UTF_8)) }.getOrDefault(false)
+            }
+            if (ok) {
+                prefs.lastBackupAt = System.currentTimeMillis()
+                prefs.backupUri = uri.toString()
+            }
+            CouiToast.show(if (ok) saved else failWrite)
+        }
     }
     val openLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -8143,16 +6530,16 @@ private fun BackupPane(
         val data = raw?.let { prefs.importJson(it) }
         if (data != null) {
             onImported(data)
-            Toast.makeText(context, restored, Toast.LENGTH_SHORT).show()
+            CouiToast.show(restored)
         } else {
-            Toast.makeText(context, bad, Toast.LENGTH_SHORT).show()
+            CouiToast.show(bad)
         }
     }
     Box(Modifier.fillMaxSize()) {
         Scaffold(topBar = { SubTopBar(copy.backup, onBack, BarTitle.End) }) { padding ->
-            LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+            LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
                 item {
-                    Card(Modifier.padding(12.dp).fillMaxWidth()) {
+                    Group {
                         ArrowPreference(more.createBackup, summary = more.createBackupSum, onClick = {
                             val name = java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm", java.util.Locale.US)
                                 .format(java.util.Date()) + ".zip"
@@ -8169,96 +6556,42 @@ private fun BackupPane(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ThemePane(
+internal fun ThemePane(
     copy: Copy,
     lang: String,
     colorMode: ColorSchemeMode,
     onMode: (ColorSchemeMode) -> Unit,
-    iconStyle: String,
-    onIcon: (String) -> Unit,
-    seed: Int,
-    onSeed: (Int) -> Unit,
-    palette: String,
-    onPalette: (String) -> Unit,
     onBanner: () -> Unit,
-    prefs: Prefs,
     onBack: () -> Unit,
 ) {
-    val monetOn = colorMode.name.startsWith("Monet")
     Scaffold(topBar = { SubTopBar(copy.themeSettings, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding) {
-            item { SmallTitle(copy.appearance) }
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding) {
             item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                Group(title = copy.appearance) {
                     RadioButtonPreference(
                         title = copy.followSystem,
-                        selected = !colorMode.name.contains("Light") && !colorMode.name.contains("Dark"),
-                        onClick = { onMode(toneOf(colorMode, "system")) },
+                        selected = colorMode == ColorSchemeMode.System,
+                        onClick = { onMode(ColorSchemeMode.System) },
                     )
                     RadioButtonPreference(
                         title = copy.light,
-                        selected = colorMode.name.contains("Light"),
-                        onClick = { onMode(toneOf(colorMode, "light")) },
+                        selected = colorMode == ColorSchemeMode.Light,
+                        onClick = { onMode(ColorSchemeMode.Light) },
                     )
                     RadioButtonPreference(
                         title = copy.dark,
-                        selected = colorMode.name.contains("Dark"),
-                        onClick = { onMode(toneOf(colorMode, "dark")) },
+                        selected = colorMode == ColorSchemeMode.Dark,
+                        onClick = { onMode(ColorSchemeMode.Dark) },
                     )
                 }
             }
             item { Spacer(Modifier.height(12.dp)) }
             item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
-                    SwitchPreference(
-                        checked = monetOn,
-                        onCheckedChange = { onMode(monetOf(colorMode, it)) },
-                        title = "Monet 取色",
-                    )
-                    if (monetOn) {
-                        Text(
-                            if (lang == "en") "Custom color" else "自定义颜色",
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp),
-                            fontSize = 13.sp,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        )
-                        val presets = listOf(
-                            0xFF00A870.toInt() to "青绿",
-                            0xFF3482FF.toInt() to "蓝",
-                            0xFF00B3A4.toInt() to "青",
-                            0xFFFF7A18.toInt() to "橙",
-                            0xFFE23B4A.toInt() to "红",
-                            0xFFFF4F8B.toInt() to "粉",
-                            0xFF34C759.toInt() to "绿",
-                        )
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            presets.forEach { (color, _) ->
-                                val on = seed == color
-                                Box(
-                                    Modifier
-                                        .size(if (on) 30.dp else 26.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(color))
-                                        .clickable { onSeed(color) },
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(8.dp))
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(12.dp)) }
-            item { Spacer(Modifier.height(12.dp)) }
-            item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                Group {
                     ArrowPreference(
                         title = if (lang == "en") "Header background" else if (lang == "zh-TW") "背景欄" else "背景栏",
-                        summary = if (lang == "en") "Replace the picture at the top of Mine" else if (lang == "zh-TW") "更換我的頁頂部那張圖" else "更换我的页顶部那张图",
+                        summary = if (lang == "en") "Change the top background bar" else if (lang == "zh-TW") "修改頂部背景欄" else "修改顶部背景栏",
                         onClick = onBanner,
                     )
                 }
@@ -8269,61 +6602,9 @@ private fun ThemePane(
 }
 
 @Composable
-private fun GatePane(
-    lang: String,
-    allowAdult: Boolean,
-    onAllowAdult: (Boolean) -> Unit,
-    onBack: () -> Unit,
-) {
-    val title = when (lang) { "en" -> "Mystery switch"; "zh-TW" -> "神秘開關"; else -> "神秘开关" }
-    Scaffold(topBar = { SubTopBar(title, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding) {
-            item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
-                    SwitchPreference(
-                        checked = allowAdult,
-                        onCheckedChange = onAllowAdult,
-                        title = when (lang) { "en" -> "Restricted content (18+)"; "zh-TW" -> "限制級內容（18+）"; else -> "限制级内容（18+）" },
-                        summary = when (lang) {
-                            "en" -> "Turn on to browse 18+ manga and novel sources"
-                            "zh-TW" -> "開啟此功能可瀏覽閱讀18+漫畫和小說源"
-                            else -> "开启此功能可浏览阅读18+漫画和小说源"
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun toneOf(mode: ColorSchemeMode, tone: String): ColorSchemeMode {
-    val monet = mode.name.startsWith("Monet")
-    return when (tone) {
-        "light" -> if (monet) ColorSchemeMode.MonetLight else ColorSchemeMode.Light
-        "dark" -> if (monet) ColorSchemeMode.MonetDark else ColorSchemeMode.Dark
-        else -> if (monet) ColorSchemeMode.MonetSystem else ColorSchemeMode.System
-    }
-}
-
-private fun monetOf(mode: ColorSchemeMode, on: Boolean): ColorSchemeMode {
-    val tone = when (mode) {
-        ColorSchemeMode.MonetLight, ColorSchemeMode.Light -> "light"
-        ColorSchemeMode.MonetDark, ColorSchemeMode.Dark -> "dark"
-        else -> "system"
-    }
-    val forced = when (tone) {
-        "light" -> if (on) ColorSchemeMode.MonetLight else ColorSchemeMode.Light
-        "dark" -> if (on) ColorSchemeMode.MonetDark else ColorSchemeMode.Dark
-        else -> ColorSchemeMode.System
-    }
-    return if (on && tone == "system") ColorSchemeMode.MonetSystem else forced
-}
-
-@Composable
-private fun IntroPane(
+internal fun IntroPane(
     copy: Copy,
     onBack: () -> Unit,
-    onOss: () -> Unit,
     onNotes: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -8331,20 +6612,20 @@ private fun IntroPane(
     val body = copy.introBody
     val cut = body.indexOf(link)
     Scaffold(topBar = { SubTopBar(copy.intro, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding) {
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding) {
             item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
+                Group {
                     Column(Modifier.padding(16.dp)) {
-                        Text("书漫屿", style = MiuixTheme.textStyles.title2)
-                        Text("ShuManYu ${installedVersion(context)}", color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                        Text("书漫屿", style = AppTheme.textStyles.title2)
+                        Text("ShuManYu ${installedVersion(context)}", color = AppTheme.colorScheme.onSurfaceVariantSummary)
                         Spacer(Modifier.height(10.dp))
                         if (cut >= 0) {
-                            Text(body.substring(0, cut), fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurfaceSecondary)
+                            Text(body.substring(0, cut), fontSize = 14.sp, color = AppTheme.colorScheme.onSurfaceSecondary)
                             Text(
                                 link,
                                 fontSize = 14.sp,
-                                color = MiuixTheme.colorScheme.primary,
-                                modifier = Modifier.clickable {
+                                color = AppTheme.colorScheme.primary,
+                                modifier = Modifier.couiClickable {
                                     runCatching {
                                         context.startActivity(
                                             Intent(Intent.ACTION_VIEW, Uri.parse(link)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
@@ -8353,32 +6634,27 @@ private fun IntroPane(
                                 },
                             )
                         } else {
-                            Text(body, fontSize = 14.sp, color = MiuixTheme.colorScheme.onSurfaceSecondary)
+                            Text(body, fontSize = 14.sp, color = AppTheme.colorScheme.onSurfaceSecondary)
                         }
                         Spacer(Modifier.height(12.dp))
-                        Text("项目地址",fontSize=14.sp,color=MiuixTheme.colorScheme.onSurfaceSecondary)
+                        Text("项目地址",fontSize=14.sp,color=AppTheme.colorScheme.onSurfaceSecondary)
                         Text(
                             "https://github.com/${GitHubUpdates.REPOSITORY}",
                             fontSize=14.sp,
-                            color=MiuixTheme.colorScheme.primary,
-                            modifier=Modifier.clickable {
+                            color=AppTheme.colorScheme.primary,
+                            modifier=Modifier.couiClickable {
                                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/${GitHubUpdates.REPOSITORY}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                             },
                         )
                     }
                 }
             }
-            item { SmallTitle("软件功能") }
             item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                Group(title = "软件功能") {
                     ArrowPreference(
                         title = "更新日志",
                         summary = installedVersion(context),
                         onClick = onNotes,
-                    )
-                    ArrowPreference(
-                        title = "开源声明",
-                        onClick = onOss,
                     )
                 }
             }
@@ -8389,30 +6665,169 @@ private fun IntroPane(
 
 private fun installedVersion(context:Context):String = runCatching {
     context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
-}.getOrDefault("1.0.2")
+}.getOrDefault("0.1.3beta")
 
 @Composable
 private fun NotesPane(lang: String, onBack: () -> Unit) {
     val context=LocalContext.current
     val title=if(lang=="en")"What's new" else "更新日志"
-    val changes=listOf(
-        "更换笔趣阁小说源。",
-        "新增收藏自动分类，按已收藏作品显示类型及题材标签，支持直接收藏并手动整理到收藏夹。",
-        "优化添加网站的内容解析、跳转处理和验证后的会话复用。",
-        "适配底栏 Monet 配色，调整自定义颜色设置，精简存储空间说明及小说列表提示。",
-        "移除书城功能菜单中的自动检测入口。",
-        "修复小说章节标题缺失及工具栏遮挡正文的问题，优化分页与阅读位置保持。",
-        "优化小说封面的详情页自动补取与缓存，支持滑动列表时自动加载，无可用封面时保留底部书名显示。",
-        "修复自动检查更新触发不及时的问题，增加应用回到前台后的检查及联网失败后的重试。"
+    val v010 = listOf(
+        "新增" to listOf(
+            "全新 COUI 风格界面，整体使用 COUI-Kit 重做：搜索框、设置分组、弹窗与输入框、滑块/开关/勾选/单选、分类标签、列表回弹与按压动效换用 COUI 官方组件；按钮、轻提示、进度、空状态、下拉刷新、阅读器工具条、平板侧栏与图标按 COUI 设计语言重绘；主题色改为蓝色。",
+            "拷贝漫画书源。",
+            "一镜到底展开动画：打开书籍、功能和设置页面时，页面从点击处展开，返回时收回原位。",
+            "书城、书架、历史常驻搜索框，点开进入独立搜索页。",
+        ),
+        "优化" to listOf(
+            "全新启动图标。",
+            "右上角按钮改为悬浮样式，图标重新绘制。",
+            "更多菜单重新设计。",
+            "底栏加大，四个图标重绘，选中时显示实心图标。",
+            "弹窗出现时底栏自动隐藏，关闭后从底部弹回。",
+            "空状态文案更新。",
+            "首次打开即提示授权，提示框在屏幕正中。",
+            "存储空间清理更彻底。",
+            "阅读设置精简。",
+            "更新日志重写。",
+        ),
+        "修复" to listOf(
+            "书城切换书源时闪退。",
+        ),
+        "移除" to listOf(
+            "笔趣阁（暂无小说源，等待后续加入）。",
+            "Monet 取色。",
+            "实验室与内置浏览器。",
+            "开源声明。",
+            "网站管理与添加网站。",
+            "清除 Cookies。",
+            "阅读设置里的双页拆分、长按弹出选单、锁定横竖屏。",
+        ),
+    )
+    val releases = listOf(
+        "0.1.3beta" to listOf(
+            "新增" to listOf(
+                "新增禁漫天堂、爱看韩漫书源。",
+                "漫画阅读页新增章节目录。",
+                "漫画详情页目录支持正序/倒序切换。",
+            ),
+            "修复" to listOf(
+                "搜索未跟随当前书源。",
+                "从漫画详情返回搜索页会重新加载。",
+                "部分漫画图片错位。",
+                "阅读时拖动进度条没反应。",
+                "连续条漫单击唤出工具栏时页面跟着滑动。",
+            ),
+            "优化" to listOf(
+                "书架默认改为紧凑网格显示。",
+                "适配底栏宽度。",
+                "一镜到底动画更顺滑。",
+                "章节目录改为居中排版，去掉序号、总数与分割线。",
+                "阅读页工具精简为目录、旋转、设置。",
+                "阅读设置精简：保留通用与滤镜，条漫相关设置并入通用。",
+                "更新日志按版本分区显示。",
+                "小说阅读页改用 COUI 组件重写。",
+                "适配 Monet 主题图标。",
+            ),
+            "移除" to listOf(
+                "阅读模式选择（阅读页工具栏与设置里的预设阅读模式）。",
+                "阅读模式提示浮层。",
+                "点击动画设置。",
+            ),
+        ),
+        "0.1.2" to listOf(
+            "修复" to listOf(
+                "存储空间清理闪退。",
+                "保存反馈日志闪退。",
+                "创建备份闪退。",
+            ),
+            "优化" to listOf(
+                "书城搜索改为右上角放大镜入口。",
+                "预测性返回默认开启，移除开关。",
+                "存储空间改为缓存与下载两项，下载可一键清理。",
+                "漫画阅读页长按菜单显示优化。",
+                "阅读器工具栏弹出菜单对齐所点按钮。",
+                "按压效果统一为 COUI 样式，去除按压黑色描边。",
+            ),
+            "移除" to listOf(
+                "移除漫画阅读裁边功能。",
+            ),
+        ),
+        "0.1.1" to listOf(
+            "修复" to listOf(
+                "存储空间清理完成后闪退。",
+                "书城分类标签显示错位。",
+            ),
+            "优化" to listOf(
+                "底栏恢复为之前的尺寸。",
+                "书架、历史搜索改为右上角放大镜入口。",
+                "一镜到底动画全程带圆角。",
+                "书城搜索框缩小并移到顶栏。",
+            ),
+        ),
+        "0.1.0" to v010,
     )
     Scaffold(topBar={SubTopBar(title,onBack,BarTitle.End)}) { padding ->
-        LazyColumn(contentPadding=padding) {
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding=padding) {
             item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                        Text("版本 ${installedVersion(context)}",color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                        Text("更新内容",style=MiuixTheme.textStyles.title2)
-                        changes.forEachIndexed { index,text-> Text("${index+1}.$text",fontSize=14.sp,lineHeight=22.sp) }
+                Group {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                        val currentVersion = installedVersion(context)
+                        Text(
+                            "当前版本 $currentVersion",
+                            color = AppTheme.colorScheme.onSurfaceVariantSummary,
+                            fontSize = 13.sp,
+                        )
+                        releases.forEachIndexed { index, (version, groups) ->
+                            if (index > 0) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp)
+                                        .height(1.dp)
+                                        .background(CouiTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+                                )
+                            }
+                            Column(Modifier.fillMaxWidth().padding(top = if (index == 0) 14.dp else 0.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "版本 $version",
+                                        style = AppTheme.textStyles.title1,
+                                        color = AppTheme.colorScheme.onSurface,
+                                    )
+                                    if (version == currentVersion) {
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            "当前",
+                                            color = AppTheme.colorScheme.primary,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(50))
+                                                .background(AppTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                                        )
+                                    }
+                                }
+                                groups.forEach { (head, items) ->
+                                    Text(
+                                        head,
+                                        style = AppTheme.textStyles.title2,
+                                        modifier = Modifier.padding(top = 14.dp, bottom = 4.dp),
+                                    )
+                                    items.forEach { text ->
+                                        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                                            Text(
+                                                "•",
+                                                color = AppTheme.colorScheme.onSurfaceVariantSummary,
+                                                fontSize = 14.sp,
+                                                lineHeight = 22.sp,
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(text, fontSize = 14.sp, lineHeight = 22.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -8423,9 +6838,9 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
 @Composable
 private fun LanguagePane(copy: Copy, lang: String, onLang: (String) -> Unit, onBack: () -> Unit) {
     Scaffold(topBar = { SubTopBar(copy.language, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding) {
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding) {
             item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
+                Group {
                     RadioButtonPreference(copy.followSystem, selected = lang == "system", onClick = { onLang("system") })
                     RadioButtonPreference(copy.zhCN, selected = lang == "zh-CN", onClick = { onLang("zh-CN") })
                     RadioButtonPreference(copy.zhTW, selected = lang == "zh-TW", onClick = { onLang("zh-TW") })
@@ -8439,7 +6854,6 @@ private fun LanguagePane(copy: Copy, lang: String, onLang: (String) -> Unit, onB
 @Composable
 private fun PageImage(
     src: String,
-    crop: Boolean = false,
     webtoon: Boolean = true,
     colorFilter: ColorFilter? = null,
     tint: Color = Color.Transparent,
@@ -8457,18 +6871,7 @@ private fun PageImage(
         bmp = decoded
         fail = decoded == null
     }
-    var display by remember(bmp,crop) { mutableStateOf(if(crop)null else bmp) }
-    LaunchedEffect(bmp,crop) {
-        val original=bmp
-        display=if(original==null || !crop)original else withContext(Dispatchers.Default) {
-            val rect=WhiteEdgeBounds.find(original.width,original.height,object:WhiteEdgeBounds.Lines {
-                override fun row(y:Int,out:IntArray){original.getPixels(out,0,original.width,0,y,original.width,1)}
-                override fun column(x:Int,out:IntArray){original.getPixels(out,0,1,x,0,1,original.height)}
-            })
-            if(rect[0]==0 && rect[1]==0 && rect[2]==original.width && rect[3]==original.height)original
-            else android.graphics.Bitmap.createBitmap(original,rect[0],rect[1],rect[2]-rect[0],rect[3]-rect[1])
-        }
-    }
+    val display = bmp
     val shot = remember(display) { display?.asImageBitmap() }
     when {
         shot != null -> {
@@ -8545,10 +6948,6 @@ private fun PageImage(
     }
 }
 
-private val coverRam = object : android.util.LruCache<String, android.graphics.Bitmap>(16 * 1024) {
-    override fun sizeOf(key: String, value: android.graphics.Bitmap): Int = (value.byteCount / 1024).coerceAtLeast(1)
-}
-
 private fun shrinkCover(src: android.graphics.Bitmap, maxPx: Int): android.graphics.Bitmap {
     val max = maxOf(src.width, src.height)
     if (max <= maxPx) return src
@@ -8579,15 +6978,6 @@ private fun decodeCoverFile(path: String, maxPx: Int = 640): android.graphics.Bi
     return shrinkCover(raw, maxPx)
 }
 
-private fun decodeCoverAsset(context: Context, name: String, maxPx: Int = 640): android.graphics.Bitmap? {
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    context.assets.open("covers/$name").use { BitmapFactory.decodeStream(it, null, bounds) }
-    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-    val opts = BitmapFactory.Options().apply { inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maxPx) }
-    val raw = context.assets.open("covers/$name").use { BitmapFactory.decodeStream(it, null, opts) } ?: return null
-    return shrinkCover(raw, maxPx)
-}
-
 @Composable
 private fun SmartCover(
     src: String,
@@ -8598,12 +6988,12 @@ private fun SmartCover(
     fallbackTitle: String = "",
 ) {
     val context = LocalContext.current
-    var bmp by remember(src) { mutableStateOf(coverRam.get(src) ?: Crawler.peekCover(src)) }
+    var bmp by remember(src) { mutableStateOf(CoverLoader.peek(src)) }
     var failed by remember(src) { mutableStateOf(false) }
     var retryImage by remember(src) { mutableIntStateOf(0) }
     LaunchedEffect(src,retryImage) {
         failed=false
-        val hit = coverRam.get(src) ?: Crawler.peekCover(src)
+        val hit = CoverLoader.peek(src)
         if (hit != null) {
             bmp = hit
             return@LaunchedEffect
@@ -8612,7 +7002,6 @@ private fun SmartCover(
             val remote = when {
                 src.startsWith("http://") || src.startsWith("https://") -> src
                 src.startsWith("//") -> "https:$src"
-                src.startsWith("/files/") || src.startsWith("/style/") -> "https://www.bqg5.com$src"
                 else -> ""
             }
             val path = when {
@@ -8622,14 +7011,12 @@ private fun SmartCover(
                 else -> ""
             }
             when {
-                remote.isNotEmpty() -> if(retryImage>0)Crawler.downloadBitmap(remote,force=true) else Crawler.awaitCover(remote)
+                remote.isNotEmpty() -> if (retryImage > 0) CoverLoader.refresh(remote) else CoverLoader.await(remote)
                 path.isNotEmpty() -> decodeCoverFile(path, 480)
-                src.isNotBlank() -> decodeCoverAsset(context.applicationContext, src, 480)
                 else -> null
             }
         }
         if (decoded != null) {
-            coverRam.put(src, decoded)
             bmp = decoded
         } else failed=true
     }
@@ -8640,10 +7027,10 @@ private fun SmartCover(
     } else if (fallbackTitle.isNotBlank()) {
         NovelCoverPlate(fallbackTitle, modifier)
     } else if (!plate) {
-        Box(modifier.background(MiuixTheme.colorScheme.surface).clickable(enabled=failed && src.isNotBlank()) { retryImage++ },contentAlignment=Alignment.Center) {
+        Box(modifier.background(AppTheme.colorScheme.surface).couiClickable(enabled = failed && src.isNotBlank(), shape = null) { retryImage++ },contentAlignment=Alignment.Center) {
             if(failed)Column(horizontalAlignment=Alignment.CenterHorizontally) {
-                Text(if(src.isBlank())"暂无封面" else "封面暂不可用",fontSize=11.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                if(src.isNotBlank())Text("点击重试",fontSize=10.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                Text(if(src.isBlank())"暂无封面" else "封面暂不可用",fontSize=11.sp,color=AppTheme.colorScheme.onSurfaceVariantSummary)
+                if(src.isNotBlank())Text("点击重试",fontSize=10.sp,color=AppTheme.colorScheme.onSurfaceVariantSummary)
             }
         }
     }
@@ -8713,7 +7100,7 @@ private fun FoldersPane(
     var selectedTab by remember { mutableStateOf("__all") }
     var editingBook by remember { mutableStateOf<String?>(null) }
     val novelIds=works.values.filter { work ->
-        webSites.find { it.id==work.siteId }?.let { Sites.isNovel(it) } ?: isBiqugeWork(work.id,listOf(work))
+        Sites.isNovelSite(work.siteId)
     }.map { it.id }.toSet()
     val tabs = if(ids.isEmpty()) emptyList() else buildList {
         if(folders.isNotEmpty())add("__folders" to "收藏夹")
@@ -8744,7 +7131,7 @@ private fun FoldersPane(
                     IconButton(onClick = {
                         draft = ""
                         creating = true
-                    }) { Icon(Icons.Plus, contentDescription = createTitle) }
+                    }) { Icon(CouiIcons.Outlined.Add, contentDescription = createTitle) }
                 },
             )
         },
@@ -8752,17 +7139,17 @@ private fun FoldersPane(
         Column(Modifier.fillMaxSize().padding(padding)) {
             if(tabs.isNotEmpty())Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 tabs.forEach { (key,label) ->
-                    Text(label,modifier=Modifier.clip(RoundedCornerShape(18.dp)).background(if(selectedTab==key)MiuixTheme.colorScheme.primary.copy(alpha=0.13f) else Color.Transparent).clickable { selectedTab=key }.padding(horizontal=14.dp,vertical=12.dp),color=if(selectedTab==key)MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,fontWeight=if(selectedTab==key)FontWeight.Bold else FontWeight.Normal)
+                    Text(label,modifier=Modifier.clip(RoundedCornerShape(18.dp)).background(if(selectedTab==key)AppTheme.colorScheme.primary.copy(alpha=0.13f) else Color.Transparent).couiClickable { selectedTab=key }.padding(horizontal=14.dp,vertical=12.dp),color=if(selectedTab==key)AppTheme.colorScheme.primary else AppTheme.colorScheme.onSurface,fontWeight=if(selectedTab==key)FontWeight.Bold else FontWeight.Normal)
                 }
             }
             if(selectedTab=="__folders") {
-            LazyColumn(contentPadding = PaddingValues(bottom=24.dp), modifier = Modifier.fillMaxSize()) {
+            LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = PaddingValues(bottom=24.dp), modifier = Modifier.fillMaxSize()) {
                 items(folders, key = { it.id }) { folder ->
                     Card(Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth()) {
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .combinedClickable(
+                                .couiClickable(
                                     onClick = { onOpen(folder.id) },
                                     onLongClick = { drop = folder.id },
                                 )
@@ -8781,7 +7168,7 @@ private fun FoldersPane(
                                     "${folder.books.size}",
                                     fontSize = 34.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MiuixTheme.colorScheme.onSurface,
+                                    color = AppTheme.colorScheme.onSurface,
                                 )
                             }
                             if (folder.books.isNotEmpty()) {
@@ -8798,7 +7185,7 @@ private fun FoldersPane(
                                                 .weight(1f)
                                                 .aspectRatio(0.78f)
                                                 .clip(RoundedCornerShape(4.dp))
-                                                .clickable { onCover(id) },
+                                                .couiClickable { onCover(id) },
                                         )
                                     }
                                     repeat(4 - shown.size) {
@@ -8812,17 +7199,17 @@ private fun FoldersPane(
                 item { Spacer(Modifier.height(24.dp)) }
             }
             } else if(shown.isEmpty()) {
-                EmptyFace("(´・ω・`)",if(lang=="en")"No favorites yet" else "暂无收藏",Modifier.fillMaxSize())
+                EmptyState("(´・ω・`)",if(lang=="en")"No favorites yet" else "暂无收藏",Modifier.fillMaxSize())
             } else {
-                LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(bottom=24.dp)) {
+                LazyColumn(Modifier.fillMaxSize(), overscrollEffect = rememberCouiOverscrollEffect(), contentPadding=PaddingValues(bottom=24.dp)) {
                     items(shown,key={it}) { id ->
                         val work=works[id]
                         Card(Modifier.padding(horizontal=12.dp,vertical=5.dp).fillMaxWidth()) {
-                            Row(Modifier.fillMaxWidth().combinedClickable(onClick={onCover(id)},onLongClick={editingBook=id}).padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().couiClickable(onClick={onCover(id)},onLongClick={editingBook=id}).padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
                                 SmartCover(coverOf(id,crawled),Modifier.width(58.dp).height(78.dp).clip(RoundedCornerShape(6.dp)))
                                 Column(Modifier.weight(1f).padding(horizontal=12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                                     Text(work?.title ?: id,maxLines=2,overflow=TextOverflow.Ellipsis)
-                                    Text(work?.let { favoriteTags(it).joinToString(" · ") }.orEmpty(),fontSize=12.sp,color=MiuixTheme.colorScheme.onSurfaceVariantSummary,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                    Text(work?.let { favoriteTags(it).joinToString(" · ") }.orEmpty(),fontSize=12.sp,color=AppTheme.colorScheme.onSurfaceVariantSummary,maxLines=1,overflow=TextOverflow.Ellipsis)
                                 }
                                 IconButton(onClick={editingBook=id}) { Text("⋯") }
                             }
@@ -8833,41 +7220,28 @@ private fun FoldersPane(
         }
     }
     editingBook?.let { id ->
-        OverlayScrim(onDismiss={editingBook=null}) {
-            Card(Modifier.padding(24.dp).fillMaxWidth()) {
-                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                    Button(onClick={editingBook=null;onAssign(id)},modifier=Modifier.fillMaxWidth()) { Text("加入收藏夹") }
-                    Button(onClick={editingBook=null;onFavoriteRemove(id)},modifier=Modifier.fillMaxWidth()) { Text("取消收藏") }
-                }
+        Dialog(
+            onDismissRequest = { editingBook = null },
+            confirmAction = CouiDialogAction(text = if (lang == "en") "Cancel" else "取消", onClick = { editingBook = null }),
+            placement = CouiDialogPlacement.Bottom,
+        ) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
+                ArrowPreference(if (lang == "en") "Add to collection" else "加入收藏夹", onClick = { editingBook = null; onAssign(id) })
+                ArrowPreference(if (lang == "en") "Remove from favorites" else "取消收藏", onClick = { editingBook = null; onFavoriteRemove(id) })
             }
         }
     }
 
     if (creating) {
-        OverlayScrim(onDismiss = { creating = false }) {
-            Card(Modifier.padding(24.dp).fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(createTitle, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                    TextField(
-                        value = draft,
-                        onValueChange = { draft = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = nameLabel,
-                    )
-                    Button(
-                        onClick = {
-                            if (draft.trim().isNotBlank()) {
-                                onCreate(draft)
-                                creating = false
-                            }
-                        },
-                        enabled = draft.trim().isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColorsPrimary(),
-                    ) { Text(createWord) }
-                }
-            }
-        }
+        CouiNameDialog(
+            title = createTitle,
+            initial = "",
+            placeholder = nameLabel,
+            confirm = createWord,
+            cancel = if (lang == "en") "Cancel" else "取消",
+            onConfirm = { onCreate(it); creating = false },
+            onDismiss = { creating = false },
+        )
     }
     val id = drop
     if (id != null) {
@@ -8887,34 +7261,6 @@ private fun FoldersPane(
 
 
 @Composable
-private fun OssPane(lang: String, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val title = if (lang == "en") "Open source" else if (lang == "zh-TW") "開源聲明" else "开源声明"
-    val libs = listOf(
-        Triple("Miuix", "Apache-2.0", "https://github.com/compose-miuix-ui/miuix"),
-        Triple("Jetpack Compose", "Apache-2.0", "https://developer.android.com/jetpack/compose"),
-        Triple("AndroidX", "Apache-2.0", "https://developer.android.com/jetpack/androidx"),
-        Triple("Kotlin", "Apache-2.0", "https://kotlinlang.org"),
-        Triple("Kotlin Coroutines", "Apache-2.0", "https://github.com/Kotlin/kotlinx.coroutines"),
-    )
-    Scaffold(
-        topBar = { SubTopBar(title, onBack, BarTitle.End) },
-    ) { padding ->
-        LazyColumn(contentPadding = padding) {
-            item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
-                    libs.forEach { (name, license, url) ->
-                        ArrowPreference(title = name, summary = license, onClick = {
-                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                        })
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun FontPane(
     lang: String,
     gear: String,
@@ -8923,11 +7269,11 @@ private fun FontPane(
 ) {
     val title = if (lang == "en") "Adjust type" else if (lang == "zh-TW") "調整字體" else "调整字体"
     Scaffold(topBar = { SubTopBar(title, onBack, BarTitle.End) }) { padding ->
-        LazyColumn(contentPadding = padding, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = padding, modifier = Modifier.fillMaxSize()) {
             item {
-                Card(Modifier.padding(12.dp).fillMaxWidth()) {
+                Group {
                     Column(Modifier.padding(16.dp)) {
-                        Text(if (lang == "en") "Sample" else "示范", fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                        Text(if (lang == "en") "Sample" else "示范", fontSize = 13.sp, color = AppTheme.colorScheme.onSurfaceVariantSummary)
                         Spacer(Modifier.height(8.dp))
                         Text("书漫屿", fontSize = 28.sp, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(6.dp))
@@ -8940,7 +7286,7 @@ private fun FontPane(
                 }
             }
             item {
-                Card(Modifier.padding(horizontal = 12.dp).fillMaxWidth()) {
+                Group {
                     RadioButtonPreference(if (lang == "en") "Follow system" else if (lang == "zh-TW") "跟隨系統" else "跟随系统", selected = gear == "system", onClick = { onGear("system") })
                     RadioButtonPreference(if (lang == "en") "Small" else "小", selected = gear == "s", onClick = { onGear("s") })
                     RadioButtonPreference(if (lang == "en") "Medium" else "中", selected = gear == "m", onClick = { onGear("m") })
@@ -8950,230 +7296,6 @@ private fun FontPane(
             item { Spacer(Modifier.height(24.dp)) }
         }
     }
-}
-
-private object Icons {
-    val Book: ImageVector = ImageVector.Builder("book", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(6f, 5f); lineTo(11f, 5f); curveTo(12.2f, 5f, 13f, 5.8f, 13f, 7f); lineTo(13f, 20f); lineTo(7f, 18.5f); curveTo(6.4f, 18.3f, 6f, 17.8f, 6f, 17.2f); close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(18f, 5f); lineTo(13f, 5f); lineTo(13f, 20f); lineTo(17f, 18.5f); curveTo(17.6f, 18.3f, 18f, 17.8f, 18f, 17.2f); lineTo(18f, 5f); close()
-        }
-    }.build()
-
-    val Clock: ImageVector = ImageVector.Builder("clock", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(12f, 3.5f)
-            curveTo(16.7f, 3.5f, 20.5f, 7.3f, 20.5f, 12f)
-            curveTo(20.5f, 16.7f, 16.7f, 20.5f, 12f, 20.5f)
-            curveTo(7.3f, 20.5f, 3.5f, 16.7f, 3.5f, 12f)
-            curveTo(3.5f, 7.3f, 7.3f, 3.5f, 12f, 3.5f)
-            close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(12f, 7f); lineTo(12f, 12.5f); lineTo(15.5f, 14.5f)
-        }
-    }.build()
-
-    val Grid: ImageVector = ImageVector.Builder("grid", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(4.5f, 4.5f); lineTo(10f, 4.5f); lineTo(10f, 10f); lineTo(4.5f, 10f); close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(14f, 4.5f); lineTo(19.5f, 4.5f); lineTo(19.5f, 10f); lineTo(14f, 10f); close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(4.5f, 14f); lineTo(10f, 14f); lineTo(10f, 19.5f); lineTo(4.5f, 19.5f); close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(14f, 14f); lineTo(19.5f, 14f); lineTo(19.5f, 19.5f); lineTo(14f, 19.5f); close()
-        }
-    }.build()
-
-    val Download: ImageVector = ImageVector.Builder("download", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(12f, 4f); lineTo(12f, 14f)
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(7.5f, 10.5f); lineTo(12f, 15f); lineTo(16.5f, 10.5f)
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(5.5f, 19f); lineTo(18.5f, 19f)
-        }
-    }.build()
-
-    val Globe: ImageVector = ImageVector.Builder("globe", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(12f, 3.5f)
-            curveTo(16.7f, 3.5f, 20.5f, 7.3f, 20.5f, 12f)
-            curveTo(20.5f, 16.7f, 16.7f, 20.5f, 12f, 20.5f)
-            curveTo(7.3f, 20.5f, 3.5f, 16.7f, 3.5f, 12f)
-            curveTo(3.5f, 7.3f, 7.3f, 3.5f, 12f, 3.5f)
-            close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(3.8f, 12f); lineTo(20.2f, 12f)
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(12f, 3.5f)
-            curveTo(14.2f, 6.2f, 15.5f, 9f, 15.5f, 12f)
-            curveTo(15.5f, 15f, 14.2f, 17.8f, 12f, 20.5f)
-            curveTo(9.8f, 17.8f, 8.5f, 15f, 8.5f, 12f)
-            curveTo(8.5f, 9f, 9.8f, 6.2f, 12f, 3.5f)
-            close()
-        }
-    }.build()
-
-    val Store: ImageVector = ImageVector.Builder("store", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(7f, 4.2f)
-            lineTo(17f, 4.2f)
-            curveTo(17.9f, 4.2f, 18.6f, 4.9f, 18.6f, 5.8f)
-            lineTo(18.6f, 19f)
-            curveTo(18.6f, 19.9f, 17.9f, 20.6f, 17f, 20.6f)
-            lineTo(7f, 20.6f)
-            curveTo(6.1f, 20.6f, 5.4f, 19.9f, 5.4f, 19f)
-            lineTo(5.4f, 5.8f)
-            curveTo(5.4f, 4.9f, 6.1f, 4.2f, 7f, 4.2f)
-            close()
-        }
-        path(fill = androidx.compose.ui.graphics.SolidColor(Color.White)) {
-            moveTo(10.1f, 4.2f)
-            lineTo(13.9f, 4.2f)
-            lineTo(13.9f, 9.4f)
-            lineTo(12f, 7.7f)
-            lineTo(10.1f, 9.4f)
-            close()
-        }
-    }.build()
-
-    val User: ImageVector = ImageVector.Builder("user", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(12f, 12f)
-            curveTo(14.2f, 12f, 16f, 10.2f, 16f, 8f)
-            curveTo(16f, 5.8f, 14.2f, 4f, 12f, 4f)
-            curveTo(9.8f, 4f, 8f, 5.8f, 8f, 8f)
-            curveTo(8f, 10.2f, 9.8f, 12f, 12f, 12f)
-            close()
-        }
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(5.5f, 20f)
-            curveTo(5.5f, 16.4f, 8.4f, 13.5f, 12f, 13.5f)
-            curveTo(15.6f, 13.5f, 18.5f, 16.4f, 18.5f, 20f)
-        }
-    }.build()
-
-    val Back: ImageVector = ImageVector.Builder("back", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.White), strokeLineWidth = 1.8f) {
-            moveTo(15f, 5f); lineTo(7f, 12f); lineTo(15f, 19f)
-        }
-    }.build()
-
-    private val stroke = androidx.compose.ui.graphics.SolidColor(Color.White)
-
-    val Plus: ImageVector = ImageVector.Builder("plus", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(12f, 5f); lineTo(12f, 19f)
-        }
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(5f, 12f); lineTo(19f, 12f)
-        }
-    }.build()
-
-    val Bookmark: ImageVector = ImageVector.Builder("bookmark", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(7f, 4f); lineTo(17f, 4f); lineTo(17f, 20f); lineTo(12f, 16.2f); lineTo(7f, 20f); close()
-        }
-    }.build()
-
-    val BookmarkOn: ImageVector = ImageVector.Builder("bookmarkOn", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = stroke) {
-            moveTo(7f, 4f); lineTo(17f, 4f); lineTo(17f, 20f); lineTo(12f, 16.2f); lineTo(7f, 20f); close()
-        }
-    }.build()
-
-    val SkipPrev: ImageVector = ImageVector.Builder("skipPrev", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(7f, 6f); lineTo(7f, 18f)
-            moveTo(17f, 6.5f); lineTo(10f, 12f); lineTo(17f, 17.5f)
-        }
-    }.build()
-
-    val SkipNext: ImageVector = ImageVector.Builder("skipNext", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(17f, 6f); lineTo(17f, 18f)
-            moveTo(7f, 6.5f); lineTo(14f, 12f); lineTo(7f, 17.5f)
-        }
-    }.build()
-
-    val Reader: ImageVector = ImageVector.Builder("reader", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(8f, 3.5f); lineTo(16f, 3.5f); curveTo(17f, 3.5f, 17.8f, 4.3f, 17.8f, 5.3f)
-            lineTo(17.8f, 18.7f); curveTo(17.8f, 19.7f, 17f, 20.5f, 16f, 20.5f); lineTo(8f, 20.5f)
-            curveTo(7f, 20.5f, 6.2f, 19.7f, 6.2f, 18.7f); lineTo(6.2f, 5.3f); curveTo(6.2f, 4.3f, 7f, 3.5f, 8f, 3.5f); close()
-            moveTo(9f, 8f); lineTo(15f, 8f)
-            moveTo(9f, 12f); lineTo(15f, 12f)
-        }
-    }.build()
-
-    val Rotate: ImageVector = ImageVector.Builder("rotate", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(20f, 12f)
-            curveTo(20f, 7.6f, 16.4f, 4f, 12f, 4f)
-            curveTo(8.8f, 4f, 6f, 5.8f, 4.6f, 8.4f)
-            moveTo(4f, 5f); lineTo(4.6f, 8.6f); lineTo(8.2f, 8f)
-            moveTo(4f, 12f)
-            curveTo(4f, 16.4f, 7.6f, 20f, 12f, 20f)
-            curveTo(15.2f, 20f, 18f, 18.2f, 19.4f, 15.6f)
-            moveTo(20f, 19f); lineTo(19.4f, 15.4f); lineTo(15.8f, 16f)
-        }
-    }.build()
-
-    val Crop: ImageVector = ImageVector.Builder("crop", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(7f, 3.5f); lineTo(7f, 17f); lineTo(20.5f, 17f)
-            moveTo(17f, 20.5f); lineTo(17f, 7f); lineTo(3.5f, 7f)
-        }
-    }.build()
-
-    val Gear: ImageVector = ImageVector.Builder("gear", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(12f, 8.2f)
-            curveTo(14.1f, 8.2f, 15.8f, 9.9f, 15.8f, 12f)
-            curveTo(15.8f, 14.1f, 14.1f, 15.8f, 12f, 15.8f)
-            curveTo(9.9f, 15.8f, 8.2f, 14.1f, 8.2f, 12f)
-            curveTo(8.2f, 9.9f, 9.9f, 8.2f, 12f, 8.2f)
-            close()
-            moveTo(12f, 3.5f); lineTo(13.1f, 6f); lineTo(10.9f, 6f); close()
-            moveTo(12f, 20.5f); lineTo(10.9f, 18f); lineTo(13.1f, 18f); close()
-            moveTo(3.5f, 12f); lineTo(6f, 10.9f); lineTo(6f, 13.1f); close()
-            moveTo(20.5f, 12f); lineTo(18f, 13.1f); lineTo(18f, 10.9f); close()
-        }
-    }.build()
-
-    val Trash: ImageVector = ImageVector.Builder("trash", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(5f, 7f); lineTo(19f, 7f)
-            moveTo(9.2f, 7f); lineTo(9.8f, 4.6f); lineTo(14.2f, 4.6f); lineTo(14.8f, 7f)
-            moveTo(7.2f, 7.2f); lineTo(8.2f, 19.4f); lineTo(15.8f, 19.4f); lineTo(16.8f, 7.2f)
-            moveTo(10.6f, 10.4f); lineTo(10.9f, 16.2f)
-            moveTo(13.4f, 10.4f); lineTo(13.1f, 16.2f)
-        }
-    }.build()
-
-    val Filter: ImageVector = ImageVector.Builder("filter", 24.dp, 24.dp, 24f, 24f).apply {
-        path(fill = null, stroke = stroke, strokeLineWidth = 1.8f) {
-            moveTo(4f, 7f); lineTo(20f, 7f)
-            moveTo(4f, 12f); lineTo(20f, 12f)
-            moveTo(4f, 17f); lineTo(20f, 17f)
-        }
-        path(fill = stroke) {
-            moveTo(8f, 7f); curveTo(8f, 8.1f, 7.1f, 9f, 6f, 9f); curveTo(4.9f, 9f, 4f, 8.1f, 4f, 7f); curveTo(4f, 5.9f, 4.9f, 5f, 6f, 5f); curveTo(7.1f, 5f, 8f, 5.9f, 8f, 7f); close()
-            moveTo(16f, 12f); curveTo(16f, 13.1f, 15.1f, 14f, 14f, 14f); curveTo(12.9f, 14f, 12f, 13.1f, 12f, 12f); curveTo(12f, 10.9f, 12.9f, 10f, 14f, 10f); curveTo(15.1f, 10f, 16f, 10.9f, 16f, 12f); close()
-            moveTo(11f, 17f); curveTo(11f, 18.1f, 10.1f, 19f, 9f, 19f); curveTo(7.9f, 19f, 7f, 18.1f, 7f, 17f); curveTo(7f, 15.9f, 7.9f, 15f, 9f, 15f); curveTo(10.1f, 15f, 11f, 15.9f, 11f, 17f); close()
-        }
-    }.build()
 }
 
 internal fun favoriteTags(work: CrawledWork): List<String> =
@@ -9188,12 +7310,3 @@ internal fun normalizedNovelChapterTitle(title:String,index:Int,body:String=""):
     return if(generic.matches(heading) && first.length in 3..70 && first.startsWith(heading))first else heading
 }
 
-internal fun novelPageStart(body:String,pages:List<String>,page:Int):Int {
-    var offset=0
-    for(i in 0..page.coerceAtMost(pages.lastIndex)) {
-        val start=body.indexOf(pages[i],offset).coerceAtLeast(offset)
-        if(i==page)return start
-        offset=start+pages[i].length
-    }
-    return 0
-}

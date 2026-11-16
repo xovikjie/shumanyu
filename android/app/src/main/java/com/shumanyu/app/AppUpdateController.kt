@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
-import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -62,5 +61,5 @@ internal class AppUpdateController(private val context:Context) {
         val opened=runCatching { context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(page)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
         if(opened)later() else message("无法打开浏览器，请安装浏览器后重试")
     }
-    private fun message(text:String){Toast.makeText(context,text,Toast.LENGTH_LONG).show()}
+    private fun message(text:String){CouiToast.show(text, long = true)}
 }

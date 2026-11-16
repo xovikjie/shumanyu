@@ -16,11 +16,6 @@ data class Manga(
     val chapters: List<Chapter>,
 )
 
-data class Source(val id: String, val name: String, val summary: String, var enabled: Boolean = true, val url: String = "")
-
-fun defaultSources() = emptyList<Source>()
-
-val STORE_CATEGORIES = listOf("全部", "冒险", "百合", "生活", "四格", "伪娘", "悬疑", "后宫", "热血", "耽美", "其他", "恐怖")
 
 val catalog: List<Manga> = emptyList()
 

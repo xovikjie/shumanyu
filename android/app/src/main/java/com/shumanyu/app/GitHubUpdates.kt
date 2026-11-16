@@ -94,8 +94,11 @@ internal object GitHubUpdates {
     }
     fun isNewer(release:GitHubRelease,currentCode:Long,currentVersion:String):Boolean {
         release.code?.let { return it>currentCode }
-        val local=currentVersion.removePrefix("v").removePrefix("V").split('.').map { it.toIntOrNull() ?: return false }
-        val remote=release.version.split('.').map { it.toIntOrNull() ?: return false }
+        // Local builds may carry a pre-release suffix ("0.1.3beta"); compare the leading
+        // number of each dotted segment so the suffix does not disable update checks.
+        fun part(raw:String):Int?=Regex("""^[vV]?(\d+)""").find(raw.trim())?.groupValues?.get(1)?.toIntOrNull()
+        val local=currentVersion.removePrefix("v").removePrefix("V").split('.').map { part(it) ?: return false }
+        val remote=release.version.split('.').map { part(it) ?: return false }
         for(i in 0 until maxOf(local.size,remote.size)) {
             val comparison=remote.getOrElse(i){0}.compareTo(local.getOrElse(i){0})
             if(comparison!=0)return comparison>0
