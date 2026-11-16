@@ -1,0 +1,3 @@
+# DSH GitHub 插件写入测试
+
+这个文件由 DeepSeek Harness 的 GitHub 插件通过 GitHub API 创建，用于验证提交能力。
