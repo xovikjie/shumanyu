@@ -6691,8 +6691,6 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
     Dialog(
         onDismissRequest = { if (!downloading) updater.later() },
         title = "发现新版本 ${release.version}",
-        message = release.notes.take(240).let { if (release.notes.length > 240) "$it…" else it }
-            .ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" },
         confirmAction = CouiDialogAction(
             text = when {
                 downloading -> "取消下载"
@@ -6707,6 +6705,16 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
         placement = CouiDialogPlacement.Bottom,
     ) {
         Column(Modifier.fillMaxWidth()) {
+            Text(
+                release.notes.ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" },
+                fontSize = 14.sp,
+                color = CouiTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp)
+                    .couiVerticalScroll(rememberScrollState()),
+            )
+            Spacer(Modifier.height(12.dp))
             when {
                 downloading -> {
                     CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(top = 10.dp))
@@ -6731,10 +6739,6 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
                     color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                     fontSize = 13.sp,
                 )
-            }
-            if (!downloading) {
-                Spacer(Modifier.height(10.dp))
-                CouiButton("浏览器下载", { updater.openPage() }, kind = CouiButtonKind.Secondary, compact = true)
             }
         }
     }
