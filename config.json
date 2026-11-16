@@ -13,7 +13,6 @@
   "sources": {
     "enabled": [
       "copy",
-      "jm",
       "ikan"
     ]
   }
