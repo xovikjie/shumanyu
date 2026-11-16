@@ -5,7 +5,14 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
 
-internal data class GitHubRelease(val version:String,val code:Long?,val notes:String,val page:String)
+internal data class GitHubRelease(
+    val version:String,
+    val code:Long?,
+    val notes:String,
+    val page:String,
+    val apkUrl:String = "",
+    val apkSize:Long = 0,
+)
 
 internal object GitHubUpdates {
     const val REPOSITORY="xovikjie/shumanyu"
@@ -79,18 +86,26 @@ internal object GitHubUpdates {
         if(uri.scheme!="https" || uri.host!="github.com" || uri.userInfo!=null || uri.port!=-1 ||
             !uri.path.orEmpty().startsWith("/$REPOSITORY/releases/tag/"))return null
         val assets=item.optJSONArray("assets") ?: return null
-        val hasApk=(0 until assets.length()).any { index->
+        var apkUrl=""
+        var apkSize=0L
+        for(index in 0 until assets.length()) {
             val asset=assets.getJSONObject(index)
-            asset.optString("name").endsWith(".apk",true) && asset.optLong("size")>0 &&
-                asset.optString("browser_download_url").startsWith("https://github.com/$REPOSITORY/releases/download/")
+            val name=asset.optString("name")
+            val size=asset.optLong("size")
+            val url=asset.optString("browser_download_url")
+            if(!name.endsWith(".apk",true) || size<=0L) continue
+            if(!url.startsWith("https://github.com/$REPOSITORY/releases/download/")) continue
+            // 有 arm64 包时优先，其余取体积最大的 APK。
+            val better=apkUrl.isBlank() || (name.contains("arm64",true) && !apkUrl.contains("arm64",true)) || size>apkSize
+            if(better) { apkUrl=url; apkSize=size }
         }
-        if(!hasApk)return null
+        if(apkUrl.isBlank())return null
         val tag=item.optString("tag_name").removePrefix("v").removePrefix("V")
         if(!Regex("\\d+(?:\\.\\d+){1,3}").matches(tag))return null
         val body=item.optString("body")
         val code=Regex("<!--\\s*shumanyu-version-code:\\s*(\\d+)\\s*-->").find(body)?.groupValues?.get(1)?.toLongOrNull()
         val notes=Regex("<!--[\\s\\S]*?-->").replace(body,"").trim().take(2000)
-        return GitHubRelease(tag,code,notes,page)
+        return GitHubRelease(tag,code,notes,page,apkUrl,apkSize)
     }
     fun isNewer(release:GitHubRelease,currentCode:Long,currentVersion:String):Boolean {
         release.code?.let { return it>currentCode }

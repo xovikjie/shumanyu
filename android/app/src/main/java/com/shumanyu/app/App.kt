@@ -29,7 +29,9 @@ import com.itos.coui.dialog.CouiDialogPlacement
 
 import com.itos.coui.dialog.CouiDialogAction
 
+import com.itos.coui.dialog.CouiDialogActionStyle
 
+import com.itos.coui.dialog.CouiDialogDefaults
 import com.itos.coui.scroll.rememberCouiOverscrollEffect
 
 import com.itos.coui.scroll.couiVerticalScroll
@@ -325,7 +327,7 @@ internal fun copyOf(lang: String) = when (lang) {
         "看過的都會留在這裡", "書城", "該分類暫無內容", "您暫時沒有瀏覽記錄",
         "目前沒有網路，已顯示離線內容", "正在載入…", "發現新章節", "取消",
         "回饋", "提取問題日誌", "主題設定", "深色模式與背景欄",
-        "軟體介紹", "書漫嶼是一款集成漫畫和小說源的應用，目前還處於早期階段，漫畫源、小說源以及各項功能還在持續更新中....\n\n軟體僅供學習交流，請勿用於商業用途。\n\n建議與反饋：https://t.me/shumanyu1", "暫無新章節",
+        "關於", "書漫嶼是一款集成漫畫和小說源的應用，目前還處於早期階段，漫畫源、小說源以及各項功能還在持續更新中....\n\n軟體僅供學習交流，請勿用於商業用途。\n\n建議與反饋：https://t.me/shumanyu1", "暫無新章節",
     )
     "en" -> Copy(
         "Library", "Store", "Search", "Me",
@@ -349,7 +351,7 @@ internal fun copyOf(lang: String) = when (lang) {
         "看过的都会留在这里", "书城", "该分类暂无内容", "您暂时没有浏览记录",
         "当前没有网络，已显示离线内容", "正在加载…", "发现新章节", "取消",
         "反馈", "提取问题日志", "主题设置", "深色模式与背景栏",
-        "软件介绍", "书漫屿是一款集成漫画和小说源的应用，目前还处于早期阶段，漫画源、小说源以及各项功能还在持续更新中....\n\n软件仅供学习交流，请勿用于商业用途。\n\n建议与反馈：https://t.me/shumanyu1", "暂无新章节",
+        "关于", "书漫屿是一款集成漫画和小说源的应用，目前还处于早期阶段，漫画源、小说源以及各项功能还在持续更新中....\n\n软件仅供学习交流，请勿用于商业用途。\n\n建议与反馈：https://t.me/shumanyu1", "暂无新章节",
     )
 }
 
@@ -1385,6 +1387,20 @@ fun ShuManYuApp() {
                     copy = copy,
                     onBack = { screen = Screen.Tabs },
                     onNotes = { screen = Screen.Notes },
+                    onCheckUpdate = {
+                        if (appUpdater.checking) {
+                            CouiToast.show("正在检查更新…")
+                        } else {
+                            appScope.launch {
+                                appUpdater.check(immediate = true)
+                                if (appUpdater.available == null) {
+                                    CouiToast.show(
+                                        if (Net.online(context)) "当前已是最新版本" else "网络不可用，无法检查更新",
+                                    )
+                                }
+                            }
+                        }
+                    },
                 )
             
             Screen.Language -> 
@@ -1695,15 +1711,8 @@ fun ShuManYuApp() {
             )
         }
         appUpdater.available?.let { release ->
-            BackHandler { appUpdater.later() }
-            ConfirmSheet(
-                title = "发现新版本 ${release.version}",
-                message = release.notes.take(240).let { if(release.notes.length>240)it+"…" else it }.ifBlank { "新版已发布，前往 GitHub 查看更新内容并下载。" },
-                confirm = "前往下载",
-                cancel = "稍后",
-                onConfirm = { appUpdater.download() },
-                onDismiss = { appUpdater.later() },
-            )
+            BackHandler(enabled = !appUpdater.downloading) { appUpdater.later() }
+            AppUpdateDialog(release, appUpdater)
         }
         CouiToastHost(if (useFloatingChrome) toastBackdrop else null)
         }
@@ -6606,6 +6615,7 @@ internal fun IntroPane(
     copy: Copy,
     onBack: () -> Unit,
     onNotes: () -> Unit,
+    onCheckUpdate: () -> Unit,
 ) {
     val context = LocalContext.current
     val link = "https://t.me/shumanyu1"
@@ -6652,6 +6662,11 @@ internal fun IntroPane(
             item {
                 Group(title = "软件功能") {
                     ArrowPreference(
+                        title = "检查更新",
+                        summary = installedVersion(context),
+                        onClick = onCheckUpdate,
+                    )
+                    ArrowPreference(
                         title = "更新日志",
                         summary = installedVersion(context),
                         onClick = onNotes,
@@ -6665,50 +6680,81 @@ internal fun IntroPane(
 
 private fun installedVersion(context:Context):String = runCatching {
     context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
-}.getOrDefault("0.1.3beta")
+}.getOrDefault("0.1.3")
+
+@Composable
+private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController) {
+    val accent = CouiTheme.colorScheme.accent
+    val downloading = updater.downloading
+    val error = updater.downloadError
+    val progress = updater.progress
+    Dialog(
+        onDismissRequest = { if (!downloading) updater.later() },
+        title = "发现新版本 ${release.version}",
+        message = release.notes.take(240).let { if (release.notes.length > 240) "$it…" else it }
+            .ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" },
+        confirmAction = CouiDialogAction(
+            text = when {
+                downloading -> "取消下载"
+                error.isNotBlank() -> "重试"
+                else -> "下载并安装"
+            },
+            onClick = { if (downloading) updater.cancelDownload() else updater.startDownload() },
+            style = CouiDialogActionStyle.Primary,
+            colors = CouiDialogDefaults.primaryActionColors(accent),
+        ),
+        dismissAction = CouiDialogAction(text = "稍后", onClick = { if (!downloading) updater.later() }),
+        placement = CouiDialogPlacement.Bottom,
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            when {
+                downloading -> {
+                    CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(top = 10.dp))
+                    Text(
+                        progress?.let { "正在下载 ${(it * 100).toInt()}%" } ?: "正在连接 GitHub…",
+                        color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                error.isNotBlank() -> Text(
+                    error,
+                    color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                    fontSize = 13.sp,
+                )
+                else -> Text(
+                    buildString {
+                        append("安装包 ")
+                        if (release.apkSize > 0) append("%.1f MB".format(release.apkSize / 1024f / 1024f))
+                        append(" · 下载完成后会打开系统安装界面")
+                    },
+                    color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                    fontSize = 13.sp,
+                )
+            }
+            if (!downloading) {
+                Spacer(Modifier.height(10.dp))
+                CouiButton("浏览器下载", { updater.openPage() }, kind = CouiButtonKind.Secondary, compact = true)
+            }
+        }
+    }
+}
 
 @Composable
 private fun NotesPane(lang: String, onBack: () -> Unit) {
     val context=LocalContext.current
     val title=if(lang=="en")"What's new" else "更新日志"
-    val v010 = listOf(
-        "新增" to listOf(
-            "全新 COUI 风格界面，整体使用 COUI-Kit 重做：搜索框、设置分组、弹窗与输入框、滑块/开关/勾选/单选、分类标签、列表回弹与按压动效换用 COUI 官方组件；按钮、轻提示、进度、空状态、下拉刷新、阅读器工具条、平板侧栏与图标按 COUI 设计语言重绘；主题色改为蓝色。",
-            "拷贝漫画书源。",
-            "一镜到底展开动画：打开书籍、功能和设置页面时，页面从点击处展开，返回时收回原位。",
-            "书城、书架、历史常驻搜索框，点开进入独立搜索页。",
-        ),
-        "优化" to listOf(
-            "全新启动图标。",
-            "右上角按钮改为悬浮样式，图标重新绘制。",
-            "更多菜单重新设计。",
-            "底栏加大，四个图标重绘，选中时显示实心图标。",
-            "弹窗出现时底栏自动隐藏，关闭后从底部弹回。",
-            "空状态文案更新。",
-            "首次打开即提示授权，提示框在屏幕正中。",
-            "存储空间清理更彻底。",
-            "阅读设置精简。",
-            "更新日志重写。",
-        ),
-        "修复" to listOf(
-            "书城切换书源时闪退。",
-        ),
-        "移除" to listOf(
-            "笔趣阁（暂无小说源，等待后续加入）。",
-            "Monet 取色。",
-            "实验室与内置浏览器。",
-            "开源声明。",
-            "网站管理与添加网站。",
-            "清除 Cookies。",
-            "阅读设置里的双页拆分、长按弹出选单、锁定横竖屏。",
-        ),
-    )
     val releases = listOf(
-        "0.1.3beta" to listOf(
+        "0.1.3" to listOf(
             "新增" to listOf(
                 "新增禁漫天堂、爱看韩漫书源。",
+                "拷贝漫画书源。",
                 "漫画阅读页新增章节目录。",
                 "漫画详情页目录支持正序/倒序切换。",
+                "全新 COUI 风格界面，整体使用 COUI-Kit 重做：搜索框、设置分组、弹窗与输入框、滑块/开关/勾选/单选、分类标签、列表回弹与按压动效换用 COUI 官方组件；按钮、轻提示、进度、空状态、下拉刷新、阅读器工具条、平板侧栏与图标按 COUI 设计语言重绘；主题色改为蓝色。",
+                "一镜到底展开动画：打开书籍、功能和设置页面时，页面从点击处展开，返回时收回原位。",
+                "书城、书架、历史常驻搜索框，点开进入独立搜索页。",
+                "新增应用内检查更新、下载 APK 并拉起系统安装。",
             ),
             "修复" to listOf(
                 "搜索未跟随当前书源。",
@@ -6716,55 +6762,61 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
                 "部分漫画图片错位。",
                 "阅读时拖动进度条没反应。",
                 "连续条漫单击唤出工具栏时页面跟着滑动。",
+                "漫画加载中轻微滑动会直接跳到结尾。",
+                "存储空间清理闪退。",
+                "保存反馈日志闪退。",
+                "创建备份闪退。",
+                "存储空间清理完成后闪退。",
+                "书城分类标签显示错位。",
+                "书城切换书源时闪退。",
             ),
             "优化" to listOf(
                 "书架默认改为紧凑网格显示。",
                 "适配底栏宽度。",
                 "一镜到底动画更顺滑。",
                 "章节目录改为居中排版，去掉序号、总数与分割线。",
+                "章节目录改为与 COUI 选择弹窗一致的单选行排版。",
                 "阅读页工具精简为目录、旋转、设置。",
                 "阅读设置精简：保留通用与滤镜，条漫相关设置并入通用。",
                 "更新日志按版本分区显示。",
                 "小说阅读页改用 COUI 组件重写。",
                 "适配 Monet 主题图标。",
-            ),
-            "移除" to listOf(
-                "阅读模式选择（阅读页工具栏与设置里的预设阅读模式）。",
-                "阅读模式提示浮层。",
-                "点击动画设置。",
-            ),
-        ),
-        "0.1.2" to listOf(
-            "修复" to listOf(
-                "存储空间清理闪退。",
-                "保存反馈日志闪退。",
-                "创建备份闪退。",
-            ),
-            "优化" to listOf(
                 "书城搜索改为右上角放大镜入口。",
                 "预测性返回默认开启，移除开关。",
                 "存储空间改为缓存与下载两项，下载可一键清理。",
                 "漫画阅读页长按菜单显示优化。",
                 "阅读器工具栏弹出菜单对齐所点按钮。",
                 "按压效果统一为 COUI 样式，去除按压黑色描边。",
-            ),
-            "移除" to listOf(
-                "移除漫画阅读裁边功能。",
-            ),
-        ),
-        "0.1.1" to listOf(
-            "修复" to listOf(
-                "存储空间清理完成后闪退。",
-                "书城分类标签显示错位。",
-            ),
-            "优化" to listOf(
                 "底栏恢复为之前的尺寸。",
                 "书架、历史搜索改为右上角放大镜入口。",
                 "一镜到底动画全程带圆角。",
                 "书城搜索框缩小并移到顶栏。",
+                "全新启动图标。",
+                "右上角按钮改为悬浮样式，图标重新绘制。",
+                "更多菜单重新设计。",
+                "底栏加大，四个图标重绘，选中时显示实心图标。",
+                "弹窗出现时底栏自动隐藏，关闭后从底部弹回。",
+                "空状态文案更新。",
+                "首次打开即提示授权，提示框在屏幕正中。",
+                "存储空间清理更彻底。",
+                "阅读设置精简。",
+                "更新日志重写。",
+                "软件介绍改为关于，并在更新日志上方新增检查更新入口。",
+            ),
+            "移除" to listOf(
+                "阅读模式选择（阅读页工具栏与设置里的预设阅读模式）。",
+                "阅读模式提示浮层。",
+                "点击动画设置。",
+                "漫画阅读裁边功能。",
+                "笔趣阁（暂无小说源，等待后续加入）。",
+                "Monet 取色。",
+                "实验室与内置浏览器。",
+                "开源声明。",
+                "网站管理与添加网站。",
+                "清除 Cookies。",
+                "阅读设置里的双页拆分、长按弹出选单、锁定横竖屏。",
             ),
         ),
-        "0.1.0" to v010,
     )
     Scaffold(topBar={SubTopBar(title,onBack,BarTitle.End)}) { padding ->
         LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding=padding) {
