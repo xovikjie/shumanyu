@@ -6718,24 +6718,9 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
             when {
                 downloading -> {
                     CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(top = 10.dp))
-                    Text(
-                        progress?.let { "正在下载 ${(it * 100).toInt()}%" } ?: "正在连接 GitHub…",
-                        color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
                 }
                 error.isNotBlank() -> Text(
                     error,
-                    color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                    fontSize = 13.sp,
-                )
-                else -> Text(
-                    buildString {
-                        append("安装包 ")
-                        if (release.apkSize > 0) append("%.1f MB".format(release.apkSize / 1024f / 1024f))
-                        append(" · 下载完成后会打开系统安装界面")
-                    },
                     color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                     fontSize = 13.sp,
                 )
