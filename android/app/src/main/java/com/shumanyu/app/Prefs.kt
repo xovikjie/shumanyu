@@ -379,7 +379,7 @@ class Prefs(context: Context) {
             val arr = JSONArray(p.getString("webSites", "[]") ?: "[]")
             (0 until arr.length()).map { arr.getJSONObject(it) }
         }.getOrDefault(emptyList())
-        return Sites.defaults.map { base ->
+        return Sites.defaults.filter { RemoteConfig.sourcesEnabled(it.id) }.map { base ->
             val s = saved.firstOrNull { it.optString("id") == base.id }
             base.copy(
                 enabled = true,

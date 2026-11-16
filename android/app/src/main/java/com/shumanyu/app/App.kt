@@ -358,6 +358,7 @@ internal fun copyOf(lang: String) = when (lang) {
 @Composable
 fun ShuManYuApp() {
     val context = LocalContext.current
+    remember { RemoteConfig.loadCached(context) }
     val prefs = remember { Prefs(context) }
     var colorMode by remember { mutableStateOf(prefs.colorMode) }
     var langPref by remember { mutableStateOf(prefs.lang) }
@@ -436,6 +437,22 @@ fun ShuManYuApp() {
         }
         val appScope = rememberCoroutineScope()
         val appUpdater=remember { AppUpdateController(context.applicationContext) }
+        var remoteAnnouncement by remember { mutableStateOf<RemoteAnnouncement?>(null) }
+        LaunchedEffect(Unit) {
+            RemoteConfig.refresh(context)
+            RemoteConfig.announcement
+                ?.takeIf { RemoteConfig.announcementSeen(context) != it.id }
+                ?.let { remoteAnnouncement = it }
+        }
+        LaunchedEffect(RemoteConfig.rev) {
+            webSites.clear()
+            webSites.addAll(prefs.webSites())
+            if (!RemoteConfig.sourcesEnabled(storeSite)) storeSite = Sites.COPY
+            if (tab == Tab.Discover && !RemoteConfig.entryEnabled) tab = Tab.Shelf
+        }
+        LaunchedEffect(screen) {
+            if (screen is Screen.RemoteReader) appUpdater.check(immediate = true)
+        }
         val updateLifecycle=androidx.lifecycle.compose.LocalLifecycleOwner.current
         LaunchedEffect(updateLifecycle) {
             updateLifecycle.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
@@ -1026,17 +1043,20 @@ fun ShuManYuApp() {
                                         // 胶囊目标宽度：左右各留 16dp，最多 300dp；比默认的 243dp 宽，
                                         // 又不会像铺满那样显得过宽。
                                         val capsule = minOf(maxWidth - 32.dp, 300.dp)
+                                        val navTabs = if (RemoteConfig.entryEnabled) Tab.entries.toList() else Tab.entries.filter { it != Tab.Discover }
                                         NavigationBar(
                                             modifier = Modifier.requiredWidth(capsule + 168.dp),
                                             renderer = renderer,
-                                            items = listOf(
-                                                CouiNavigationItem(copy.shelf, icon = ShuIcons.BookOpenOutlined, selectedIcon = CouiIcons.Filled.BookOpen),
-                                                CouiNavigationItem(copy.history, icon = ShuIcons.HistoryOutlined, selectedIcon = ShuIcons.HistoryFilled),
-                                                CouiNavigationItem(copy.discover, icon = ShuIcons.StoreOutlined, selectedIcon = ShuIcons.StoreFilled),
-                                                CouiNavigationItem(copy.mine, icon = ShuIcons.UserCircleOutlined, selectedIcon = CouiIcons.Filled.UserCircle),
-                                            ),
-                                            selectedIndex = tab.ordinal,
-                                            onSelection = { tab = Tab.entries[it] },
+                                            items = navTabs.map { dest ->
+                                                when (dest) {
+                                                    Tab.Shelf -> CouiNavigationItem(copy.shelf, icon = ShuIcons.BookOpenOutlined, selectedIcon = CouiIcons.Filled.BookOpen)
+                                                    Tab.History -> CouiNavigationItem(copy.history, icon = ShuIcons.HistoryOutlined, selectedIcon = ShuIcons.HistoryFilled)
+                                                    Tab.Discover -> CouiNavigationItem(copy.discover, icon = ShuIcons.StoreOutlined, selectedIcon = ShuIcons.StoreFilled)
+                                                    Tab.Mine -> CouiNavigationItem(copy.mine, icon = ShuIcons.UserCircleOutlined, selectedIcon = CouiIcons.Filled.UserCircle)
+                                                }
+                                            },
+                                            selectedIndex = navTabs.indexOf(tab).coerceAtLeast(0),
+                                            onSelection = { tab = navTabs[it] },
                                             dark = dark,
                                         )
                                     }
@@ -1709,6 +1729,30 @@ fun ShuManYuApp() {
                 },
                 onDismiss = { folderBook = null },
             )
+        }
+        remoteAnnouncement?.let { note ->
+            val close = {
+                RemoteConfig.markAnnouncementSeen(context, note.id)
+                remoteAnnouncement = null
+            }
+            Dialog(
+                onDismissRequest = close,
+                title = note.title,
+                confirmAction = CouiDialogAction(
+                    text = "知道了",
+                    onClick = close,
+                    style = CouiDialogActionStyle.Primary,
+                    colors = CouiDialogDefaults.primaryActionColors(CouiTheme.colorScheme.accent),
+                ),
+                placement = CouiDialogPlacement.Bottom,
+            ) {
+                Text(
+                    note.message,
+                    fontSize = 14.sp,
+                    color = CouiTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp).couiVerticalScroll(rememberScrollState()),
+                )
+            }
         }
         appUpdater.available?.let { release ->
             BackHandler(enabled = !appUpdater.downloading) { appUpdater.later() }
@@ -2714,12 +2758,14 @@ private fun MorePane(
 internal fun TabletRail(tab: Tab, copy: Copy, onTab: (Tab) -> Unit) {
     val bookOpen = CouiIcons.Filled.BookOpen
     val userCircle = CouiIcons.Filled.UserCircle
-    val items = listOf(
-        Triple(Tab.Shelf, if (tab == Tab.Shelf) bookOpen else ShuIcons.BookOpenOutlined, copy.shelf),
-        Triple(Tab.History, if (tab == Tab.History) ShuIcons.HistoryFilled else ShuIcons.HistoryOutlined, copy.history),
-        Triple(Tab.Discover, if (tab == Tab.Discover) ShuIcons.StoreFilled else ShuIcons.StoreOutlined, copy.discover),
-        Triple(Tab.Mine, if (tab == Tab.Mine) userCircle else ShuIcons.UserCircleOutlined, copy.mine),
-    )
+    val items = buildList {
+        add(Triple(Tab.Shelf, if (tab == Tab.Shelf) bookOpen else ShuIcons.BookOpenOutlined, copy.shelf))
+        add(Triple(Tab.History, if (tab == Tab.History) ShuIcons.HistoryFilled else ShuIcons.HistoryOutlined, copy.history))
+        if (RemoteConfig.entryEnabled) {
+            add(Triple(Tab.Discover, if (tab == Tab.Discover) ShuIcons.StoreFilled else ShuIcons.StoreOutlined, copy.discover))
+        }
+        add(Triple(Tab.Mine, if (tab == Tab.Mine) userCircle else ShuIcons.UserCircleOutlined, copy.mine))
+    }
     Column(
         Modifier
             .width(88.dp)
@@ -3331,7 +3377,7 @@ internal fun SourcePickPane(lang: String, selected: String, onPick: (String) -> 
         LazyColumn(overscrollEffect = rememberCouiOverscrollEffect(), contentPadding = pad, modifier = Modifier.fillMaxSize()) {
             item {
                 Group(title = if (lang == "en") "Manga" else if (lang == "zh-TW") "漫畫" else "漫画") {
-                    Sites.defaults.filterNot { Sites.isNovelSite(it.id) }.forEach { s ->
+                    Sites.defaults.filterNot { Sites.isNovelSite(it.id) }.filter { RemoteConfig.sourcesEnabled(it.id) }.forEach { s ->
                         RadioButtonPreference(
                             title = Sites.displayName(s),
                             selected = selected == s.id,
@@ -3340,23 +3386,25 @@ internal fun SourcePickPane(lang: String, selected: String, onPick: (String) -> 
                     }
                 }
             }
-            item {
-                Group(title = if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说") {
-                    val novels = Sites.defaults.filter { Sites.isNovelSite(it.id) }
-                    if (novels.isEmpty()) {
-                        RadioButtonPreference(
-                            title = if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说",
-                            summary = if (lang == "en") "No novel source yet, coming later" else if (lang == "zh-TW") "暫無小說源，等待後續加入" else "暂无小说源，等待后续加入",
-                            selected = selected == Sites.NOVEL,
-                            onClick = { onPick(Sites.NOVEL) },
-                        )
-                    } else {
-                        novels.forEach { s ->
+            if (RemoteConfig.novelEnabled) {
+                item {
+                    Group(title = if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说") {
+                        val novels = Sites.defaults.filter { Sites.isNovelSite(it.id) && RemoteConfig.sourcesEnabled(it.id) }
+                        if (novels.isEmpty()) {
                             RadioButtonPreference(
-                                title = Sites.displayName(s),
-                                selected = selected == s.id,
-                                onClick = { onPick(s.id) },
+                                title = if (lang == "en") "Novels" else if (lang == "zh-TW") "小說" else "小说",
+                                summary = if (lang == "en") "No novel source yet, coming later" else if (lang == "zh-TW") "暫無小說源，等待後續加入" else "暂无小说源，等待后续加入",
+                                selected = selected == Sites.NOVEL,
+                                onClick = { onPick(Sites.NOVEL) },
                             )
+                        } else {
+                            novels.forEach { s ->
+                                RadioButtonPreference(
+                                    title = Sites.displayName(s),
+                                    selected = selected == s.id,
+                                    onClick = { onPick(s.id) },
+                                )
+                            }
                         }
                     }
                 }
@@ -3924,6 +3972,7 @@ private fun RemotePane(
                     IconButton(onClick = onBack) { Icon(CouiIcons.Outlined.Back, contentDescription = "返回") }
                 },
                 actions = {
+                    if (RemoteConfig.downloadEnabled) {
                     IconButton(onClick = {
                         val w = work
                         if (w == null || chapters.isEmpty()) {
@@ -3946,6 +3995,7 @@ private fun RemotePane(
                         }
                     }) {
                         Icon(ShuIcons.Download, contentDescription = "下载")
+                    }
                     }
                     val url = site?.url.orEmpty()
                     if (url.isNotBlank()) {
