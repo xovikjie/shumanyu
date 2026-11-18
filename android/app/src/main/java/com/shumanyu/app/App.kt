@@ -195,6 +195,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.ColorMatrix
@@ -7208,7 +7209,7 @@ private fun SmartCover(
     }
     val shot = remember(bmp) { bmp?.asImageBitmap() }
     if (shot != null) {
-        Image(bitmap = shot, contentDescription = null, modifier = modifier, contentScale = contentScale)
+        Image(bitmap = shot, contentDescription = null, modifier = modifier, contentScale = contentScale, filterQuality = FilterQuality.High)
         if (onReady != null) SideEffect { onReady() }
     } else if (fallbackTitle.isNotBlank()) {
         NovelCoverPlate(fallbackTitle, modifier)
