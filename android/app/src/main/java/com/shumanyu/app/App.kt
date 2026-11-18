@@ -6739,6 +6739,7 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
     val downloading = updater.downloading
     val error = updater.downloadError
     val progress = updater.progress
+    val notes = remember(release.notes) { formatUpdateNotes(release.notes) }
     Dialog(
         onDismissRequest = { if (!downloading) updater.later() },
         title = "发现新版本 ${release.version}",
@@ -6757,27 +6758,54 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
     ) {
         Column(Modifier.fillMaxWidth()) {
             Text(
-                release.notes.ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" },
-                fontSize = 14.sp,
+                notes.ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" },
+                fontSize = 13.5.sp,
+                lineHeight = 20.sp,
                 color = CouiTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 200.dp)
+                    .padding(horizontal = 20.dp)
+                    .heightIn(max = 220.dp)
                     .couiVerticalScroll(rememberScrollState()),
             )
             Spacer(Modifier.height(12.dp))
             when {
                 downloading -> {
-                    CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(top = 10.dp))
+                    CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 10.dp))
                 }
                 error.isNotBlank() -> Text(
                     error,
                     color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                     fontSize = 13.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp),
                 )
             }
         }
     }
+}
+
+/** 去掉 Release 正文里的 Markdown 记号和多余空行，弹窗里按普通段落显示。 */
+private fun formatUpdateNotes(raw: String): String {
+    val out = StringBuilder()
+    raw.lineSequence().forEach { line ->
+        val t = line.trim()
+        when {
+            t.startsWith("## ") -> {
+                if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append('\n')
+                out.append(t.removePrefix("## ").trim()).append('\n')
+            }
+            t.startsWith("### ") -> {
+                if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append('\n')
+                out.append(t.removePrefix("### ").trim()).append('\n')
+            }
+            t.startsWith("- ") -> out.append("• ").append(t.removePrefix("- ").trim()).append('\n')
+            t.startsWith("* ") -> out.append("• ").append(t.removePrefix("* ").trim()).append('\n')
+            t.startsWith("<!--") || t.endsWith("-->") -> Unit
+            t.isBlank() -> if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append('\n')
+            else -> out.append(t).append('\n')
+        }
+    }
+    return out.toString().trim()
 }
 
 @Composable
@@ -6788,6 +6816,7 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
         "0.1.3" to listOf(
             "新增" to listOf(
                 "新增禁漫天堂、爱看韩漫书源。",
+                "新增和图书小说源。",
                 "拷贝漫画书源。",
                 "漫画阅读页新增章节目录。",
                 "漫画详情页目录支持正序/倒序切换。",

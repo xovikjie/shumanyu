@@ -12,7 +12,7 @@ android {
         applicationId = "com.shumanyu.app"
         minSdk = 34
         targetSdk = 37
-        versionCode = 13
+        versionCode = 14
         versionName = "0.1.3"
         ndk { abiFilters += "arm64-v8a" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

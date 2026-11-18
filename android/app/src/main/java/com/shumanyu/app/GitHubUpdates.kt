@@ -104,7 +104,7 @@ internal object GitHubUpdates {
         if(!Regex("\\d+(?:\\.\\d+){1,3}").matches(tag))return null
         val body=item.optString("body")
         val code=Regex("<!--\\s*shumanyu-version-code:\\s*(\\d+)\\s*-->").find(body)?.groupValues?.get(1)?.toLongOrNull()
-        val notes=Regex("<!--[\\s\\S]*?-->").replace(body,"").trim().take(2000)
+        val notes=Regex("<!--[\\s\\S]*?-->").replace(body,"").trim().take(6000)
         return GitHubRelease(tag,code,notes,page,apkUrl,apkSize)
     }
     fun isNewer(release:GitHubRelease,currentCode:Long,currentVersion:String):Boolean {
