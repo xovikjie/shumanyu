@@ -416,8 +416,9 @@ fun ShuManYuApp() {
         val crawled = remember { mutableStateListOf<CrawledWork>().also { it.addAll(LocalStore.loadAllListings()) } }
         var storeSite by remember {
             mutableStateOf(
-                prefs.lastSiteId.takeIf { it == Sites.NOVEL || it == Sites.JM || it == Sites.IKAN }
-                    ?: Sites.COPY,
+                prefs.lastSiteId.takeIf {
+                    it == Sites.NOVEL || it == Sites.JM || it == Sites.IKAN || it == Sites.HETUSHU
+                } ?: Sites.COPY,
             )
         }
         LaunchedEffect(Unit) {

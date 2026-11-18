@@ -371,7 +371,7 @@ class Prefs(context: Context) {
     /** Built-in comic sources; only their last error and item count are persisted. */
     fun webSites(): List<WebSite> {
         if (lastSiteId != Sites.COPY && lastSiteId != Sites.JM && lastSiteId != Sites.IKAN &&
-            lastSiteId != Sites.NOVEL
+            lastSiteId != Sites.HETUSHU && lastSiteId != Sites.NOVEL
         ) {
             lastSiteId = Sites.COPY
         }
