@@ -503,7 +503,7 @@ fun ShuManYuApp() {
                 shelfMenu = false
             }
         }
-        fun crawlSite(site: WebSite, category: String = "推荐", silent: Boolean = true, onDone: () -> Unit = {}) {
+        fun crawlSite(site: WebSite, category: String = "推荐", page: Int = 0, silent: Boolean = true, onDone: () -> Unit = {}) {
             if (!Net.online(context)) {
                 if (!silent) CouiToast.show(copy.offline)
                 onDone()
@@ -543,7 +543,7 @@ fun ShuManYuApp() {
                     pending = null
                     applyListing(category, snap)
                 }
-                val (items, err) = Crawler.fetch(site.url, site.id, category) { partial ->
+                val (items, err) = Crawler.fetch(site.url, site.id, category, page) { partial ->
                     if (partial.isEmpty()) return@fetch
                     main.post {
                         patchCovers(partial)
@@ -784,7 +784,7 @@ fun ShuManYuApp() {
                             onPickSource = { screen = Screen.SourcePick },
                             onWeb = { openSite(it) },
                             onToggleCols = { discoverCols = if (discoverCols == 2) 3 else 2 },
-                            onCrawl = { site, cat, done -> crawlSite(site, cat, silent = true, onDone = done) },
+                            onCrawl = { site, cat, page, done -> crawlSite(site, cat, page, silent = true, onDone = done) },
                             listState = discoverScroll,
                             catState = discoverCat,
                             bleedBottom = !forceTablet,
@@ -3160,7 +3160,7 @@ internal fun DiscoverPane(
     onPickSource: () -> Unit,
     onWeb: (String) -> Unit,
     onToggleCols: () -> Unit,
-    onCrawl: (WebSite, String, () -> Unit) -> Unit,
+    onCrawl: (WebSite, String, Int, () -> Unit) -> Unit,
     listState: LazyListState,
     catState: androidx.compose.runtime.MutableState<String>,
     bleedBottom: Boolean = false,
@@ -3173,6 +3173,14 @@ internal fun DiscoverPane(
     var busy by remember { mutableStateOf(false) }
     var activeRequest by remember { mutableStateOf<Any?>(null) }
     var retryListing by remember { mutableIntStateOf(0) }
+    var page by remember(storeSite, cat) { mutableIntStateOf(0) }
+    var loadingMore by remember(storeSite, cat) { mutableStateOf(false) }
+    var endReached by remember(storeSite, cat) { mutableStateOf(false) }
+    LaunchedEffect(retryListing) {
+        page = 0
+        loadingMore = false
+        endReached = false
+    }
     val fetchedAt = remember { mutableStateMapOf<String, Long>() }
     val cats = if (site == null) emptyList() else Sites.catsFor(site)
     val siteLabel = when {
@@ -3222,10 +3230,28 @@ internal fun DiscoverPane(
         val has = cards.isNotEmpty()
         if (has && age in 1..180_000) { busy = false; return@LaunchedEffect }
         busy = !has
-        onCrawl(s, cat) {
+        onCrawl(s, cat, 0) {
             if (activeRequest === requestToken) busy = false
             fetchedAt[key] = System.currentTimeMillis()
+            page = 0
         }
+    }
+    LaunchedEffect(listState, cards.size, cols, asList, site?.id, cat, online, endReached) {
+        if (!online || site == null || endReached || cards.isEmpty()) return@LaunchedEffect
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1 }
+            .collect { last ->
+                val rows = if (asList) cards.size else (cards.size + cols - 1) / cols
+                if (!loadingMore && rows > 0 && last >= rows - 2) {
+                    loadingMore = true
+                    val before = cards.size
+                    val next = page + 1
+                    onCrawl(site, cat, next) {
+                        page = next
+                        loadingMore = false
+                        if (cards.size <= before) endReached = true
+                    }
+                }
+            }
     }
     var storeMenu by remember { mutableStateOf(false) }
     var discoverHead by remember { mutableIntStateOf(0) }
