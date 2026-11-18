@@ -6733,16 +6733,18 @@ private fun installedVersion(context:Context):String = runCatching {
     context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
 }.getOrDefault("0.1.3")
 
+private data class UpdateSection(val title: String, val items: List<String>)
+
 @Composable
 private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController) {
     val accent = CouiTheme.colorScheme.accent
     val downloading = updater.downloading
     val error = updater.downloadError
     val progress = updater.progress
-    val notes = remember(release.notes) { formatUpdateNotes(release.notes) }
+    val sections = remember(release.notes) { parseUpdateSections(release.notes) }
     Dialog(
         onDismissRequest = { if (!downloading) updater.later() },
-        title = "发现新版本 ${release.version}",
+        title = "更新内容",
         confirmAction = CouiDialogAction(
             text = when {
                 downloading -> "取消下载"
@@ -6758,22 +6760,53 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
     ) {
         Column(Modifier.fillMaxWidth()) {
             Text(
-                notes.ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" },
-                fontSize = 13.5.sp,
-                lineHeight = 20.sp,
-                color = CouiTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .heightIn(max = 220.dp)
-                    .couiVerticalScroll(rememberScrollState()),
+                release.version,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                fontSize = 14.sp,
+                color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
             )
-            Spacer(Modifier.height(12.dp))
-            when {
-                downloading -> {
-                    CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 10.dp))
+            Spacer(Modifier.height(14.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .couiVerticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
+            ) {
+                sections.forEach { section ->
+                    Text(
+                        section.title,
+                        style = AppTheme.textStyles.title2,
+                        color = CouiTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 6.dp),
+                    )
+                    section.items.forEach { item ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                            Text(
+                                "•",
+                                color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                                fontSize = 14.sp,
+                                lineHeight = 22.sp,
+                            )
+                            Spacer(Modifier.width(7.dp))
+                            Text(
+                                item,
+                                fontSize = 14.sp,
+                                lineHeight = 22.sp,
+                                color = CouiTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
                 }
-                error.isNotBlank() -> Text(
+            }
+            if (downloading) {
+                Spacer(Modifier.height(10.dp))
+                CouiLinearProgress(progress, Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 4.dp))
+            }
+            if (error.isNotBlank() && !downloading) {
+                Spacer(Modifier.height(8.dp))
+                Text(
                     error,
                     color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                     fontSize = 13.sp,
@@ -6784,28 +6817,41 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
     }
 }
 
-/** 去掉 Release 正文里的 Markdown 记号和多余空行，弹窗里按普通段落显示。 */
-private fun formatUpdateNotes(raw: String): String {
-    val out = StringBuilder()
+/** 把 Release 正文拆成「分组 + 条目」，弹窗按分区标题和圆点列表显示。 */
+private fun parseUpdateSections(raw: String): List<UpdateSection> {
+    val sections = ArrayList<UpdateSection>()
+    var title = "更新内容"
+    var items = ArrayList<String>()
+    fun flush() {
+        if (items.isNotEmpty()) {
+            sections.add(UpdateSection(title, items.toList()))
+            items = ArrayList()
+        }
+    }
     raw.lineSequence().forEach { line ->
         val t = line.trim()
         when {
-            t.startsWith("## ") -> {
-                if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append('\n')
-                out.append(t.removePrefix("## ").trim()).append('\n')
+            t.startsWith("<!--") -> Unit
+            t.startsWith("##") -> {
+                flush()
+                title = t.trimStart('#').trim().ifBlank { "更新内容" }
             }
-            t.startsWith("### ") -> {
-                if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append('\n')
-                out.append(t.removePrefix("### ").trim()).append('\n')
-            }
-            t.startsWith("- ") -> out.append("• ").append(t.removePrefix("- ").trim()).append('\n')
-            t.startsWith("* ") -> out.append("• ").append(t.removePrefix("* ").trim()).append('\n')
-            t.startsWith("<!--") || t.endsWith("-->") -> Unit
-            t.isBlank() -> if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append('\n')
-            else -> out.append(t).append('\n')
+            t.startsWith("- ") -> items.add(t.removePrefix("- ").trim())
+            t.startsWith("* ") -> items.add(t.removePrefix("* ").trim())
+            t.isBlank() -> Unit
+            else -> items.add(t)
         }
     }
-    return out.toString().trim()
+    flush()
+    if (sections.isEmpty()) {
+        sections.add(
+            UpdateSection(
+                "更新内容",
+                listOf(raw.trim().ifBlank { "新版已发布，下载后覆盖安装即可保留数据。" }),
+            ),
+        )
+    }
+    return sections
 }
 
 @Composable
@@ -6820,7 +6866,7 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
                 "拷贝漫画书源。",
                 "漫画阅读页新增章节目录。",
                 "漫画详情页目录支持正序/倒序切换。",
-                "全新 COUI 风格界面，整体使用 COUI-Kit 重做：搜索框、设置分组、弹窗与输入框、滑块/开关/勾选/单选、分类标签、列表回弹与按压动效换用 COUI 官方组件；按钮、轻提示、进度、空状态、下拉刷新、阅读器工具条、平板侧栏与图标按 COUI 设计语言重绘；主题色改为蓝色。",
+                "UI 全面采用 COUI 重构。",
                 "一镜到底展开动画：打开书籍、功能和设置页面时，页面从点击处展开，返回时收回原位。",
                 "书城、书架、历史常驻搜索框，点开进入独立搜索页。",
                 "新增应用内检查更新、下载 APK 并拉起系统安装。",
@@ -6838,6 +6884,7 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
                 "存储空间清理完成后闪退。",
                 "书城分类标签显示错位。",
                 "书城切换书源时闪退。",
+                "和图书章节正文解析失败。",
             ),
             "优化" to listOf(
                 "书架默认改为紧凑网格显示。",
