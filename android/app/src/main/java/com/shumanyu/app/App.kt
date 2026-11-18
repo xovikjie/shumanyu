@@ -6744,7 +6744,7 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
     val sections = remember(release.notes) { parseUpdateSections(release.notes) }
     Dialog(
         onDismissRequest = { if (!downloading) updater.later() },
-        title = "更新内容",
+        title = "发现新版本 ${release.version}",
         confirmAction = CouiDialogAction(
             text = when {
                 downloading -> "取消下载"
@@ -6759,14 +6759,6 @@ private fun AppUpdateDialog(release: GitHubRelease, updater: AppUpdateController
         placement = CouiDialogPlacement.Bottom,
     ) {
         Column(Modifier.fillMaxWidth()) {
-            Text(
-                release.version,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontSize = 14.sp,
-                color = CouiTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-            )
-            Spacer(Modifier.height(14.dp))
             Column(
                 Modifier
                     .fillMaxWidth()
