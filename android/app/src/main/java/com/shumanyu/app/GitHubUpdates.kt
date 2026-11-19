@@ -101,7 +101,7 @@ internal object GitHubUpdates {
         }
         if(apkUrl.isBlank())return null
         val tag=item.optString("tag_name").removePrefix("v").removePrefix("V")
-        if(!Regex("\\d+(?:\\.\\d+){1,3}").matches(tag))return null
+        if(!Regex("\\d+(?:\\.\\d+){1,3}(?:[A-Za-z]+\\d*)?").matches(tag))return null
         val body=item.optString("body")
         val code=Regex("<!--\\s*shumanyu-version-code:\\s*(\\d+)\\s*-->").find(body)?.groupValues?.get(1)?.toLongOrNull()
         val notes=Regex("<!--[\\s\\S]*?-->").replace(body,"").trim().take(6000)

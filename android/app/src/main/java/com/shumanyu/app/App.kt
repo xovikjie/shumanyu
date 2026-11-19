@@ -6758,7 +6758,7 @@ internal fun IntroPane(
 
 private fun installedVersion(context:Context):String = runCatching {
     context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
-}.getOrDefault("0.1.3")
+}.getOrDefault("0.1.4beta")
 
 private data class UpdateSection(val title: String, val items: List<String>)
 
@@ -6878,6 +6878,18 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
     val context=LocalContext.current
     val title=if(lang=="en")"What's new" else "更新日志"
     val releases = listOf(
+        "0.1.4beta" to listOf(
+            "新增" to listOf(
+                "书城列表支持分页，漫画/小说滑到底自动加载下一页。",
+            ),
+            "修复" to listOf(
+                "和图书章节显示「未解析到正文」。",
+            ),
+            "优化" to listOf(
+                "封面清晰度优化：640px 解码、ARGB_8888、小图放大、高质量采样。",
+                "更新弹窗标题恢复为「发现新版本 x.x.x」，日志改为分组 + 圆点排版。",
+            ),
+        ),
         "0.1.3" to listOf(
             "新增" to listOf(
                 "新增禁漫天堂、爱看韩漫书源。",
@@ -6943,7 +6955,7 @@ private fun NotesPane(lang: String, onBack: () -> Unit) {
                 "阅读模式提示浮层。",
                 "点击动画设置。",
                 "漫画阅读裁边功能。",
-                "笔趣阁（暂无小说源，等待后续加入）。",
+                "笔趣阁。",
                 "Monet 取色。",
                 "实验室与内置浏览器。",
                 "开源声明。",
